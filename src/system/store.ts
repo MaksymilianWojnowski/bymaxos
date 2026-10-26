@@ -1,0 +1,209 @@
+import { create, type StoreApi, type UseBoundStore } from 'zustand'
+import { getWorkArea } from './layout'
+import { applyAppearance, defaultSettings, type Settings } from './settings'
+import { KEYS, safeStorage } from './storage'
+import * as wm from './wm'
+import type { AppId, Rect, Size, WindowSpec, WMState } from './types'
+
+export type Overlay =
+  | null
+  | 'controlCenter'
+  | 'shortcuts'
+  | 'spotlight'
+  | 'launchpad'
+  | 'missionControl'
+  | 'notificationCenter'
+  | 'appSwitcher'
+
+export const AVAILABLE_OVERLAYS = new Set<Exclude<Overlay, null>>(['controlCenter', 'shortcuts'])
+
+interface SystemData {
+  wm: WMState
+  viewport: Size
+  locked: boolean
+  overlay: Overlay
+  openMenuId: string | null
+  settings: Settings
+  keyboardLocked: boolean
+  selectedDesktopIcon: string | null
+}
+
+export interface SystemState extends SystemData {
+  setViewport(w: number, h: number): void
+  openApp(appId: AppId, props?: Record<string, unknown>): string | null
+  focus(id: string): void
+  close(id: string): void
+  quitApp(appId: AppId): void
+  minimize(id: string): void
+  restore(id: string): void
+  toggleMaximize(id: string): void
+  move(id: string, x: number, y: number): void
+  setRect(id: string, r: Rect): void
+  setTitle(id: string, t: string): void
+  blurWindows(): void
+  unlock(): void
+  lock(): void
+  setOverlay(o: Overlay): void
+  setOpenMenu(id: string | null): void
+  updateSettings(p: Partial<Settings>): void
+  setKeyboardLocked(v: boolean): void
+  selectDesktopIcon(id: string | null): void
+}
+
+const DARK_QUERY = '(prefers-color-scheme: dark)'
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)'
+
+function matches(query: string): boolean {
+  return window.matchMedia(query).matches
+}
+
+// Stored settings may be garbage from an older build or another tab: merge only a plain object.
+function initialData(): SystemData {
+  const viewport = { w: window.innerWidth, h: window.innerHeight }
+  const defaults = defaultSettings({ prefersReducedMotion: matches(REDUCED_MOTION_QUERY) })
+  const stored = safeStorage.get<unknown>('local', KEYS.settings, null)
+  const settings =
+    typeof stored === 'object' && stored !== null && !Array.isArray(stored)
+      ? { ...defaults, ...stored }
+      : defaults
+  const saved = safeStorage.get<unknown>('session', KEYS.windows, null)
+  const hydrated = wm.hydrate(saved, getWorkArea(viewport.w, viewport.h))
+  return {
+    wm: { ...wm.emptyWM, ...hydrated },
+    viewport,
+    locked: safeStorage.get<unknown>('session', KEYS.unlocked, false) !== true,
+    overlay: null,
+    openMenuId: null,
+    settings,
+    keyboardLocked: false,
+    selectedDesktopIcon: null,
+  }
+}
+
+let appResolver: (id: AppId) => WindowSpec | undefined = () => undefined
+
+export function setAppResolver(fn: (id: AppId) => WindowSpec | undefined): void {
+  appResolver = fn
+}
+
+function persistLastRects(state: WMState): void {
+  safeStorage.set('session', KEYS.windows, state.lastRectByApp)
+}
+
+const initial = initialData()
+applyAppearance(initial.settings, matches(DARK_QUERY))
+
+export const useSystem: UseBoundStore<StoreApi<SystemState>> = create<SystemState>()((set, get) => {
+  const area = (): Rect => {
+    const { w, h } = get().viewport
+    return getWorkArea(w, h)
+  }
+
+  return {
+    ...initial,
+
+    setViewport(w, h) {
+      set({ viewport: { w, h }, wm: wm.clampAll(get().wm, getWorkArea(w, h)) })
+    },
+
+    openApp(appId, props) {
+      const spec = appResolver(appId)
+      if (!spec) return null
+      const next = wm.openWindow(get().wm, spec, area(), props)
+      set({ wm: next })
+      return next.focusedId
+    },
+
+    focus(id) {
+      set({ wm: wm.focusWindow(get().wm, id) })
+    },
+
+    close(id) {
+      const next = wm.closeWindow(get().wm, id)
+      set({ wm: next })
+      persistLastRects(next)
+    },
+
+    quitApp(appId) {
+      const next = wm.closeApp(get().wm, appId)
+      set({ wm: next })
+      persistLastRects(next)
+    },
+
+    minimize(id) {
+      set({ wm: wm.minimizeWindow(get().wm, id) })
+    },
+
+    restore(id) {
+      set({ wm: wm.restoreWindow(get().wm, id) })
+    },
+
+    toggleMaximize(id) {
+      set({ wm: wm.toggleMaximize(get().wm, id, area()) })
+    },
+
+    move(id, x, y) {
+      set({ wm: wm.moveWindow(get().wm, id, x, y, area()) })
+    },
+
+    setRect(id, r) {
+      const { wm: state } = get()
+      const win = state.windows.find((w) => w.id === id)
+      const minSize = (win && appResolver(win.appId)?.minSize) ?? { w: 0, h: 0 }
+      set({ wm: wm.setWindowRect(state, id, r, minSize, area()) })
+    },
+
+    setTitle(id, t) {
+      set({ wm: wm.setWindowTitle(get().wm, id, t) })
+    },
+
+    blurWindows() {
+      set((s) => ({ wm: { ...s.wm, focusedId: null } }))
+    },
+
+    unlock() {
+      set({ locked: false })
+      safeStorage.set('session', KEYS.unlocked, true)
+    },
+
+    lock() {
+      set({ locked: true })
+      safeStorage.set('session', KEYS.unlocked, false)
+    },
+
+    setOverlay(o) {
+      set({ overlay: o })
+    },
+
+    setOpenMenu(id) {
+      set({ openMenuId: id })
+    },
+
+    updateSettings(p) {
+      const settings = { ...get().settings, ...p }
+      set({ settings })
+      safeStorage.set('local', KEYS.settings, settings)
+      applyAppearance(settings, matches(DARK_QUERY))
+    },
+
+    setKeyboardLocked(v) {
+      set({ keyboardLocked: v })
+    },
+
+    selectDesktopIcon(id) {
+      set({ selectedDesktopIcon: id })
+    },
+  }
+})
+
+// Follow the OS colour scheme live while the appearance setting is 'auto'.
+window
+  .matchMedia(DARK_QUERY)
+  .addEventListener('change', (e) => applyAppearance(useSystem.getState().settings, e.matches))
+
+// Test helper: fresh state computed from storage, as on a page load.
+export function resetSystem(): void {
+  const data = initialData()
+  applyAppearance(data.settings, matches(DARK_QUERY))
+  useSystem.setState(data)
+}
