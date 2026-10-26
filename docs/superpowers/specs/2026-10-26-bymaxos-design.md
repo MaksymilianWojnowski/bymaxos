@@ -112,7 +112,7 @@ Menus, shortcuts, context menus, dock menus and Spotlight dispatch commands (`{ 
 
 ### 3.6 Shortcuts
 
-Browser/OS-reserved chords (`⌘W`, `⌘Tab`, `⌘Space`, `⌘Q`) cannot be intercepted. Primary shortcuts: `⌥W` close, `⌥M` minimize, `⌥Tab` / `` ⌥` `` app switcher, `⌘K` Spotlight, `⌃↑` / F3 Mission Control, `⌥Q` quit app, `⌘1/⌘2` Finder views, `Esc` closes overlays. Chords match on `event.code` (⌥ changes `event.key` on macOS) and are ignored while focus is in a text field, except `Esc` and `⌘K`. Menus display the shortcut that actually works. In browser full screen (Control Center → Full Screen) on Chromium, the Keyboard Lock API is requested so native `⌘W`/`⌘Tab`/`⌘Q` work too; the menu hints switch accordingly.
+Browser/OS-reserved chords (`⌘W`, `⌘Tab`, `⌘Space`, `⌘Q`) cannot be intercepted. Primary shortcuts: `⌥W` close, `⌥M` minimize, `⌥Tab` / `` ⌥` `` app switcher, `⌘K` Spotlight, `⌥↑` Mission Control, `⌥Q` quit app, `⌥1/⌥2` Finder views, `⌥N` new window, `Esc` closes overlays. Chords match on `event.code` (⌥ changes `event.key` on macOS) and are ignored while focus is in a text field, except `Esc` and `⌘K`. Menus display the shortcut that actually works. In browser full screen (Control Center → Full Screen) on Chromium, the Keyboard Lock API is requested so native `⌘W`/`⌘Tab`/`⌘Q`/`⌘M`/`⌘N`/`⌘1`/`⌘2` work too; the menu hints switch accordingly.
 
 ### 3.7 Persistence
 
