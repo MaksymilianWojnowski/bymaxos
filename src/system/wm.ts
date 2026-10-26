@@ -16,7 +16,8 @@ export function clampRect(r: Rect, area: Rect, minSize?: Size): Rect {
   const w = Math.min(minW, area.w);
   const h = Math.min(minH, area.h);
   const x = Math.min(Math.max(r.x, area.x - (w - MIN_VISIBLE)), area.x + area.w - MIN_VISIBLE);
-  const y = Math.min(Math.max(r.y, area.y), area.y + area.h - TITLE_BAR_H);
+  // The title bar never goes above the work area, even when the area is shorter than the bar.
+  const y = Math.min(Math.max(r.y, area.y), Math.max(area.y, area.y + area.h - TITLE_BAR_H));
   return { x, y, w, h };
 }
 
@@ -36,8 +37,13 @@ function topVisibleId(windows: WindowState[]): string | null {
   return best?.id ?? null;
 }
 
+// A minimized window that restores maximized must track the area too, or it returns at the old size.
+function isMaximized(w: WindowState): boolean {
+  return w.mode === 'maximized' || (w.mode === 'minimized' && w.restoreTo === 'maximized');
+}
+
 function lastRectOf(w: WindowState): Rect {
-  return w.mode === 'maximized' ? (w.prevRect ?? w.rect) : w.rect;
+  return isMaximized(w) ? (w.prevRect ?? w.rect) : w.rect;
 }
 
 function removeWindows(s: WMState, gone: WindowState[]): WMState {
@@ -58,7 +64,12 @@ export function openWindow(
 ): WMState {
   if (spec.singleInstance) {
     const existing = topWindowOfApp(s, spec.appId, true);
-    if (existing) return restoreWindow(s, existing.id);
+    if (existing) {
+      const shown = restoreWindow(s, existing.id);
+      return props
+        ? patch(shown, existing.id, (w) => ({ ...w, props: { ...w.props, ...props } }))
+        : shown;
+    }
   }
 
   const { w, h } = spec.defaultSize;
@@ -139,7 +150,9 @@ export function restoreWindow(s: WMState, id: string): WMState {
   const w = find(s, id);
   if (!w) return s;
   const shown =
-    w.mode === 'minimized' ? patch(s, id, (win) => ({ ...win, mode: win.restoreTo ?? 'normal' })) : s;
+    w.mode === 'minimized'
+      ? patch(s, id, (win) => ({ ...win, mode: win.restoreTo ?? 'normal', restoreTo: undefined }))
+      : s;
   return focusWindow(shown, id);
 }
 
@@ -188,7 +201,7 @@ export function clampAll(s: WMState, area: Rect): WMState {
     ...s,
     windows: s.windows.map((w) => ({
       ...w,
-      rect: w.mode === 'maximized' ? area : clampRect(w.rect, area),
+      rect: isMaximized(w) ? area : clampRect(w.rect, area),
       prevRect: w.prevRect && clampRect(w.prevRect, area),
     })),
   };

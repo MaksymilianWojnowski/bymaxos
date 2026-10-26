@@ -87,6 +87,14 @@ describe('openWindow', () => {
     expect(again.focusedId).toBe(first.windows[0].id)
   })
 
+  it('merges props into an existing singleInstance window when re-opened', () => {
+    const single: WindowSpec = { ...notesSpec, singleInstance: true }
+    const first = openWindow(emptyWM, single, area, { a: 1 })
+    const again = openWindow(first, single, area, { b: 2 })
+    expect(again.windows).toHaveLength(1)
+    expect(again.windows[0].props).toEqual({ a: 1, b: 2 })
+  })
+
   it('uses the clamped lastRectByApp for the first window of an app', () => {
     const s: WMState = {
       ...emptyWM,
@@ -200,6 +208,11 @@ describe('clampRect', () => {
     expect(clampRect(r(9999, 100, 800, 500), area).x).toBe(1440 - 80)
   })
 
+  it('never lets the title bar go above the work area when the area is shorter than the bar', () => {
+    const short: Rect = { x: 0, y: 24, w: 800, h: 10 }
+    expect(clampRect(r(100, 100, 100, 100), short).y).toBe(24)
+  })
+
   it('caps size at the area and floors it at minSize', () => {
     expect(clampRect(r(0, 100, 2000, 2000), area)).toMatchObject({ w: 1440, h: 792 })
     expect(clampRect(r(0, 100, 100, 100), area, { w: 400, h: 260 })).toMatchObject({
@@ -222,6 +235,19 @@ describe('clampAll', () => {
       else expect(w.rect).toEqual(clampRect(w.rect, small))
     }
     expect(next.windows[0].rect).toEqual({ x: 944, y: 596, w: 800, h: 500 })
+  })
+})
+
+describe('minimized-maximized windows', () => {
+  it('follow a new work area so they restore at its size', () => {
+    const a = openWindow(emptyWM, spec, area)
+    const id = a.windows[0].id
+    const hidden = minimizeWindow(toggleMaximize(a, id, area), id)
+    const moved: Rect = { x: 100, y: 24, w: 900, h: 700 }
+    const restored = restoreWindow(clampAll(hidden, moved), id)
+    expect(restored.windows[0].mode).toBe('maximized')
+    expect(restored.windows[0].rect).toEqual(moved)
+    expect(restored.windows[0].restoreTo).toBeUndefined()
   })
 })
 
