@@ -20,6 +20,17 @@ html.reduce-motion *::after {
   animation: var(--anim-window-open);
 }
 
+.login-unlocking {
+  animation: login-unlock 300ms ease-out forwards;
+}
+
+@keyframes login-unlock {
+  to {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
 @keyframes window-open {
   from {
     opacity: 0;
