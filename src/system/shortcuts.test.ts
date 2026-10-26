@@ -60,6 +60,11 @@ describe('shortcutLabel', () => {
     expect(shortcutLabel('window.close', true)).toBe('⌘W')
   })
 
+  it('tells overlay.open commands apart by overlay when given a full command', () => {
+    expect(shortcutLabel({ type: 'overlay.open', overlay: 'missionControl' }, false)).toBe('⌥↑')
+    expect(shortcutLabel({ type: 'overlay.open', overlay: 'spotlight' }, false)).toBe('⌘K')
+  })
+
   it('falls back to the always-on label for commands with no locked variant', () => {
     expect(shortcutLabel('overlay.close', true)).toBe('Esc')
   })
@@ -86,6 +91,14 @@ describe('isTextField', () => {
     const editable = document.createElement('div')
     editable.setAttribute('contenteditable', 'true')
     expect(isTextField(editable)).toBe(true)
+
+    const bareEditable = document.createElement('div')
+    bareEditable.setAttribute('contenteditable', '')
+    expect(isTextField(bareEditable)).toBe(true)
+
+    const notEditable = document.createElement('div')
+    notEditable.setAttribute('contenteditable', 'false')
+    expect(isTextField(notEditable)).toBe(false)
 
     expect(isTextField(document.createElement('button'))).toBe(false)
     expect(isTextField(null)).toBe(false)

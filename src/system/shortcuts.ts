@@ -72,10 +72,16 @@ export function matchShortcut(
   return null
 }
 
-export function shortcutLabel(type: string, keyboardLocked: boolean): string | undefined {
-  const lockedMatch = SHORTCUTS.find((s) => s.command.type === type && s.when === 'keyboardLocked')
+// A bare type matches by type; a command also matches its overlay, which tells apart overlay.open entries.
+function sameCommand(s: ShortcutDef, cmd: string | Command): boolean {
+  if (typeof cmd === 'string') return s.command.type === cmd
+  return s.command.type === cmd.type && (cmd.overlay === undefined || s.command.overlay === cmd.overlay)
+}
+
+export function shortcutLabel(cmd: string | Command, keyboardLocked: boolean): string | undefined {
+  const lockedMatch = SHORTCUTS.find((s) => sameCommand(s, cmd) && s.when === 'keyboardLocked')
   if (keyboardLocked && lockedMatch) return lockedMatch.combo
-  return SHORTCUTS.find((s) => s.command.type === type && s.when === 'always')?.combo
+  return SHORTCUTS.find((s) => sameCommand(s, cmd) && s.when === 'always')?.combo
 }
 
 const TEXT_INPUT_TYPES = new Set(['text', 'search', 'email', 'url', 'tel', 'password', 'number'])
@@ -84,5 +90,8 @@ export function isTextField(el: Element | null): boolean {
   if (!el) return false
   if (el instanceof HTMLTextAreaElement) return true
   if (el instanceof HTMLInputElement) return TEXT_INPUT_TYPES.has(el.type)
-  return (el instanceof HTMLElement && el.isContentEditable) || el.matches('[contenteditable="true"]')
+  return (
+    (el instanceof HTMLElement && el.isContentEditable) ||
+    el.matches('[contenteditable]:not([contenteditable="false"])')
+  )
 }

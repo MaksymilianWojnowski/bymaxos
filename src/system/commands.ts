@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { KEYS, safeStorage } from './storage'
 import { AVAILABLE_OVERLAYS, useSystem, type Overlay } from './store'
-import { activeAppId, emptyWM } from './wm'
+import { activeAppId, emptyWM, raiseAppWindows } from './wm'
 
 export type Command = { type: string; [key: string]: unknown }
 export type Handler = (cmd: Command) => void
+export type HandlerRecord = Record<string, Handler>
 
 interface GlobalEntry {
   handler: Handler
@@ -13,7 +14,8 @@ interface GlobalEntry {
 
 // Global names never collide with window command names, so a global always wins a lookup.
 const globals = new Map<string, GlobalEntry>()
-const windowHandlers = new Map<string, Record<string, Handler>>()
+// A getter, not a snapshot: a window's command set can change between renders.
+const windowHandlers = new Map<string, () => HandlerRecord>()
 
 export function registerGlobal(
   type: string,
@@ -29,11 +31,12 @@ export function registerGlobal(
 
 export function registerWindowHandlers(
   windowId: string,
-  handlers: Record<string, Handler>,
+  source: HandlerRecord | (() => HandlerRecord),
 ): () => void {
-  windowHandlers.set(windowId, handlers)
+  const get = typeof source === 'function' ? source : () => source
+  windowHandlers.set(windowId, get)
   return () => {
-    if (windowHandlers.get(windowId) === handlers) windowHandlers.delete(windowId)
+    if (windowHandlers.get(windowId) === get) windowHandlers.delete(windowId)
   }
 }
 
@@ -48,7 +51,7 @@ function resolve(cmd: Command): Handler | undefined {
   const entry = globals.get(cmd.type)
   if (entry) return (entry.enabled?.(cmd) ?? true) ? entry.handler : undefined
   const id = useSystem.getState().wm.focusedId
-  const handlers = id === null ? undefined : windowHandlers.get(id)
+  const handlers = id === null ? undefined : windowHandlers.get(id)?.()
   return handlers && Object.hasOwn(handlers, cmd.type) ? handlers[cmd.type] : undefined
 }
 
@@ -63,19 +66,14 @@ export function dispatch(cmd: Command): boolean {
   return true
 }
 
-// Command types are read at mount; handler bodies follow every render through the ref.
-export function useWindowCommands(windowId: string, handlers: Record<string, Handler>): void {
+// Keys and bodies both follow the latest render; the registration happens once per windowId.
+export function useWindowCommands(windowId: string, handlers: HandlerRecord): void {
   const latest = useRef(handlers)
-  useEffect(() => {
+  // Layout effect: the ref is current before paint and before any dispatch, and lint forbids writing it during render.
+  useLayoutEffect(() => {
     latest.current = handlers
   })
-  useEffect(() => {
-    const wrapped: Record<string, Handler> = {}
-    for (const type of Object.keys(latest.current)) {
-      wrapped[type] = (cmd) => latest.current[type]?.(cmd)
-    }
-    return registerWindowHandlers(windowId, wrapped)
-  }, [windowId])
+  useEffect(() => registerWindowHandlers(windowId, () => latest.current), [windowId])
 }
 
 const state = () => useSystem.getState()
@@ -94,6 +92,17 @@ const targetApp = (cmd: Command): string =>
 const hasWindowsOf = (cmd: Command): boolean =>
   state().wm.windows.some((w) => w.appId === targetApp(cmd))
 
+// Raise is possible when a visible window of the active app sits below a visible window of another app.
+const canRaiseActiveApp = (): boolean => {
+  const { wm } = state()
+  const app = activeAppId(wm)
+  const visible = (w: { mode: string }) => w.mode !== 'minimized'
+  const mine = wm.windows.filter((w) => w.appId === app && visible(w))
+  if (mine.length === 0) return false
+  const lowest = Math.min(...mine.map((w) => w.z))
+  return wm.windows.some((w) => w.appId !== app && visible(w) && w.z > lowest)
+}
+
 type GlobalDef = [type: string, handler: Handler, enabled?: (cmd: Command) => boolean]
 
 const SYSTEM_GLOBALS: GlobalDef[] = [
@@ -106,11 +115,10 @@ const SYSTEM_GLOBALS: GlobalDef[] = [
       if (typeof cmd.id === 'string') state().focus(cmd.id)
     },
   ],
-  // Focus is already on the top window, so this only re-asserts it; the z order is left alone.
   [
     'window.bringAllToFront',
-    onFocused((id) => state().focus(id)),
-    () => state().wm.windows.length > 0,
+    () => useSystem.setState((s) => ({ wm: raiseAppWindows(s.wm, activeAppId(s.wm)) })),
+    canRaiseActiveApp,
   ],
   [
     'app.open',

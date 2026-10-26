@@ -212,6 +212,22 @@ export function activeAppId(s: WMState): AppId {
   return focused?.appId ?? 'finder';
 }
 
+// Visible windows of the app move above every other window; the rest keep their relative order.
+export function raiseAppWindows(s: WMState, appId: AppId): WMState {
+  const byZ = (a: WindowState, b: WindowState) => a.z - b.z;
+  const raised = s.windows
+    .filter((w) => w.appId === appId && w.mode !== 'minimized')
+    .sort(byZ);
+  const raisedIds = new Set(raised.map((w) => w.id));
+  const order = [...s.windows.filter((w) => !raisedIds.has(w.id)).sort(byZ), ...raised];
+  const zById = new Map(order.map((w, i) => [w.id, i + 1]));
+  return {
+    ...s,
+    windows: s.windows.map((w) => ({ ...w, z: zById.get(w.id) ?? w.z })),
+    nextZ: order.length + 1,
+  };
+}
+
 export function topWindowOfApp(
   s: WMState,
   appId: AppId,

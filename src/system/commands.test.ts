@@ -4,6 +4,7 @@ import {
   canDispatch,
   dispatch,
   installSystemCommands,
+  type HandlerRecord,
   registerGlobal,
   registerWindowHandlers,
   resetCommands,
@@ -176,5 +177,63 @@ describe('useWindowCommands', () => {
 
     unmount()
     expect(canDispatch({ type: 'notes.newNote' })).toBe(false)
+  })
+
+  it('follows command keys that appear and disappear between renders', () => {
+    const w1 = open('notes')
+    const back = vi.fn()
+    const { rerender } = renderHook(
+      ({ keys }: { keys: HandlerRecord }) => useWindowCommands(w1, keys),
+      { initialProps: { keys: { 'notes.back': back } as HandlerRecord } },
+    )
+    rerender({ keys: { 'notes.forward': vi.fn() } })
+
+    expect(canDispatch({ type: 'notes.back' })).toBe(false)
+    expect(dispatch({ type: 'notes.back' })).toBe(false)
+    expect(back).not.toHaveBeenCalled()
+    expect(canDispatch({ type: 'notes.forward' })).toBe(true)
+  })
+})
+
+describe('window.bringAllToFront', () => {
+  const bring = { type: 'window.bringAllToFront' }
+  const zOf = (id: string) => useSystem.getState().wm.windows.find((w) => w.id === id)?.z
+
+  it('is disabled when the active app has no visible window', () => {
+    const dispose = installSystemCommands()
+    open('notes')
+    expect(canDispatch(bring)).toBe(false)
+    dispose()
+  })
+
+  it('is disabled when the active app is already on top', () => {
+    const dispose = installSystemCommands()
+    open('notes')
+    open('finder')
+    expect(canDispatch(bring)).toBe(false)
+    dispose()
+  })
+
+  it('is disabled when the only window above is minimized', () => {
+    const dispose = installSystemCommands()
+    const n1 = open('notes')
+    open('finder')
+    useSystem.getState().minimize(n1)
+    expect(canDispatch(bring)).toBe(false)
+    dispose()
+  })
+
+  it('raises the active app windows above others, keeping their order and focus', () => {
+    const dispose = installSystemCommands()
+    const f1 = open('finder')
+    const n1 = open('notes')
+    const f2 = open('finder')
+    expect(canDispatch(bring)).toBe(true)
+
+    expect(dispatch(bring)).toBe(true)
+    expect([zOf(n1), zOf(f1), zOf(f2)]).toEqual([1, 2, 3])
+    expect(useSystem.getState().wm.focusedId).toBe(f2)
+    expect(canDispatch(bring)).toBe(false)
+    dispose()
   })
 })
