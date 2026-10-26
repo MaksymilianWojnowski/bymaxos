@@ -1,0 +1,55 @@
+/* Design tokens. Consumed as CSS variables everywhere and mapped to Tailwind via @theme. */
+
+:root {
+  --mb-h: 24px;
+  --tb-h: 28px;
+  --dock-reserve: 84px;
+  --radius-window: 12px;
+  --radius-menu: 8px;
+  --glass-blur: 24px;
+  --accent: #0a84ff;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter Variable', system-ui, sans-serif;
+}
+
+:root[data-theme='light'] {
+  --glass-bg: rgba(236, 236, 236, 0.72);
+  --glass-border: rgba(0, 0, 0, 0.12);
+  --menu-bg: rgba(236, 236, 236, 0.8);
+  --window-bg: #ececec;
+  --window-fg: #1d1d1f;
+  --sidebar-bg: rgba(226, 226, 226, 0.7);
+  --text-1: #1d1d1f;
+  --text-2: rgba(60, 60, 67, 0.6);
+  --shadow-window: 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 0 0.5px rgba(0, 0, 0, 0.2);
+  --shadow-window-inactive: 0 4px 14px rgba(0, 0, 0, 0.15), 0 0 0 0.5px rgba(0, 0, 0, 0.15);
+}
+
+:root[data-theme='dark'] {
+  --glass-bg: rgba(40, 40, 40, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --menu-bg: rgba(30, 30, 30, 0.8);
+  --window-bg: #1e1e1e;
+  --window-fg: #f5f5f7;
+  --sidebar-bg: rgba(40, 40, 40, 0.7);
+  --text-1: #f5f5f7;
+  --text-2: rgba(235, 235, 245, 0.6);
+  --shadow-window: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+  --shadow-window-inactive: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+}
+
+@theme inline {
+  --color-accent: var(--accent);
+  --color-window: var(--window-bg);
+  --color-window-fg: var(--window-fg);
+  --color-sidebar: var(--sidebar-bg);
+  --color-menu: var(--menu-bg);
+  --color-glass: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --font-sans: var(--font-ui);
+  --radius-mac-window: var(--radius-window);
+  --radius-mac-menu: var(--radius-menu);
+  --shadow-mac-window: var(--shadow-window);
+  --shadow-mac-window-inactive: var(--shadow-window-inactive);
+}
