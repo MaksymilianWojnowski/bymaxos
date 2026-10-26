@@ -1,30 +1,37 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { dockIconRects } from './dockIconRects'
 import { WindowLayer } from './WindowLayer'
 import { setAppResolver, resetSystem, useSystem } from '../../system/store'
 import type { WindowSpec } from '../../system/types'
 
-const stub = vi.hoisted(() => ({ shouldThrow: false }))
+// 'flaky' fails its first chunk load; each app id gets its own lazy cache entry.
+const stub = vi.hoisted(() => ({ shouldThrow: false, failNext: false }))
 
 vi.mock('../../apps/registry', () => {
   const StubApp = () => {
     if (stub.shouldThrow) throw new Error('boom')
     return <p>stub</p>
   }
-  const finder = {
-    id: 'finder',
+  const makeApp = (id: string) => ({
+    id,
     name: 'Finder',
     icon: { glyph: () => null, background: '#000' },
-    load: () => Promise.resolve({ default: StubApp }),
+    load: () => {
+      if (stub.failNext) {
+        stub.failNext = false
+        return Promise.reject(new Error('chunk failed'))
+      }
+      return Promise.resolve({ default: StubApp })
+    },
     window: {
       defaultSize: { w: 600, h: 400 },
       minSize: { w: 300, h: 200 },
       resizable: true,
       singleInstance: false,
     },
-  }
-  return { getApp: (id: string) => (id === 'finder' ? finder : undefined) }
+  })
+  return { getApp: (id: string) => (id === 'finder' || id === 'flaky' ? makeApp(id) : undefined) }
 })
 
 const spec: WindowSpec = {
@@ -49,6 +56,7 @@ afterEach(() => {
   cleanup()
   stub.shouldThrow = false
   dockIconRects.clear()
+  Reflect.deleteProperty(HTMLElement.prototype, 'animate')
   document.documentElement.classList.remove('reduce-motion')
   vi.restoreAllMocks()
 })
@@ -80,7 +88,8 @@ describe('Window', () => {
   })
 
   it('runs the minimize animation once and ignores clicks while it runs', () => {
-    const animate = vi.fn(() => ({ onfinish: null }))
+    const anim = { onfinish: null, oncancel: null, cancel: vi.fn() }
+    const animate = vi.fn(() => anim)
     Object.defineProperty(HTMLElement.prototype, 'animate', { value: animate, configurable: true })
     dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
     openFinder()
@@ -90,7 +99,21 @@ describe('Window', () => {
     fireEvent.click(minimize)
     expect(animate).toHaveBeenCalledTimes(1)
     expect(useSystem.getState().wm.windows[0].mode).toBe('normal')
-    Reflect.deleteProperty(HTMLElement.prototype, 'animate')
+  })
+
+  it('minimizes when the animation finishes', () => {
+    const anim = { onfinish: null as null | (() => void), oncancel: null, cancel: vi.fn() }
+    Object.defineProperty(HTMLElement.prototype, 'animate', {
+      value: vi.fn(() => anim),
+      configurable: true,
+    })
+    dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
+    openFinder()
+    render(<WindowLayer />)
+    fireEvent.click(screen.getByRole('button', { name: 'Minimize' }))
+    act(() => anim.onfinish?.())
+    expect(useSystem.getState().wm.windows[0].mode).toBe('minimized')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('toggles maximize on title bar double-click', () => {
@@ -136,6 +159,17 @@ describe('Window', () => {
     render(<WindowLayer />)
     expect(await screen.findByText('Finder quit unexpectedly.')).toBeInTheDocument()
     stub.shouldThrow = false
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen' }))
+    expect(await screen.findByText('stub')).toBeInTheDocument()
+  })
+
+  it('retries a failed app load after Reopen', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    stub.failNext = true
+    setAppResolver(() => ({ ...spec, appId: 'flaky' }))
+    useSystem.getState().openApp('flaky')
+    render(<WindowLayer />)
+    expect(await screen.findByText('Finder quit unexpectedly.')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Reopen' }))
     expect(await screen.findByText('stub')).toBeInTheDocument()
   })

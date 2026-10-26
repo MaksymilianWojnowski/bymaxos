@@ -2,6 +2,7 @@ import { Component, type ReactNode } from 'react'
 
 interface Props {
   appName: string
+  onReset?: () => void
   children: ReactNode
 }
 
@@ -17,7 +18,10 @@ export class AppErrorBoundary extends Component<Props, State> {
     return { failed: true }
   }
 
-  private reopen = () => this.setState({ failed: false })
+  private reopen = () => {
+    this.props.onReset?.()
+    this.setState({ failed: false })
+  }
 
   render() {
     if (!this.state.failed) return this.props.children

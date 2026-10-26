@@ -1,4 +1,10 @@
-import { lazy, Suspense, type ComponentType, type LazyExoticComponent } from 'react'
+import {
+  lazy,
+  Suspense,
+  useReducer,
+  type ComponentType,
+  type LazyExoticComponent,
+} from 'react'
 import { getApp } from '../../apps/registry'
 import type { AppDefinition, AppProps } from '../../apps/types'
 import { useSystem } from '../../system/store'
@@ -21,9 +27,11 @@ function componentFor(app: AppDefinition, load: NonNullable<AppDefinition['load'
 export function WindowLayer() {
   const windows = useSystem((s) => s.wm.windows)
   const focusedId = useSystem((s) => s.wm.focusedId)
+  // A reset drops the cached lazy component; this re-render makes the window pick up the fresh one.
+  const [, rerender] = useReducer((n: number) => n + 1, 0)
 
   return (
-    <div className="pointer-events-none absolute inset-0">
+    <div className="pointer-events-none absolute inset-0 isolate">
       {windows
         .filter((win) => win.mode !== 'minimized')
         .map((win) => {
@@ -33,7 +41,13 @@ export function WindowLayer() {
           const App = componentFor(app, load)
           return (
             <Window key={win.id} win={win} app={app} focused={win.id === focusedId}>
-              <AppErrorBoundary appName={app.name}>
+              <AppErrorBoundary
+                appName={app.name}
+                onReset={() => {
+                  components.delete(app.id)
+                  rerender()
+                }}
+              >
                 <Suspense fallback={null}>
                   <App windowId={win.id} props={win.props} />
                 </Suspense>

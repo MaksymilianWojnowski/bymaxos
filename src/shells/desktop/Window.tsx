@@ -49,6 +49,7 @@ export function Window({ win, app, focused, children }: Props) {
   const rootRef = useRef<HTMLDivElement>(null)
   const gesture = useRef<Gesture | null>(null)
   const animating = useRef(false)
+  const animation = useRef<Animation | null>(null)
   const resizable = app.window?.resizable ?? false
   const minSize = app.window?.minSize ?? { w: 0, h: 0 }
   const titleId = `win-title-${win.id}`
@@ -61,6 +62,9 @@ export function Window({ win, app, focused, children }: Props) {
       if (previous instanceof HTMLElement && previous.isConnected) previous.focus()
     }
   }, [])
+
+  // Cancelling on unmount stops a minimize still in flight when the window closes.
+  useEffect(() => () => animation.current?.cancel(), [])
 
   const minimize = () => {
     if (animating.current) return
@@ -82,7 +86,12 @@ export function Window({ win, app, focused, children }: Props) {
       ],
       { duration: 220, easing: 'ease-in', fill: 'forwards' },
     )
+    animation.current = anim
     anim.onfinish = () => minimizeWin(win.id)
+    // cancel() does not fire onfinish, so a cancelled run must release the guard here.
+    anim.oncancel = () => {
+      animating.current = false
+    }
   }
 
   const onTitlePointerDown = (e: PointerEvent<HTMLDivElement>) => {
@@ -145,7 +154,7 @@ export function Window({ win, app, focused, children }: Props) {
       onPointerCancel={endGesture}
     >
       <div
-        className="relative flex shrink-0 items-center border-b border-black/10 select-none"
+        className="relative flex shrink-0 touch-none items-center border-b border-black/10 select-none"
         style={{ height: 'var(--tb-h)' }}
         onPointerDown={onTitlePointerDown}
         onDoubleClick={(e) => {
@@ -167,10 +176,14 @@ export function Window({ win, app, focused, children }: Props) {
                 aria-label={name}
                 disabled={disabled}
                 onClick={onClick}
-                className="flex h-3 w-3 items-center justify-center rounded-full text-black/60 disabled:opacity-40"
+                className="flex h-3 w-3 items-center justify-center rounded-full text-black/60 outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40"
                 style={{ background: focused ? color : 'var(--traffic-inactive)' }}
               >
-                <Glyph aria-hidden className="h-2 w-2 opacity-0 group-hover:opacity-100" strokeWidth={3} />
+                <Glyph
+                  aria-hidden
+                  className="h-2 w-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+                  strokeWidth={3}
+                />
               </button>
             )
           })}
@@ -194,7 +207,7 @@ export function Window({ win, app, focused, children }: Props) {
             key={dir}
             aria-hidden="true"
             data-resize={dir}
-            className="absolute z-10"
+            className="absolute z-10 touch-none"
             style={HANDLES[dir]}
             onPointerDown={onHandlePointerDown}
           />
