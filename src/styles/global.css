@@ -8,9 +8,16 @@ html.reduce-motion *::after {
   transition: none !important;
 }
 
-html.reduce-transparency {
+/* Outranks the theme selectors in tokens.css, which would otherwise keep glass translucent. */
+:root.reduce-transparency[data-theme] {
   --glass-bg: var(--window-bg);
+  --menu-bg: var(--window-bg);
+  --sidebar-bg: var(--window-bg);
   --glass-blur: 0px;
+}
+
+.animate-window-open {
+  animation: var(--anim-window-open);
 }
 
 @keyframes window-open {

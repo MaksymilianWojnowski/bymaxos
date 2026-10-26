@@ -8,6 +8,7 @@
   --radius-menu: 8px;
   --glass-blur: 24px;
   --accent: #0a84ff;
+  --anim-window-open: window-open 160ms ease-out;
   --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter Variable', system-ui, sans-serif;
 }
 
