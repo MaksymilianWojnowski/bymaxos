@@ -16,6 +16,15 @@ describe('reduce-transparency', () => {
   })
 })
 
+describe('login blur', () => {
+  it('drops the blur and goes solid under reduce-transparency', () => {
+    expect(globalCss).toMatch(/\.login-blur\s*\{\s*backdrop-filter:\s*blur\(40px\);\s*\}/)
+    expect(globalCss).toMatch(
+      /html\.reduce-transparency \.login-blur\s*\{[^}]*backdrop-filter:\s*none[^}]*background:\s*var\(--window-bg\)/,
+    )
+  })
+})
+
 describe('window-open animation', () => {
   it('exposes a shared token and utility class at 160ms ease-out', () => {
     expect(tokensCss).toMatch(/--anim-window-open:\s*window-open 160ms ease-out;/)

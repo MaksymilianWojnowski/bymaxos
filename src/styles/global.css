@@ -20,6 +20,16 @@ html.reduce-motion *::after {
   animation: var(--anim-window-open);
 }
 
+.login-blur {
+  backdrop-filter: blur(40px);
+}
+
+/* Reduce-transparency makes the login glass solid, like every other glass surface. */
+html.reduce-transparency .login-blur {
+  backdrop-filter: none;
+  background: var(--window-bg);
+}
+
 .login-unlocking {
   animation: login-unlock 300ms ease-out forwards;
 }

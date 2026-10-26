@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type WheelEvent } from 'react'
 import { getContent } from '../../content'
 import { Wallpaper } from './Wallpaper'
 
@@ -28,6 +28,11 @@ export function LoginScreen({ onUnlock }: { onUnlock: () => void }) {
   const [unlocking, setUnlocking] = useState(false)
   const started = useRef(false)
   const timer = useRef<number | undefined>(undefined)
+  const root = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    root.current?.focus()
+  }, [])
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), CLOCK_MS)
@@ -54,26 +59,31 @@ export function LoginScreen({ onUnlock }: { onUnlock: () => void }) {
     }
   }
 
+  const onWheel = (e: WheelEvent) => {
+    if (e.deltaY < 0) unlock()
+  }
+
   return (
     <div
+      ref={root}
       role="button"
       aria-label="Unlock"
       tabIndex={0}
-      autoFocus
       onClick={unlock}
       onKeyDown={onKeyDown}
-      onWheel={(e) => {
-        if (e.deltaY < 0) unlock()
-      }}
-      className={`relative flex h-full w-full cursor-default flex-col items-center justify-center overflow-hidden text-white outline-none${unlocking ? ' login-unlocking' : ''}`}
+      onWheel={onWheel}
+      className={`relative flex h-full w-full cursor-default flex-col items-center justify-center overflow-hidden text-white focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70 focus-visible:outline-none${unlocking ? ' login-unlocking' : ''}`}
     >
       <Wallpaper />
-      <div aria-hidden="true" className="absolute inset-0 backdrop-blur-[40px]" />
+      <div aria-hidden="true" className="login-blur absolute inset-0" />
       <div className="relative flex flex-col items-center text-center drop-shadow-md">
         <p className="text-7xl font-light tracking-tight tabular-nums">{clockText(now)}</p>
         <p className="mt-1 text-lg font-medium">{dateFormat.format(now)}</p>
 
-        <div className="mt-12 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-white/25 text-2xl font-semibold">
+        <div
+          aria-hidden="true"
+          className="mt-12 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-white/25 text-2xl font-semibold"
+        >
           {profile.avatarUrl ? (
             <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
           ) : (

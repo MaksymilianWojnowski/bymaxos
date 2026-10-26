@@ -32,4 +32,28 @@ describe('LoginScreen', () => {
     vi.advanceTimersByTime(300)
     expect(onUnlock).toHaveBeenCalledTimes(1)
   })
+
+  it('focuses the Unlock element on mount', () => {
+    render(<LoginScreen onUnlock={() => {}} />)
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Unlock' }))
+  })
+
+  it('unlocks on Space', () => {
+    document.documentElement.classList.add('reduce-motion')
+    const onUnlock = vi.fn()
+    render(<LoginScreen onUnlock={onUnlock} />)
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Unlock' }), { key: ' ' })
+    expect(onUnlock).toHaveBeenCalledTimes(1)
+  })
+
+  it('unlocks on wheel up but not on wheel down', () => {
+    document.documentElement.classList.add('reduce-motion')
+    const onUnlock = vi.fn()
+    render(<LoginScreen onUnlock={onUnlock} />)
+    const unlockEl = screen.getByRole('button', { name: 'Unlock' })
+    fireEvent.wheel(unlockEl, { deltaY: 40 })
+    expect(onUnlock).not.toHaveBeenCalled()
+    fireEvent.wheel(unlockEl, { deltaY: -40 })
+    expect(onUnlock).toHaveBeenCalledTimes(1)
+  })
 })
