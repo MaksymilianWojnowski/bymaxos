@@ -18,6 +18,7 @@
   --menu-bg: rgba(236, 236, 236, 0.8);
   --window-bg: #ececec;
   --window-fg: #1d1d1f;
+  --traffic-inactive: #c7c7c7;
   --sidebar-bg: rgba(226, 226, 226, 0.7);
   --text-1: #1d1d1f;
   --text-2: rgba(60, 60, 67, 0.6);
@@ -31,6 +32,7 @@
   --menu-bg: rgba(30, 30, 30, 0.8);
   --window-bg: #1e1e1e;
   --window-fg: #f5f5f7;
+  --traffic-inactive: #4d4d4d;
   --sidebar-bg: rgba(40, 40, 40, 0.7);
   --text-1: #f5f5f7;
   --text-2: rgba(235, 235, 245, 0.6);

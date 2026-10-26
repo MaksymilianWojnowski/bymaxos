@@ -4,6 +4,7 @@ import { parseDeepLink } from '../../system/shell'
 import { useSystem } from '../../system/store'
 import { LoginScreen } from './LoginScreen'
 import { Wallpaper } from './Wallpaper'
+import { WindowLayer } from './WindowLayer'
 
 // Module scope: a shell remount must not reopen the deep-linked app.
 let deepLinkHandled = false
@@ -36,6 +37,7 @@ export function DesktopShell() {
   return (
     <div data-testid="desktop" className="relative h-full w-full">
       <Wallpaper />
+      <WindowLayer />
     </div>
   )
 }
