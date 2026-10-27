@@ -19,5 +19,6 @@ export const site: Site = {
   // TODO(content): phone-free PDF
   resume: {},
   // TODO(content): scheduling link
-  scheduling: {},
+  // TODO(content): meeting types (Cal.com event slugs)
+  scheduling: { meetingTypes: [] },
 }

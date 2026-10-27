@@ -30,6 +30,7 @@ describe('Dock', () => {
       'Finder',
       'Mail',
       'Contacts',
+      'Calendar',
       'LinkedIn (opens in new tab)',
       'GitHub (opens in new tab)',
       'Trash',

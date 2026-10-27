@@ -70,11 +70,19 @@ export interface Wallpaper {
   gradient: string
 }
 
+export interface MeetingType {
+  id: string
+  title: string
+  minutes: number
+  description: string
+  slug: string /* Cal.com event slug */
+}
+
 export interface Site {
   repoUrl?: string
   wallpapers: Wallpaper[]
   resume: { pdfUrl?: string }
-  scheduling: { calUrl?: string }
+  scheduling: { calUrl?: string; meetingTypes: MeetingType[] }
 }
 
 export interface Content {

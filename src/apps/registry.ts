@@ -1,3 +1,4 @@
+import calendarIcon from '../assets/icons/calendar.png'
 import contactsIcon from '../assets/icons/contacts.png'
 import finderIcon from '../assets/icons/finder.png'
 import mailIcon from '../assets/icons/mail.png'
@@ -112,6 +113,19 @@ const APP_LIST: (AppDefinition | null)[] = [
       singleInstance: true,
     },
     dock: { order: 2, group: 'apps' },
+  },
+  {
+    id: 'calendar',
+    name: 'Calendar',
+    icon: { image: calendarIcon },
+    load: () => import('./calendar/Calendar'),
+    window: {
+      defaultSize: { w: 760, h: 540 },
+      minSize: { w: 560, h: 420 },
+      resizable: true,
+      singleInstance: true,
+    },
+    dock: { order: 3, group: 'apps' },
   },
   {
     id: 'about',

@@ -52,4 +52,10 @@ describe('content', () => {
   it('includes a default wallpaper', () => {
     expect(ids(content.site.wallpapers)).toContain('default')
   })
+
+  it('meeting type ids are unique and slugs non-empty', () => {
+    const types = content.site.scheduling.meetingTypes
+    expect(new Set(ids(types)).size).toBe(types.length)
+    for (const t of types) expect(t.slug.trim()).not.toBe('')
+  })
 })
