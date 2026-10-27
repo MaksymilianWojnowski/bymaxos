@@ -133,15 +133,15 @@ test.describe('desktop', () => {
     expect(bar.x).toBeLessThanOrEqual(1024 - 80)
   })
 
-  test('desktop icon opens quick look', async ({ page }) => {
+  test('desktop icon opens the Resume app', async ({ page }) => {
     await unlock(page)
     await page
       .getByRole('listbox', { name: 'Desktop', exact: true })
       .getByRole('option', { name: 'Resume.pdf' })
       .dblclick()
-    const preview = page.getByRole('dialog', { name: 'Resume.pdf' })
-    await expect(preview).toBeVisible()
-    await expect(preview).toContainText('Scrum Master')
+    const resume = page.getByRole('dialog', { name: 'Resume', exact: true })
+    await expect(resume).toBeVisible()
+    await expect(resume).toContainText('Scrum Master')
   })
 
   test('control center dark mode', async ({ page }) => {

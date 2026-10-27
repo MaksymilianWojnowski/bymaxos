@@ -1,0 +1,26 @@
+[
+  {
+    "name": "bymaxos",
+    "description": "A macOS-style desk simulator",
+    "html_url": "https://github.com/MaksymilianWojnowski/bymaxos",
+    "homepage": "https://bymaxos.example",
+    "language": "TypeScript",
+    "topics": ["react", "vite"],
+    "updated_at": "2026-10-12T12:00:00Z",
+    "stargazers_count": 3,
+    "forks_count": 1,
+    "fork": false
+  },
+  {
+    "name": "forked-lib",
+    "description": "A fork that should not be listed",
+    "html_url": "https://github.com/MaksymilianWojnowski/forked-lib",
+    "homepage": null,
+    "language": "Go",
+    "topics": [],
+    "updated_at": "2026-09-01T12:00:00Z",
+    "stargazers_count": 0,
+    "forks_count": 0,
+    "fork": true
+  }
+]
