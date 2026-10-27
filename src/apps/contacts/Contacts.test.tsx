@@ -46,6 +46,12 @@ describe('Contacts', () => {
     expect(screen.getByRole('button', { name: githubUrl })).toBeInTheDocument()
   })
 
+  it('lists rows in the order email, LinkedIn, GitHub, location', () => {
+    render(<ContactsApp />)
+    const terms = Array.from(document.querySelectorAll('dt')).map((dt) => dt.textContent)
+    expect(terms).toEqual(['email', 'LinkedIn', 'GitHub', 'location'])
+  })
+
   it('Copy email copies and confirms', async () => {
     render(<ContactsApp />)
     await userEvent.click(screen.getByRole('button', { name: 'Copy email' }))

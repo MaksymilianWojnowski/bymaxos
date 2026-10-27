@@ -65,7 +65,6 @@ export default function ContactsApp() {
 
   const rows: { label: string; value: ReactNode; copyValue: string }[] = [
     { label: 'email', value: profile.email, copyValue: profile.email },
-    { label: 'location', value: profile.location, copyValue: profile.location },
     ...(linkedin
       ? [
           {
@@ -92,6 +91,7 @@ export default function ContactsApp() {
           },
         ]
       : []),
+    { label: 'location', value: profile.location, copyValue: profile.location },
   ]
 
   return (
