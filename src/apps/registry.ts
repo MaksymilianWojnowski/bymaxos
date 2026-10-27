@@ -5,6 +5,7 @@ import { setAppResolver } from '../system/store'
 import type { Command } from '../system/commands'
 import type { AppId, WindowSpec } from '../system/types'
 import { GitHubGlyph, LinkedInGlyph } from '../ui/glyphs'
+import { finderMenus } from './finder/menus'
 import type { AppDefinition, MenuContext, MenuDef, MenuItemDef } from './types'
 
 const LINK_GROUP_ORDER: Record<'system' | 'apps' | 'links' | 'trash', number> = {
@@ -37,6 +38,7 @@ const APP_LIST: (AppDefinition | null)[] = [
       color: '#ffffff',
     },
     load: () => import('./finder/Finder'),
+    menus: finderMenus,
     window: {
       defaultSize: { w: 900, h: 560 },
       minSize: { w: 520, h: 320 },

@@ -28,7 +28,8 @@ const idsOf = (menus: MenuDef[]) => menus.map((m) => m.id)
 
 describe('buildMenus', () => {
   it('starts with the system and app menus, then the defaults in fixed order', () => {
-    expect(idsOf(buildMenus(ctx, 'finder'))).toEqual(['system', 'app', 'file', 'edit', 'window', 'help'])
+    // 'about' has no menus of its own; Finder's menus would add View and Go.
+    expect(idsOf(buildMenus(ctx, 'about'))).toEqual(['system', 'app', 'file', 'edit', 'window', 'help'])
   })
 
   it('orders file, edit, view, go, window, help when an app supplies every known menu', () => {

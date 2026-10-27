@@ -16,6 +16,8 @@ export function MenuBar() {
   const keyboardLocked = useSystem((s) => s.keyboardLocked)
   const appId = useSystem((s) => activeAppId(s.wm))
   const overlay = useSystem((s) => s.overlay)
+  // openMenuId rebuilds the menus on open, so app state read at build time (e.g. a Finder checkmark) is fresh.
+  const openMenuId = useSystem((s) => s.openMenuId)
   // windowsKey and focusedId are change signals only: the body reads the store snapshot they stand for.
   const menus = useMemo(() => {
     const { wm } = useSystem.getState()
@@ -26,7 +28,7 @@ export function MenuBar() {
     }
     return buildMenus(ctx, appId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [windowsKey, focusedId, keyboardLocked, appId])
+  }, [windowsKey, focusedId, keyboardLocked, appId, openMenuId])
 
   return (
     <>
