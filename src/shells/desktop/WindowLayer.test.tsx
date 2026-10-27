@@ -71,6 +71,33 @@ describe('WindowLayer in Mission Control', () => {
     expect(useSystem.getState().overlay).toBeNull()
   })
 
+  it('a press on a non-top window picks it without moving the other targets', () => {
+    const notes = openTitled('Notes')
+    openTitled('Mail')
+    openTitled('Chat')
+    useSystem.getState().setOverlay('missionControl')
+    render(<WindowLayer />)
+    const transforms = () =>
+      Array.from(document.querySelectorAll<HTMLElement>('[data-window-id]')).map((el) => el.style.transform)
+    const before = transforms()
+    const show = screen.getByRole('button', { name: 'Show Notes' })
+    fireEvent.pointerDown(show, { clientX: 10, clientY: 10 })
+    expect(transforms()).toEqual(before)
+    fireEvent.click(show)
+    expect(useSystem.getState().wm.focusedId).toBe(notes)
+    expect(useSystem.getState().overlay).toBeNull()
+  })
+
+  it('the title bar traffic lights are inert while Mission Control is open', () => {
+    openTitled('Notes')
+    useSystem.getState().setOverlay('missionControl')
+    render(<WindowLayer />)
+    for (const name of ['Close', 'Minimize', 'Zoom']) {
+      expect(screen.getByRole('button', { name }).closest('[inert]')).not.toBeNull()
+    }
+    expect(screen.getByRole('button', { name: 'Show Notes' }).closest('[inert]')).toBeNull()
+  })
+
   it('with no visible windows shows No open windows', () => {
     useSystem.getState().setOverlay('missionControl')
     render(<WindowLayer />)

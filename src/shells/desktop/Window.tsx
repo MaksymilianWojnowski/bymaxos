@@ -155,7 +155,8 @@ export function Window({ win, app, focused, children, mission }: Props) {
         }),
       }}
       onPointerDown={() => {
-        if (!focused) focus(win.id)
+        // In Mission Control a press must not raise the window: that would re-sort the grid under the cursor.
+        if (!focused && !mission) focus(win.id)
       }}
       onPointerMove={onPointerMove}
       onPointerUp={endGesture}
@@ -163,6 +164,7 @@ export function Window({ win, app, focused, children, mission }: Props) {
     >
       <div
         data-testid="titlebar"
+        inert={mission !== undefined}
         className="relative flex shrink-0 touch-none items-center border-b border-black/10 select-none"
         style={{ height: 'var(--tb-h)' }}
         onPointerDown={onTitlePointerDown}
