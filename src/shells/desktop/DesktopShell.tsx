@@ -3,6 +3,7 @@ import { dispatch, installSystemCommands } from '../../system/commands'
 import { isTextField, matchShortcut } from '../../system/shortcuts'
 import { parseDeepLink } from '../../system/shell'
 import { useSystem } from '../../system/store'
+import { Dock } from './Dock'
 import { LoginScreen } from './LoginScreen'
 import { MenuBar } from './MenuBar'
 import { Wallpaper } from './Wallpaper'
@@ -57,6 +58,7 @@ export function DesktopShell() {
     <div data-testid="desktop" className="relative h-full w-full">
       <Wallpaper />
       <WindowLayer />
+      <Dock />
       <MenuBar />
     </div>
   )
