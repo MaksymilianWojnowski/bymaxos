@@ -25,11 +25,14 @@ export interface MenuContext {
   keyboardLocked: boolean
 }
 
-export interface AppIconSpec {
-  glyph: ComponentType<{ className?: string; 'aria-hidden'?: boolean }>
-  background: string
-  color?: string
-}
+// macOS artwork (image URL, with Apple's built-in margin) or a brand glyph on a squircle.
+export type AppIconSpec =
+  | { image: string }
+  | {
+      glyph: ComponentType<{ className?: string; 'aria-hidden'?: boolean }>
+      background: string
+      color?: string
+    }
 
 export interface AppDefinition {
   id: AppId

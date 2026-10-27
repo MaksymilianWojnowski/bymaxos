@@ -1,4 +1,7 @@
-import { Eye, Info, Smile, Trash2 } from 'lucide-react'
+import finderIcon from '../assets/icons/finder.png'
+import previewIcon from '../assets/icons/preview.png'
+import systemInfoIcon from '../assets/icons/system-information.png'
+import trashIcon from '../assets/icons/trash.png'
 import { getContent } from '../content'
 import { shortcutLabel } from '../system/shortcuts'
 import { setAppResolver } from '../system/store'
@@ -32,11 +35,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'finder',
     name: 'Finder',
-    icon: {
-      glyph: Smile,
-      background: 'linear-gradient(180deg, #5ac8fa 0%, #1d7cf2 100%)',
-      color: '#ffffff',
-    },
+    icon: { image: finderIcon },
     load: () => import('./finder/Finder'),
     menus: finderMenus,
     window: {
@@ -51,11 +50,7 @@ const APP_LIST: (AppDefinition | null)[] = [
     id: 'quicklook',
     name: 'Quick Look',
     deepLink: false,
-    icon: {
-      glyph: Eye,
-      background: 'linear-gradient(180deg, #f5f5f7 0%, #c7c7cc 100%)',
-      color: '#3a3a3c',
-    },
+    icon: { image: previewIcon },
     load: () => import('./quicklook/QuickLook'),
     window: {
       defaultSize: { w: 640, h: 520 },
@@ -67,11 +62,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'about',
     name: 'About This Mac',
-    icon: {
-      glyph: Info,
-      background: 'linear-gradient(180deg, #f2f2f7 0%, #aeaeb2 100%)',
-      color: '#3a3a3c',
-    },
+    icon: { image: systemInfoIcon },
     load: () => import('./about/AboutThisMac'),
     window: {
       defaultSize: { w: 340, h: 420 },
@@ -101,11 +92,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'trash',
     name: 'Trash',
-    icon: {
-      glyph: Trash2,
-      background: 'linear-gradient(180deg, #ffffff 0%, #d1d1d6 100%)',
-      color: '#6e6e73',
-    },
+    icon: { image: trashIcon },
     alias: { appId: 'finder', props: { folderId: 'trash' } },
     dock: { order: 1, group: 'trash' },
   },

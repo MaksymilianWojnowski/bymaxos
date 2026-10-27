@@ -174,7 +174,6 @@ export function Desktop() {
       >
         {DESKTOP_IDS.map((id) => {
           const node = vfs.nodes[id]
-          const Icon = iconFor(node)
           const isSelected = id === selected
           const { x, y } = cellToPx(clampCell(positions[id], area), area)
           const offset = drag?.id === id ? drag : null
@@ -201,9 +200,7 @@ export function Desktop() {
               }}
               className={`absolute flex touch-none cursor-default select-none flex-col items-center gap-1 rounded-md p-1 ${isSelected ? 'bg-accent/30' : ''}`}
             >
-              <div className="flex h-16 w-16 items-center justify-center rounded-[14px] bg-white/90 text-accent shadow-md">
-                <Icon aria-hidden className="h-9 w-9" />
-              </div>
+              <img src={iconFor(node)} alt="" aria-hidden draggable={false} className="h-16 w-16 drop-shadow-md" />
               <span
                 className={`line-clamp-2 max-w-full break-words rounded px-1 text-center text-[12px] leading-tight text-white ${isSelected ? 'bg-accent-strong' : ''}`}
                 style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.6)' }}

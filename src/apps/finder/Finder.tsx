@@ -234,7 +234,6 @@ export default function FinderApp({ windowId, props }: AppProps) {
             >
               {children.map((id) => {
                 const node = vfs.nodes[id]
-                const Icon = iconFor(node)
                 const selected = id === state.selected
                 return (
                   <div
@@ -244,7 +243,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
                     {...itemProps(node)}
                     className="flex w-24 cursor-default flex-col items-center gap-1 rounded-md p-1"
                   >
-                    <Icon aria-hidden className="h-12 w-12 text-accent" />
+                    <img src={iconFor(node)} alt="" aria-hidden draggable={false} className="h-16 w-16" />
                     <span
                       className={`line-clamp-2 rounded px-1 text-center text-[12px] break-words ${selected ? 'bg-accent-strong text-white' : ''}`}
                     >
@@ -272,7 +271,6 @@ export default function FinderApp({ windowId, props }: AppProps) {
               <tbody>
                 {children.map((id) => {
                   const node = vfs.nodes[id]
-                  const Icon = iconFor(node)
                   const selected = id === state.selected
                   return (
                     <tr
@@ -284,7 +282,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
                     >
                       <td role="gridcell" className="px-2 py-1">
                         <span className="flex items-center gap-2">
-                          <Icon aria-hidden className="h-4 w-4 shrink-0" />
+                          <img src={iconFor(node)} alt="" aria-hidden draggable={false} className="h-4 w-4 shrink-0" />
                           {node.name}
                         </span>
                       </td>
