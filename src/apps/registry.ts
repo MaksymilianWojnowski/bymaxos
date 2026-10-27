@@ -1,4 +1,5 @@
 import finderIcon from '../assets/icons/finder.png'
+import mailIcon from '../assets/icons/mail.png'
 import previewIcon from '../assets/icons/preview.png'
 import systemInfoIcon from '../assets/icons/system-information.png'
 import texteditIcon from '../assets/icons/textedit.png'
@@ -73,6 +74,30 @@ const APP_LIST: (AppDefinition | null)[] = [
       singleInstance: false,
       documentKey: 'fileId',
     },
+  },
+  {
+    id: 'mail',
+    name: 'Mail',
+    icon: { image: mailIcon },
+    load: () => import('./mail/Mail'),
+    menus: (ctx) => [
+      {
+        id: 'file',
+        label: 'File',
+        items: [
+          item('Send', { type: 'mail.send' }, ctx),
+          SEP,
+          item('Close Window', { type: 'window.close' }, ctx),
+        ],
+      },
+    ],
+    window: {
+      defaultSize: { w: 640, h: 520 },
+      minSize: { w: 420, h: 360 },
+      resizable: true,
+      singleInstance: true,
+    },
+    dock: { order: 1, group: 'apps' },
   },
   {
     id: 'about',

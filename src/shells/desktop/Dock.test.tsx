@@ -28,6 +28,7 @@ describe('Dock', () => {
     const labels = screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))
     expect(labels).toEqual([
       'Finder',
+      'Mail',
       'LinkedIn (opens in new tab)',
       'GitHub (opens in new tab)',
       'Trash',
