@@ -22,7 +22,7 @@ Reference: https://frvky.online/ (interaction model only; no code or assets copi
 | Stack | Vite + React 19 + TypeScript (strict) + Tailwind CSS v4 + Zustand. No Next.js (everything is client-side; avoids hydration issues with clocks/viewport). |
 | Drag/resize | Own Pointer Events implementation (no `react-rnd`). |
 | Animation | CSS transitions / Web Animations API. Genie effect via WebGL (see §7.4). No animation library unless a spike proves it necessary. |
-| Icons | Original squircle app icons (SVG glyphs, Lucide for UI glyphs). No Apple icons, no Apple logo, no assets from the reference site. The "Apple menu" uses a custom "M" mark. |
+| Icons | macOS system artwork for apps, folders and documents, exported from the owner's Mac by `scripts/export-apple-icons.swift` into `src/assets/icons/` (owner decision 2026-10-27, Apple IP risk accepted). Brand glyphs on a squircle for LinkedIn/GitHub; Lucide for UI glyphs. No Apple logo, no assets from the reference site. The "Apple menu" uses a custom "M" mark. |
 | Fonts | System stack (`-apple-system, BlinkMacSystemFont, "SF Pro Text"…`), Inter (self-hosted) as fallback. |
 | Content language | English only now; content is locale-ready (`src/content/en/`, `getContent(locale)`). PL/PT/DE later. No language setting shown until a second locale exists. |
 | Contact | Public email `maksymilianwojnowski@gmail.com`. **Phone not shown publicly.** Résumé PDF download only once a phone-free PDF is supplied (`resume.pdfUrl` unset → no download button). Cal.com URL: placeholder (unset → email fallback). |
