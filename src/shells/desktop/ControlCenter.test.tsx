@@ -25,6 +25,13 @@ describe('ControlCenter', () => {
     expect(useSystem.getState().overlay).toBeNull()
   })
 
+  it('Mission Control button opens Mission Control and closes Control Center', () => {
+    openControlCenter()
+    fireEvent.click(screen.getByRole('button', { name: 'Mission Control' }))
+    expect(useSystem.getState().overlay).toBe('missionControl')
+    expect(screen.queryByRole('dialog', { name: 'Control Center' })).not.toBeInTheDocument()
+  })
+
   it('switches the appearance to dark', () => {
     openControlCenter()
     fireEvent.click(screen.getByRole('radio', { name: 'Dark' }))

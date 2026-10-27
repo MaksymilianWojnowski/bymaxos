@@ -11,6 +11,8 @@ interface Props {
   app: AppDefinition
   focused: boolean
   children: ReactNode
+  // Set while Mission Control is open: the window scales into its grid cell and picking it calls onPick.
+  mission?: { target: Rect; onPick: () => void }
 }
 
 type Gesture =
@@ -38,7 +40,7 @@ const LIGHTS: { name: 'Close' | 'Minimize' | 'Zoom'; color: string; Glyph: Lucid
 const onTrafficLight = (target: EventTarget): boolean =>
   target instanceof Element && target.closest('[data-traffic]') !== null
 
-export function Window({ win, app, focused, children }: Props) {
+export function Window({ win, app, focused, children, mission }: Props) {
   const focus = useSystem((s) => s.focus)
   const close = useSystem((s) => s.close)
   const minimizeWin = useSystem((s) => s.minimize)
@@ -145,6 +147,12 @@ export function Window({ win, app, focused, children }: Props) {
         height: win.rect.h,
         zIndex: win.z,
         boxShadow: focused ? 'var(--shadow-window)' : 'var(--shadow-window-inactive)',
+        // Scales from the top-left corner. reduce-motion's global rule drops this transition too.
+        ...(mission && {
+          transformOrigin: '0 0',
+          transform: `translate(${mission.target.x - win.rect.x}px, ${mission.target.y - win.rect.y}px) scale(${mission.target.w / win.rect.w})`,
+          transition: 'transform 300ms ease',
+        }),
       }}
       onPointerDown={() => {
         if (!focused) focus(win.id)
@@ -197,7 +205,7 @@ export function Window({ win, app, focused, children }: Props) {
         </span>
       </div>
 
-      <div data-selectable className="relative min-h-0 flex-1 overflow-auto">
+      <div data-selectable inert={mission !== undefined} className="relative min-h-0 flex-1 overflow-auto">
         {children}
       </div>
 
@@ -214,6 +222,15 @@ export function Window({ win, app, focused, children }: Props) {
             onPointerDown={onHandlePointerDown}
           />
         ))}
+
+      {mission && (
+        <button
+          type="button"
+          aria-label={`Show ${win.title}`}
+          onClick={mission.onPick}
+          className="absolute inset-0 z-20 outline-none hover:ring-4 hover:ring-inset hover:ring-accent focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-accent"
+        />
+      )}
     </div>
   )
 }

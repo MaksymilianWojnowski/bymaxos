@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { getContent } from '../../content'
+import { dispatch } from '../../system/commands'
 import { Popover } from '../../ui/Popover'
 import { useSystem } from '../../system/store'
 import type { Appearance } from '../../system/settings'
@@ -125,6 +126,16 @@ export function ControlCenter({ anchorEl }: { anchorEl: HTMLElement }) {
               )
             })}
           </div>
+        </Tile>
+
+        <Tile>
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'overlay.open', overlay: 'missionControl' })}
+            className="h-[26px] w-full rounded-[6px] bg-black/5 text-[13px] dark:bg-white/10"
+          >
+            Mission Control
+          </button>
         </Tile>
 
         <Tile>

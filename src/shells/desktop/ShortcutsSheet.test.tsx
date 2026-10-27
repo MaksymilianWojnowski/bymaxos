@@ -21,15 +21,14 @@ describe('ShortcutsSheet', () => {
       .slice(1)
       .map((row) => within(row).getAllByRole('cell')[0].textContent)
     expect(combos).toContain('⌘K')
-    expect(combos).not.toContain('⌥↑')
+    expect(combos).toContain('⌥↑')
     expect(combos).toContain('⌘W')
   })
 
   it('gives every shortcut a human label instead of the raw command type', () => {
     render(<ShortcutsSheet />)
     const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
-    // Mission Control (⌥↑) has no overlay yet, so it is not listed.
-    expect(rows).toHaveLength(SHORTCUTS.length - 1)
+    expect(rows).toHaveLength(SHORTCUTS.length)
     for (const row of rows) {
       const action = within(row).getAllByRole('cell')[1].textContent ?? ''
       expect(action).not.toBe('')

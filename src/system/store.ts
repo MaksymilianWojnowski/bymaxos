@@ -20,6 +20,7 @@ export const AVAILABLE_OVERLAYS = new Set<Exclude<Overlay, null>>([
   'shortcuts',
   'spotlight',
   'launchpad',
+  'missionControl',
 ])
 
 export interface Banner {
