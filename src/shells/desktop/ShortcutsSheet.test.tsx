@@ -20,7 +20,7 @@ describe('ShortcutsSheet', () => {
       .getAllByRole('row')
       .slice(1)
       .map((row) => within(row).getAllByRole('cell')[0].textContent)
-    expect(combos).not.toContain('⌘K')
+    expect(combos).toContain('⌘K')
     expect(combos).not.toContain('⌥↑')
     expect(combos).toContain('⌘W')
   })
@@ -28,8 +28,8 @@ describe('ShortcutsSheet', () => {
   it('gives every shortcut a human label instead of the raw command type', () => {
     render(<ShortcutsSheet />)
     const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
-    // Spotlight (⌘K) and Mission Control (⌥↑) have no overlay yet, so they are not listed.
-    expect(rows).toHaveLength(SHORTCUTS.length - 2)
+    // Mission Control (⌥↑) has no overlay yet, so it is not listed.
+    expect(rows).toHaveLength(SHORTCUTS.length - 1)
     for (const row of rows) {
       const action = within(row).getAllByRole('cell')[1].textContent ?? ''
       expect(action).not.toBe('')

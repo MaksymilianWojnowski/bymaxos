@@ -110,7 +110,8 @@ describe('dispatch and canDispatch', () => {
 describe('installSystemCommands', () => {
   it('enables overlay.open only for available overlays', () => {
     const dispose = installSystemCommands()
-    expect(canDispatch({ type: 'overlay.open', overlay: 'spotlight' })).toBe(false)
+    expect(canDispatch({ type: 'overlay.open', overlay: 'spotlight' })).toBe(true)
+    expect(canDispatch({ type: 'overlay.open', overlay: 'launchpad' })).toBe(false)
     expect(canDispatch({ type: 'overlay.open', overlay: 'controlCenter' })).toBe(true)
     dispose()
   })

@@ -15,7 +15,11 @@ export type Overlay =
   | 'notificationCenter'
   | 'appSwitcher'
 
-export const AVAILABLE_OVERLAYS = new Set<Exclude<Overlay, null>>(['controlCenter', 'shortcuts'])
+export const AVAILABLE_OVERLAYS = new Set<Exclude<Overlay, null>>([
+  'controlCenter',
+  'shortcuts',
+  'spotlight',
+])
 
 export interface Banner {
   id: string

@@ -8,6 +8,7 @@ import { Desktop } from './Desktop'
 import { Dock } from './Dock'
 import { LoginScreen } from './LoginScreen'
 import { MenuBar } from './MenuBar'
+import { Overlays } from './Overlays'
 import { Wallpaper } from './Wallpaper'
 import { WindowLayer } from './WindowLayer'
 
@@ -84,6 +85,7 @@ export function DesktopShell() {
       <MenuBar />
       <Dock />
       <Banners />
+      <Overlays />
     </div>
   )
 }
