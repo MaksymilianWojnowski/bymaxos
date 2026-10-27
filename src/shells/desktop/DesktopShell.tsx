@@ -45,11 +45,13 @@ export function DesktopShell() {
 
   useEffect(() => {
     if (locked) return
-    // Releasing Option picks the highlighted app; the window losing focus cancels any open overlay.
+    // Releasing Option picks the highlighted app; the window losing focus cancels only the app switcher.
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.key === 'Alt' && useSystem.getState().switcher) switcherCommit()
     }
-    const onBlur = () => setOverlay(null)
+    const onBlur = () => {
+      if (useSystem.getState().switcher) setOverlay(null)
+    }
     window.addEventListener('keyup', onKeyUp)
     window.addEventListener('blur', onBlur)
     return () => {

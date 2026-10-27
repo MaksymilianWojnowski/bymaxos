@@ -28,6 +28,16 @@ describe('runningAppsByRecency', () => {
     expect(runningAppsByRecency(wm)).toEqual(['finder', 'notes'])
   })
 
+  it('leads with Finder when nothing is focused and Finder has windows', () => {
+    const wm = wmWith([win('w1', 'finder', 1), win('w2', 'notes', 2)])
+    expect(runningAppsByRecency(wm)).toEqual(['finder', 'notes'])
+  })
+
+  it('ranks by z alone when nothing is focused and Finder has no windows', () => {
+    const wm = wmWith([win('w1', 'notes', 1), win('w2', 'mail', 2)])
+    expect(runningAppsByRecency(wm)).toEqual(['mail', 'notes'])
+  })
+
   it('is empty with no windows', () => {
     expect(runningAppsByRecency(emptyWM)).toEqual([])
   })

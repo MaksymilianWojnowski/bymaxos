@@ -160,6 +160,22 @@ describe('app switcher', () => {
     expect(useSystem.getState().switcher).toEqual({ appIds: ['finder'], index: 0 })
   })
 
+  it('with nothing focused and Finder open, the first step skips Finder and lands on the top other app', () => {
+    openAll('finder', 'notes')
+    useSystem.getState().blurWindows()
+    useSystem.getState().switcherStep(1)
+    const s = useSystem.getState().switcher
+    expect(s?.appIds).toEqual(['finder', 'notes'])
+    expect(s?.appIds[s.index]).toBe('notes')
+  })
+
+  it('with nothing focused and no Finder window, the first step lands on the top app', () => {
+    openAll('notes', 'mail')
+    useSystem.getState().blurWindows()
+    useSystem.getState().switcherStep(1)
+    expect(useSystem.getState().switcher).toEqual({ appIds: ['mail', 'notes'], index: 0 })
+  })
+
   it('switcherStep(-1) first opens on the last app', () => {
     openAll('finder', 'notes', 'mail')
     useSystem.getState().switcherStep(-1)

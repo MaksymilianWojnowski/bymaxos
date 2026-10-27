@@ -54,4 +54,11 @@ describe('DesktopShell', () => {
     expect(useSystem.getState().overlay).toBeNull()
     expect(useSystem.getState().wm.focusedId).toBe(focused)
   })
+
+  it('window blur leaves other overlays open', () => {
+    render(<DesktopShell />)
+    useSystem.getState().setOverlay('controlCenter')
+    fireEvent.blur(window)
+    expect(useSystem.getState().overlay).toBe('controlCenter')
+  })
 })

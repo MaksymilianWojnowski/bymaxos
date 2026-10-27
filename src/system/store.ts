@@ -242,11 +242,15 @@ export const useSystem: UseBoundStore<StoreApi<SystemState>> = create<SystemStat
         set({ switcher: { ...switcher, index: (switcher.index + dir + n) % n } })
         return
       }
-      const appIds = runningAppsByRecency(get().wm)
+      const { wm: state } = get()
+      const appIds = runningAppsByRecency(state)
       const n = appIds.length
       if (n === 0) return
       // Opening starts from index 0, so the first step lands on the second app (or the last, going back).
-      set({ overlay: 'appSwitcher', switcher: { appIds, index: (dir + n) % n } })
+      // With nothing focused and no Finder window leading, index 0 is the top app, so the first step lands there.
+      const topIsNotActive = state.focusedId === null && appIds[0] !== 'finder'
+      const index = dir === 1 && topIsNotActive ? 0 : (dir + n) % n
+      set({ overlay: 'appSwitcher', switcher: { appIds, index } })
     },
 
     switcherCommit(index) {
