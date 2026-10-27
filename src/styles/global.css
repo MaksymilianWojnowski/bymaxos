@@ -38,10 +38,15 @@ html.reduce-transparency .login-blur {
 }
 
 /* Launchpad dims the wallpaper; reduce-transparency makes its blur solid, like the other glass surfaces. */
+/* shortcut: keep the tint at 0.55 or darker, white labels fall below AA 4.5:1 over light windows at 0.3. */
 .launchpad-backdrop {
-  background: rgb(0 0 0 / 0.3);
+  background: rgb(0 0 0 / 0.55);
   backdrop-filter: blur(40px);
   animation: launchpad-fade 150ms ease-out;
+}
+
+.launchpad-backdrop-closing {
+  animation: launchpad-fade-out 150ms ease-in forwards;
 }
 
 html.reduce-transparency .launchpad-backdrop {
@@ -55,6 +60,15 @@ html.reduce-transparency .launchpad-backdrop {
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes launchpad-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 

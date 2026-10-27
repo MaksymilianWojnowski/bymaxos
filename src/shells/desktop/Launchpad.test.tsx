@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { launchpadApps } from '../../apps/registry'
 import { resetSystem, useSystem } from '../../system/store'
 import { Dock } from './Dock'
@@ -46,13 +46,23 @@ describe('Launchpad', () => {
     expect(panel().getByText('No Results')).toBeInTheDocument()
   })
 
-  it('clicking an app opens it and closes Launchpad', () => {
+  it('clicking an app opens it and fades Launchpad out', async () => {
     fireEvent.click(panel().getByRole('button', { name: 'Mail' }))
     expect(useSystem.getState().wm.windows.some((w) => w.appId === 'mail')).toBe(true)
-    expect(useSystem.getState().overlay).toBeNull()
+    await waitFor(() => expect(useSystem.getState().overlay).toBeNull())
   })
 
-  it('clicking the background closes Launchpad', () => {
+  it('clicking the background fades out, then closes Launchpad', async () => {
+    fireEvent.mouseDown(screen.getByTestId('launchpad-backdrop'))
+    expect(screen.getByTestId('launchpad-backdrop')).toHaveClass('launchpad-backdrop-closing')
+    expect(useSystem.getState().overlay).toBe('launchpad')
+    await waitFor(() => expect(useSystem.getState().overlay).toBeNull())
+  })
+
+  it('closes at once under reduce-motion', () => {
+    act(() => {
+      useSystem.getState().updateSettings({ reduceMotion: true })
+    })
     fireEvent.mouseDown(screen.getByTestId('launchpad-backdrop'))
     expect(useSystem.getState().overlay).toBeNull()
   })

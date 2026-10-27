@@ -8,31 +8,47 @@ import { AppIcon } from '../../ui/AppIcon'
 const APPS = launchpadApps()
 
 const LABEL_SHADOW = { textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)' }
+const FADE_MS = 150
 
 // Full-screen grid of apps; it covers the menu bar and the dock, so Escape or a click on the background closes it.
 export function Launchpad() {
   const setOverlay = useSystem((s) => s.setOverlay)
+  const reduceMotion = useSystem((s) => s.settings.reduceMotion)
   const [query, setQuery] = useState('')
+  const [closing, setClosing] = useState(false)
+  const timer = useRef<number | undefined>(undefined)
   const inputRef = useRef<HTMLInputElement>(null)
   const needle = query.trim().toLocaleLowerCase('en')
   const apps = needle === '' ? APPS : APPS.filter((a) => a.name.toLocaleLowerCase('en').includes(needle))
 
   useEffect(() => {
     inputRef.current?.focus()
+    return () => window.clearTimeout(timer.current)
   }, [])
 
-  // Close first: the app may open an overlay of its own, which must survive.
+  // Fades out, then closes; under reduce-motion it closes at once. Esc and the dock toggle close instantly, via the store.
+  const close = () => {
+    if (timer.current !== undefined) return
+    if (reduceMotion) {
+      setOverlay(null)
+      return
+    }
+    setClosing(true)
+    timer.current = window.setTimeout(() => setOverlay(null), FADE_MS)
+  }
+
+  // Launchpad apps never open an overlay themselves, so the dispatch can run before the close.
   const run = (appId: string) => {
-    setOverlay(null)
     dispatch({ type: 'dock.activate', appId })
+    close()
   }
 
   return (
     <div
       data-testid="launchpad-backdrop"
-      className="launchpad-backdrop fixed inset-0 z-50 flex justify-center overflow-auto font-sans text-white"
+      className={`launchpad-backdrop${closing ? ' launchpad-backdrop-closing' : ''} fixed inset-0 z-50 flex justify-center overflow-auto font-sans text-white`}
       onMouseDown={(e) => {
-        if (!(e.target as Element).closest('button, input')) setOverlay(null)
+        if (!(e.target as Element).closest('button, input')) close()
       }}
     >
       <div role="dialog" aria-label="Launchpad" className="flex w-full max-w-[960px] flex-col items-center px-4 pt-14 pb-10">
@@ -45,7 +61,7 @@ export function Launchpad() {
           onChange={(e) => setQuery(e.target.value)}
           autoComplete="off"
           spellCheck={false}
-          className="mb-10 w-[220px] rounded-[8px] bg-white/20 px-3 py-1.5 text-center text-[13px] text-white outline-none placeholder:text-white/80 focus-visible:ring-2 focus-visible:ring-accent"
+          className="mb-10 w-[220px] rounded-[8px] bg-black/40 px-3 py-1.5 text-center text-[13px] text-white outline-none placeholder:text-white/80 focus-visible:ring-2 focus-visible:ring-accent"
           style={LABEL_SHADOW}
         />
 
