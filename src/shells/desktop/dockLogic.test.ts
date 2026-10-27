@@ -54,6 +54,34 @@ describe('dockClickAction', () => {
       props: { folderId: 'trash' },
     })
   })
+
+  describe('alias activation', () => {
+    const trash = getApp('trash')!
+    const trashWin = (id: string, z: number, mode: WindowState['mode'] = 'normal'): WindowState => ({
+      ...win(id, 'finder', z, mode),
+      props: { folderId: 'trash' },
+    })
+
+    it('focuses the top visible window showing the same props', () => {
+      const wm = withWindows(trashWin('t1', 1), trashWin('t2', 4), win('f1', 'finder', 9))
+      expect(dockClickAction(wm, trash)).toEqual({ type: 'focus', id: 't2' })
+    })
+
+    it('restores a minimized window with the same props', () => {
+      expect(dockClickAction(withWindows(trashWin('t1', 1, 'minimized')), trash)).toEqual({
+        type: 'restore',
+        id: 't1',
+      })
+    })
+
+    it('ignores finder windows whose props differ', () => {
+      expect(dockClickAction(withWindows(win('f1', 'finder', 1)), trash)).toEqual({
+        type: 'alias',
+        appId: 'finder',
+        props: { folderId: 'trash' },
+      })
+    })
+  })
 })
 
 describe('magnifyScale', () => {

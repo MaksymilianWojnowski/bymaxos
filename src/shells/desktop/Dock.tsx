@@ -21,6 +21,29 @@ function showAll(appId: AppId): void {
   if (top) useSystem.getState().focus(top.id)
 }
 
+// The single activation path: a click and the context-menu "Open" of an alias both use it.
+function activate(app: AppDefinition): void {
+  const store = useSystem.getState()
+  const action = dockClickAction(store.wm, app)
+  switch (action.type) {
+    case 'external':
+      window.open(action.url, '_blank', 'noopener,noreferrer')
+      break
+    case 'alias':
+      store.openApp(action.appId, action.props)
+      break
+    case 'focus':
+      store.focus(action.id)
+      break
+    case 'restore':
+      store.restore(action.id)
+      break
+    case 'open':
+      store.openApp(app.id)
+      break
+  }
+}
+
 export function Dock() {
   const windows = useSystem((s) => s.wm.windows)
   const size = useSystem((s) => s.settings.dockSize)
@@ -40,9 +63,14 @@ export function Dock() {
       const url = getApp(String(cmd.appId))?.external
       if (url) window.open(url, '_blank', 'noopener,noreferrer')
     })
+    const disposeActivate = registerGlobal('dock.activate', (cmd) => {
+      const app = getApp(String(cmd.appId))
+      if (app) activate(app)
+    })
     return () => {
       disposeShowAll()
       disposeOpenLink()
+      disposeActivate()
     }
   }, [])
 
@@ -74,38 +102,11 @@ export function Dock() {
     setScales(next)
   }
 
-  const activate = (app: AppDefinition) => {
-    const store = useSystem.getState()
-    const action = dockClickAction(store.wm, app)
-    switch (action.type) {
-      case 'external':
-        window.open(action.url, '_blank', 'noopener,noreferrer')
-        break
-      case 'alias':
-        store.openApp(action.appId, action.props)
-        break
-      case 'focus':
-        store.focus(action.id)
-        break
-      case 'restore':
-        store.restore(action.id)
-        break
-      case 'open':
-        store.openApp(app.id)
-        break
-    }
-  }
-
   const onContextMenu = (e: MouseEvent, app: AppDefinition) => {
     const items: MenuItemDef[] = app.external
       ? [{ label: 'Open', command: { type: 'dock.openLink', appId: app.id } }]
       : app.alias
-        ? [
-            {
-              label: 'Open',
-              command: { type: 'app.open', appId: app.alias.appId, props: app.alias.props },
-            },
-          ]
+        ? [{ label: 'Open', command: { type: 'dock.activate', appId: app.id } }]
         : [
             { label: 'Open', command: { type: 'app.open', appId: app.id } },
             { label: 'Show All Windows', command: { type: 'dock.showAll', appId: app.id } },
@@ -118,6 +119,7 @@ export function Dock() {
   return (
     <>
       <div
+        role="toolbar"
         aria-label="Dock"
         onPointerMove={onPointerMove}
         onPointerLeave={() => setScales({})}
@@ -151,7 +153,8 @@ export function Dock() {
                   style={{
                     width: size,
                     height: size,
-                    transform: `scale(${scales[app.id] ?? 1})`,
+                    // Derived, not cleared in an effect: turning magnification off drops every scale at once.
+                    transform: `scale(${magnify ? (scales[app.id] ?? 1) : 1})`,
                     transformOrigin: 'bottom',
                     transition: magnify ? 'transform 120ms ease-out' : undefined,
                   }}
