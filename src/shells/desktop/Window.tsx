@@ -191,7 +191,7 @@ export function Window({ win, app, focused, children }: Props) {
         </div>
         <span
           id={titleId}
-          className={`pointer-events-none absolute inset-x-0 truncate px-16 text-center text-[13px] font-semibold text-text-1 ${focused ? '' : 'opacity-50'}`}
+          className={`pointer-events-none absolute inset-x-0 truncate px-16 text-center text-[13px] font-semibold ${focused ? 'text-text-1' : 'text-text-2'}`}
         >
           {win.title}
         </span>
