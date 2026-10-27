@@ -21,7 +21,7 @@ beforeEach(() => {
 
 describe('registry', () => {
   it('lists dock items by group then order', () => {
-    expect(dockItems().map((a) => a.id)).toEqual(['finder', 'mail', 'linkedin', 'github', 'trash'])
+    expect(dockItems().map((a) => a.id)).toEqual(['finder', 'mail', 'contacts', 'linkedin', 'github', 'trash'])
   })
 
   it('gives every loadable app a window spec and every external link https', () => {

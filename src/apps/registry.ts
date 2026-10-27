@@ -1,3 +1,4 @@
+import contactsIcon from '../assets/icons/contacts.png'
 import finderIcon from '../assets/icons/finder.png'
 import mailIcon from '../assets/icons/mail.png'
 import previewIcon from '../assets/icons/preview.png'
@@ -98,6 +99,19 @@ const APP_LIST: (AppDefinition | null)[] = [
       singleInstance: true,
     },
     dock: { order: 1, group: 'apps' },
+  },
+  {
+    id: 'contacts',
+    name: 'Contacts',
+    icon: { image: contactsIcon },
+    load: () => import('./contacts/Contacts'),
+    window: {
+      defaultSize: { w: 480, h: 520 },
+      minSize: { w: 380, h: 420 },
+      resizable: true,
+      singleInstance: true,
+    },
+    dock: { order: 2, group: 'apps' },
   },
   {
     id: 'about',

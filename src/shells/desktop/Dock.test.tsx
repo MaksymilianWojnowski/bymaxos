@@ -29,6 +29,7 @@ describe('Dock', () => {
     expect(labels).toEqual([
       'Finder',
       'Mail',
+      'Contacts',
       'LinkedIn (opens in new tab)',
       'GitHub (opens in new tab)',
       'Trash',
