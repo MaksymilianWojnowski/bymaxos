@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { MenuContext } from '../../apps/types'
 import { useSystem } from '../../system/store'
 import { activeAppId } from '../../system/wm'
@@ -7,15 +8,25 @@ import { ShortcutsSheet } from './ShortcutsSheet'
 import { StatusArea } from './StatusArea'
 
 export function MenuBar() {
-  const wm = useSystem((s) => s.wm)
+  // Menus read only window ids and titles, so a drag (which changes rects only) must not rebuild them.
+  const windowsKey = useSystem((s) =>
+    s.wm.windows.map((w) => `${w.id}\u0000${w.title}\u0000${w.appId}`).join('\u0001'),
+  )
+  const focusedId = useSystem((s) => s.wm.focusedId)
   const keyboardLocked = useSystem((s) => s.keyboardLocked)
+  const appId = useSystem((s) => activeAppId(s.wm))
   const overlay = useSystem((s) => s.overlay)
-  const ctx: MenuContext = {
-    focused: wm.windows.find((w) => w.id === wm.focusedId) ?? null,
-    windows: wm.windows,
-    keyboardLocked,
-  }
-  const menus = buildMenus(ctx, activeAppId(wm))
+  // windowsKey and focusedId are change signals only: the body reads the store snapshot they stand for.
+  const menus = useMemo(() => {
+    const { wm } = useSystem.getState()
+    const ctx: MenuContext = {
+      focused: wm.windows.find((w) => w.id === wm.focusedId) ?? null,
+      windows: wm.windows,
+      keyboardLocked,
+    }
+    return buildMenus(ctx, appId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [windowsKey, focusedId, keyboardLocked, appId])
 
   return (
     <>

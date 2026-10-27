@@ -2,6 +2,7 @@ import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react'
 import type { MenuDef, MenuItemDef } from '../apps/types'
 import { canDispatch, dispatch } from '../system/commands'
 import { useSystem } from '../system/store'
+import { ariaKeyshortcuts } from '../system/shortcuts'
 
 type Item = Extract<MenuItemDef, { label: string }>
 
@@ -69,12 +70,13 @@ function MenuRow({ item, onClose }: { item: Item; onClose: () => void }) {
       role={checkable ? 'menuitemcheckbox' : 'menuitem'}
       aria-checked={checkable ? item.checked : undefined}
       aria-disabled={enabled ? undefined : 'true'}
-      aria-keyshortcuts={item.shortcut}
+      aria-keyshortcuts={item.shortcut && ariaKeyshortcuts(item.shortcut)}
       tabIndex={-1}
       onClick={() => {
         if (!enabled) return
-        if (item.command) dispatch(item.command)
+        // Close first: the item unmounts, and a sheet the command opens must find the menu title focused as its opener.
         onClose()
+        if (item.command) dispatch(item.command)
       }}
       onPointerEnter={(e) => {
         if (enabled) e.currentTarget.focus()

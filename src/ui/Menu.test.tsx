@@ -93,7 +93,7 @@ describe('MenuBarMenus', () => {
     bar()
     fireEvent.click(title('File'))
     const open = screen.getByRole('menuitem', { name: 'Open' })
-    expect(open).toHaveAttribute('aria-keyshortcuts', '⌘O')
+    expect(open).toHaveAttribute('aria-keyshortcuts', 'Meta+O')
   })
 
   it('closes on pointerdown outside the menu bar', () => {

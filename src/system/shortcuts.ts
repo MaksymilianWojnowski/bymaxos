@@ -86,6 +86,17 @@ export function shortcutLabel(cmd: string | Command, keyboardLocked: boolean): s
 
 const TEXT_INPUT_TYPES = new Set(['text', 'search', 'email', 'url', 'tel', 'password', 'number'])
 
+const ARIA_MODIFIERS: Record<string, string> = { '⌥': 'Alt', '⌘': 'Meta', '⌃': 'Control', '⇧': 'Shift' }
+const ARIA_KEYS: Record<string, string> = { '↑': 'ArrowUp', Esc: 'Escape' }
+
+// Converts a menu glyph label ("⌥↑", "⌘K") to the aria-keyshortcuts format ("Alt+ArrowUp", "Meta+K").
+export function ariaKeyshortcuts(label: string): string {
+  const chars = [...label]
+  const mods = chars.filter((c) => Object.hasOwn(ARIA_MODIFIERS, c)).map((c) => ARIA_MODIFIERS[c])
+  const key = chars.filter((c) => !Object.hasOwn(ARIA_MODIFIERS, c)).join('')
+  return [...mods, ARIA_KEYS[key] ?? key.toUpperCase()].join('+')
+}
+
 export function isTextField(el: Element | null): boolean {
   if (!el) return false
   if (el instanceof HTMLTextAreaElement) return true

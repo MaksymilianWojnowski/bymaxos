@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isTextField, matchShortcut, shortcutLabel, type KeyLike } from './shortcuts'
+import { ariaKeyshortcuts, isTextField, matchShortcut, shortcutLabel, type KeyLike } from './shortcuts'
 
 const NONE = { inTextField: false, keyboardLocked: false }
 
@@ -102,5 +102,16 @@ describe('isTextField', () => {
 
     expect(isTextField(document.createElement('button'))).toBe(false)
     expect(isTextField(null)).toBe(false)
+  })
+})
+
+describe('ariaKeyshortcuts', () => {
+  it('maps glyphs to ARIA key names joined with +', () => {
+    expect(ariaKeyshortcuts('⌥W')).toBe('Alt+W')
+    expect(ariaKeyshortcuts('⌘K')).toBe('Meta+K')
+    expect(ariaKeyshortcuts('⌥↑')).toBe('Alt+ArrowUp')
+    expect(ariaKeyshortcuts('⌘1')).toBe('Meta+1')
+    expect(ariaKeyshortcuts('⌃⇧F3')).toBe('Control+Shift+F3')
+    expect(ariaKeyshortcuts('Esc')).toBe('Escape')
   })
 })

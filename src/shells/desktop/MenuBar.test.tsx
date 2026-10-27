@@ -76,6 +76,29 @@ describe('MenuBar', () => {
     expect(useSystem.getState().overlay).toBeNull()
   })
 
+  it('returns focus to the Help menu title after the shortcuts sheet closes', () => {
+    shell()
+    const help = screen.getByRole('menuitem', { name: 'Help' })
+    fireEvent.click(help)
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Keyboard Shortcuts' }))
+    expect(screen.getByRole('dialog', { name: 'Keyboard Shortcuts' })).toBeInTheDocument()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(help).toHaveFocus()
+  })
+
+  it('processes only Escape while the shortcuts sheet is open', async () => {
+    shell()
+    act(() => {
+      useSystem.getState().openApp('about')
+    })
+    await screen.findByRole('dialog', { name: 'About This Mac' })
+    act(() => {
+      useSystem.getState().setOverlay('shortcuts')
+    })
+    fireEvent.keyDown(window, { code: 'KeyW', key: '∑', altKey: true })
+    expect(screen.getByRole('dialog', { name: 'About This Mac' })).toBeInTheDocument()
+  })
+
   it('locks the screen from the system menu', () => {
     shell()
     fireEvent.click(screen.getByRole('menuitem', { name: 'bymaxOS' }))

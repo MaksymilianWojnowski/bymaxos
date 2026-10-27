@@ -17,12 +17,15 @@ export function DesktopShell() {
   const openApp = useSystem((s) => s.openApp)
   const unlock = useSystem((s) => s.unlock)
   const keyboardLocked = useSystem((s) => s.keyboardLocked)
+  const sheetOpen = useSystem((s) => s.overlay === 'shortcuts')
 
   useEffect(() => installSystemCommands(), [])
 
   useEffect(() => {
     if (locked) return
     const onKey = (e: KeyboardEvent) => {
+      // A modal sheet owns the keyboard; only its Escape handler (in Sheet) may act.
+      if (sheetOpen && e.key !== 'Escape') return
       const cmd = matchShortcut(e, {
         inTextField: isTextField(document.activeElement),
         keyboardLocked,
@@ -31,7 +34,7 @@ export function DesktopShell() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [locked, keyboardLocked])
+  }, [locked, keyboardLocked, sheetOpen])
 
   useEffect(() => {
     // The viewport may have changed while the mobile shell was mounted.
