@@ -39,4 +39,5 @@ export const KEYS = {
   unlocked: 'bymaxos.unlocked',
   windows: 'bymaxos.windows',
   icons: 'bymaxos.icons',
+  github: 'bymaxos.github',
 } as const;

@@ -6,6 +6,7 @@ import previewIcon from '../assets/icons/preview.png'
 import systemInfoIcon from '../assets/icons/system-information.png'
 import texteditIcon from '../assets/icons/textedit.png'
 import trashIcon from '../assets/icons/trash.png'
+import xcodeIcon from '../assets/icons/xcode.png'
 import { getContent } from '../content'
 import { shortcutLabel } from '../system/shortcuts'
 import { setAppResolver } from '../system/store'
@@ -141,6 +142,19 @@ const APP_LIST: (AppDefinition | null)[] = [
       singleInstance: true,
     },
     dock: { order: 3, group: 'apps' },
+  },
+  {
+    id: 'developer',
+    name: 'Developer',
+    icon: { image: xcodeIcon },
+    load: () => import('./developer/Developer'),
+    window: {
+      defaultSize: { w: 880, h: 560 },
+      minSize: { w: 560, h: 380 },
+      resizable: true,
+      singleInstance: true,
+    },
+    dock: { order: 4, group: 'apps' },
   },
   {
     id: 'about',
