@@ -36,6 +36,14 @@ describe('openTarget', () => {
     expect(openTarget(vfs.nodes.projects)).toEqual({ type: 'finder.navigate', folderId: 'projects' })
   })
 
+  it('opens a Markdown document in TextEdit', () => {
+    expect(openTarget(vfs.nodes['doc-hello'])).toEqual({
+      type: 'app.open',
+      appId: 'textedit',
+      props: { fileId: 'doc-hello' },
+    })
+  })
+
   it('opens a file in Quick Look when its app is not registered', () => {
     expect(openTarget(vfs.nodes['resume-pdf'])).toEqual({
       type: 'app.open',

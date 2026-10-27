@@ -41,4 +41,5 @@ export interface WindowSpec {
   minSize: Size;
   singleInstance: boolean;
   resizable: boolean;
+  documentKey?: string;
 }

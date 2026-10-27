@@ -96,6 +96,33 @@ describe('openWindow', () => {
     expect(again.windows[0].props).toEqual({ a: 1, b: 2 })
   })
 
+  it('focuses the window already showing the same document', () => {
+    const docSpec: WindowSpec = { ...notesSpec, appId: 'textedit', documentKey: 'fileId' }
+    const first = openWindow(emptyWM, docSpec, area, { fileId: 'doc-hello' })
+    const other = openWindow(first, spec, area)
+    const again = openWindow(other, docSpec, area, { fileId: 'doc-hello' })
+    const docs = again.windows.filter((w) => w.appId === 'textedit')
+    expect(docs).toHaveLength(1)
+    expect(again.focusedId).toBe(docs[0].id)
+    expect(docs[0].z).toBe(Math.max(...again.windows.map((w) => w.z)))
+  })
+
+  it('opens a new window for a different document', () => {
+    const docSpec: WindowSpec = { ...notesSpec, appId: 'textedit', documentKey: 'fileId' }
+    const first = openWindow(emptyWM, docSpec, area, { fileId: 'doc-hello' })
+    const next = openWindow(first, docSpec, area, { fileId: 'doc-skills' })
+    expect(next.windows.filter((w) => w.appId === 'textedit')).toHaveLength(2)
+  })
+
+  it('restores a minimized window of the same document', () => {
+    const docSpec: WindowSpec = { ...notesSpec, appId: 'textedit', documentKey: 'fileId' }
+    const first = openWindow(emptyWM, docSpec, area, { fileId: 'doc-hello' })
+    const minimized = minimizeWindow(first, first.focusedId as string)
+    const again = openWindow(minimized, docSpec, area, { fileId: 'doc-hello' })
+    expect(again.windows).toHaveLength(1)
+    expect(again.windows[0].mode).toBe('normal')
+  })
+
   it('uses the clamped lastRectByApp for the first window of an app', () => {
     const s: WMState = {
       ...emptyWM,

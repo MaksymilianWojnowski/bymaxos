@@ -1,6 +1,7 @@
 import finderIcon from '../assets/icons/finder.png'
 import previewIcon from '../assets/icons/preview.png'
 import systemInfoIcon from '../assets/icons/system-information.png'
+import texteditIcon from '../assets/icons/textedit.png'
 import trashIcon from '../assets/icons/trash.png'
 import { getContent } from '../content'
 import { shortcutLabel } from '../system/shortcuts'
@@ -57,6 +58,20 @@ const APP_LIST: (AppDefinition | null)[] = [
       minSize: { w: 360, h: 280 },
       resizable: true,
       singleInstance: false,
+    },
+  },
+  {
+    id: 'textedit',
+    name: 'TextEdit',
+    deepLink: false,
+    icon: { image: texteditIcon },
+    load: () => import('./textedit/TextEdit'),
+    window: {
+      defaultSize: { w: 620, h: 560 },
+      minSize: { w: 360, h: 280 },
+      resizable: true,
+      singleInstance: false,
+      documentKey: 'fileId',
     },
   },
   {
@@ -124,6 +139,7 @@ function resolveWindowSpec(id: AppId): WindowSpec | undefined {
     minSize: app.window.minSize,
     singleInstance: app.window.singleInstance,
     resizable: app.window.resizable,
+    documentKey: app.window.documentKey,
   }
 }
 setAppResolver(resolveWindowSpec)

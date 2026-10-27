@@ -72,6 +72,15 @@ export function openWindow(
     }
   }
 
+  const docKey = spec.documentKey;
+  const docValue = docKey === undefined ? undefined : props?.[docKey];
+  if (docKey !== undefined && docValue !== undefined) {
+    const sameDoc = s.windows.find(
+      (w) => w.appId === spec.appId && w.props?.[docKey] === docValue,
+    );
+    if (sameDoc) return restoreWindow(s, sameDoc.id);
+  }
+
   const { w, h } = spec.defaultSize;
   const previous = s.windows[s.windows.length - 1];
   const savedRect = s.lastRectByApp[spec.appId];

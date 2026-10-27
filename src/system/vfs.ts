@@ -85,7 +85,7 @@ const projectFiles = (p: Project): VNode[] => {
 }
 
 const docFile = (d: DocumentFile): VNode =>
-  file(`doc-${d.id}`, d.name, 'md', { appId: 'textedit', props: { docId: d.id } }, textPreview(d.name, d.body))
+  file(`doc-${d.id}`, d.name, 'md', { appId: 'textedit', props: { fileId: `doc-${d.id}` } }, textPreview(d.name, d.body))
 
 // Desktop children are aliases of nodes that live in their real folders.
 const DESKTOP_CHILDREN = ['resume-pdf', 'about', 'projects', 'contact-vcf']

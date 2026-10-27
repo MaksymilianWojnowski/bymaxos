@@ -41,7 +41,14 @@ export interface AppDefinition {
   load?: () => Promise<{ default: ComponentType<AppProps> }>
   external?: string
   alias?: { appId: AppId; props?: Record<string, unknown> }
-  window?: { defaultSize: Size; minSize: Size; resizable: boolean; singleInstance: boolean }
+  // Names the prop that identifies a document: a second open of the same one focuses its window.
+  window?: {
+    defaultSize: Size
+    minSize: Size
+    resizable: boolean
+    singleInstance: boolean
+    documentKey?: string
+  }
   menus?: (ctx: MenuContext) => MenuDef[]
   dock?: { order: number; group: 'system' | 'apps' | 'links' | 'trash' }
   mobile?: { presentation: 'fullscreen' | 'sheet' | 'external' | 'hidden' }

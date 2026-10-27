@@ -70,12 +70,12 @@ describe('buildVfs', () => {
     expect(JSON.stringify(vfs)).not.toContain('+48')
   })
 
-  it('puts about documents in About Me with a textedit docId', () => {
+  it('puts about documents in About Me with a textedit fileId', () => {
     expect(folder('about').children).toContain('doc-hello')
     expect(vfs.nodes['doc-hello']).toMatchObject({
       kind: 'file',
       name: 'Hello.md',
-      open: { appId: 'textedit', props: { docId: 'hello' } },
+      open: { appId: 'textedit', props: { fileId: 'doc-hello' } },
     })
   })
 
