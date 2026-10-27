@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { VNode } from '../../system/vfs'
 import { back, forward, initFinder, navigate, openTarget } from './finderState'
 import { vfs } from './vfsInstance'
 
@@ -44,8 +45,17 @@ describe('openTarget', () => {
     })
   })
 
-  it('opens a file in Quick Look when its app is not registered', () => {
+  it('opens Resume.pdf in the Resume app', () => {
     expect(openTarget(vfs.nodes['resume-pdf'])).toEqual({
+      type: 'app.open',
+      appId: 'resume',
+      props: undefined,
+    })
+  })
+
+  it('opens a file in Quick Look when its app is not registered', () => {
+    const node = { ...vfs.nodes['resume-pdf'], open: { appId: 'safari' } } as VNode
+    expect(openTarget(node)).toEqual({
       type: 'app.open',
       appId: 'quicklook',
       props: { nodeId: 'resume-pdf' },

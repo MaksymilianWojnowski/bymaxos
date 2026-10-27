@@ -68,3 +68,24 @@ body {
 [data-selectable] {
   user-select: text;
 }
+
+/* Print-only copy of a document (Resume) lives outside #root and is hidden on screen. */
+.print-only {
+  display: none;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  #root {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block;
+    color: #000;
+    background: #fff;
+  }
+}

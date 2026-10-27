@@ -68,6 +68,16 @@ export function DesktopShell() {
 
   return (
     <div data-testid="desktop" className="relative h-full w-full">
+      <a
+        href="?app=resume"
+        onClick={(e) => {
+          e.preventDefault()
+          openApp('resume')
+        }}
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:rounded-[6px] focus:bg-[var(--glass-bg)] focus:px-3 focus:py-1 focus:text-[13px] focus:text-[var(--text-1)] focus:shadow-md"
+      >
+        Skip to Resume
+      </a>
       <Wallpaper />
       <Desktop />
       <WindowLayer />

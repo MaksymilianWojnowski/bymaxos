@@ -89,7 +89,7 @@ describe('Finder', () => {
     expect(within(desktop).getByRole('option', { name: 'Resume.pdf' })).toHaveAttribute('aria-selected', 'true')
   })
 
-  it('opens a folder on Enter and Quick Look for a file on Enter', async () => {
+  it('opens a folder on Enter and the file app on Enter', async () => {
     useSystem.getState().openApp('finder')
     render(<WindowLayer />)
     const desktop = await screen.findByRole('listbox', { name: 'Desktop items' })
@@ -101,7 +101,7 @@ describe('Finder', () => {
     const back = await screen.findByRole('listbox', { name: 'Desktop items' })
     fireEvent.click(within(back).getByRole('option', { name: 'Resume.pdf' }))
     fireEvent.keyDown(back, { key: 'Enter' })
-    expect(await screen.findByRole('dialog', { name: 'Resume.pdf' })).toBeInTheDocument()
+    expect(useSystem.getState().wm.windows.some((w) => w.appId === 'resume')).toBe(true)
   })
 
   it('does nothing on Enter or Space without a selection, or on Space over a folder', async () => {
@@ -155,7 +155,6 @@ describe('Finder', () => {
 
     const quickLook = await screen.findByRole('dialog', { name: 'Resume.pdf' })
     expect(within(quickLook).getByText(getContent().profile.headline)).toBeInTheDocument()
-    expect(within(quickLook).getByText('Preview — the full app is coming soon.')).toBeInTheDocument()
   })
 
   it('shows the placeholder for an empty folder', async () => {

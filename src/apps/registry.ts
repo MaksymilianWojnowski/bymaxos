@@ -13,6 +13,7 @@ import type { Command } from '../system/commands'
 import type { AppId, WindowSpec } from '../system/types'
 import { GitHubGlyph, LinkedInGlyph } from '../ui/glyphs'
 import { finderMenus } from './finder/menus'
+import { resumeMenus } from './resume/menus'
 import type { AppDefinition, MenuContext, MenuDef, MenuItemDef } from './types'
 
 const LINK_GROUP_ORDER: Record<'system' | 'apps' | 'links' | 'trash', number> = {
@@ -49,6 +50,20 @@ const APP_LIST: (AppDefinition | null)[] = [
       singleInstance: false,
     },
     dock: { order: 1, group: 'system' },
+  },
+  {
+    id: 'resume',
+    name: 'Resume',
+    icon: { image: previewIcon },
+    load: () => import('./resume/Resume'),
+    menus: resumeMenus,
+    window: {
+      defaultSize: { w: 780, h: 720 },
+      minSize: { w: 480, h: 400 },
+      resizable: true,
+      singleInstance: true,
+    },
+    dock: { order: 2, group: 'system' },
   },
   {
     id: 'quicklook',
