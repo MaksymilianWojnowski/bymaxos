@@ -1,0 +1,166 @@
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { getContent } from '../../content'
+import { Popover } from '../../ui/Popover'
+import { useSystem } from '../../system/store'
+import type { Appearance } from '../../system/settings'
+import { enterFullScreen, exitFullScreen } from './fullscreen'
+
+const APPEARANCES: { value: Appearance; label: string }[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'auto', label: 'Auto' },
+]
+
+const GLASS = {
+  background: 'var(--glass-bg)',
+  backdropFilter: 'blur(var(--glass-blur))',
+  borderColor: 'var(--glass-border)',
+}
+
+function Tile({ children }: { children: ReactNode }) {
+  return (
+    <section className="rounded-[12px] border p-3" style={GLASS}>
+      {children}
+    </section>
+  )
+}
+
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={() => onChange(!checked)}
+      className="flex h-[26px] w-full items-center justify-between text-left"
+    >
+      <span aria-hidden="true">{label}</span>
+      <span
+        aria-hidden="true"
+        className={`relative h-[20px] w-[34px] shrink-0 rounded-full transition-colors ${
+          checked ? 'bg-accent' : 'bg-black/20 dark:bg-white/25'
+        }`}
+      >
+        <span
+          className={`absolute top-[2px] h-[16px] w-[16px] rounded-full bg-white transition-transform ${
+            checked ? 'translate-x-[16px]' : 'translate-x-[2px]'
+          }`}
+        />
+      </span>
+    </button>
+  )
+}
+
+// Anchored under the Control Center status button; the button's element is passed in, not read during render.
+export function ControlCenter({ anchorEl }: { anchorEl: HTMLElement }) {
+  const [anchor] = useState(() => anchorEl.getBoundingClientRect())
+  const settings = useSystem((s) => s.settings)
+  const updateSettings = useSystem((s) => s.updateSettings)
+  const setOverlay = useSystem((s) => s.setOverlay)
+  const setKeyboardLocked = useSystem((s) => s.setKeyboardLocked)
+  const close = useCallback(() => setOverlay(null), [setOverlay])
+  const wallpapers = getContent().site.wallpapers
+  const canFullScreen = document.fullscreenEnabled === true
+
+  const [fullscreen, setFullscreen] = useState(() => !!document.fullscreenElement)
+  useEffect(() => {
+    // Escape or the browser's own control can leave full screen while the panel is open.
+    const sync = () => setFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', sync)
+    return () => document.removeEventListener('fullscreenchange', sync)
+  }, [])
+
+  const toggleFullScreen = async () => {
+    if (fullscreen) {
+      await exitFullScreen()
+      setKeyboardLocked(false)
+      setFullscreen(false)
+    } else {
+      const r = await enterFullScreen()
+      setKeyboardLocked(r.keyboardLocked)
+      setFullscreen(r.fullscreen)
+    }
+  }
+
+  return (
+    <Popover anchor={anchor} onClose={close} label="Control Center" anchorEl={anchorEl}>
+      <div className="flex w-[320px] flex-col gap-2">
+        <Tile>
+          <div
+            role="radiogroup"
+            aria-label="Appearance"
+            className="grid grid-cols-3 gap-1 rounded-[8px] bg-black/5 p-0.5 dark:bg-white/10"
+          >
+            {APPEARANCES.map((a) => {
+              const checked = settings.appearance === a.value
+              return (
+                <button
+                  key={a.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={checked}
+                  onClick={() => updateSettings({ appearance: a.value })}
+                  className={`h-[24px] rounded-[6px] text-[12px] ${
+                    checked ? 'bg-white font-medium text-black shadow dark:bg-white/25 dark:text-white' : 'text-text-1'
+                  }`}
+                >
+                  {a.label}
+                </button>
+              )
+            })}
+          </div>
+        </Tile>
+
+        <Tile>
+          <div className="flex flex-col gap-1">
+            <Toggle
+              label="Reduce motion"
+              checked={settings.reduceMotion}
+              onChange={(v) => updateSettings({ reduceMotion: v })}
+            />
+            <Toggle
+              label="Reduce transparency"
+              checked={settings.reduceTransparency}
+              onChange={(v) => updateSettings({ reduceTransparency: v })}
+            />
+            <Toggle
+              label="Dock magnification"
+              checked={settings.dockMagnification}
+              onChange={(v) => updateSettings({ dockMagnification: v })}
+            />
+          </div>
+        </Tile>
+
+        <Tile>
+          <div className="flex gap-2">
+            {wallpapers.map((w) => (
+              <button
+                key={w.id}
+                type="button"
+                aria-label={w.name}
+                aria-pressed={settings.wallpaperId === w.id}
+                title={w.name}
+                onClick={() => updateSettings({ wallpaperId: w.id })}
+                className="h-[40px] flex-1 rounded-[8px] aria-pressed:ring-2 aria-pressed:ring-accent aria-pressed:ring-offset-2"
+                style={{ backgroundImage: w.gradient }}
+              />
+            ))}
+          </div>
+        </Tile>
+
+        {canFullScreen && (
+          <Tile>
+            <button
+              type="button"
+              onClick={toggleFullScreen}
+              className="h-[26px] w-full rounded-[6px] bg-black/5 text-[13px] dark:bg-white/10"
+            >
+              {fullscreen ? 'Exit Full Screen' : 'Enter Full Screen'}
+            </button>
+          </Tile>
+        )}
+      </div>
+    </Popover>
+  )
+}

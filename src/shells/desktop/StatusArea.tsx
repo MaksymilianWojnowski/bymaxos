@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Battery, BatteryCharging, Search, SlidersHorizontal, Wifi, WifiOff } from 'lucide-react'
 import { canDispatch, dispatch } from '../../system/commands'
 import { useSystem } from '../../system/store'
+import { ControlCenter } from './ControlCenter'
 import { formatMenuClock } from './clock'
 import { useBattery, useOnline } from './statusHooks'
 
@@ -23,6 +24,7 @@ export function StatusArea() {
   const overlay = useSystem((s) => s.overlay)
   const setOverlay = useSystem((s) => s.setOverlay)
   const spotlightOk = canDispatch({ type: 'overlay.open', overlay: 'spotlight' })
+  const [controlAnchor, setControlAnchor] = useState<HTMLButtonElement | null>(null)
 
   return (
     <div className="flex h-full items-center gap-3 text-[13px] text-text-1">
@@ -40,6 +42,7 @@ export function StatusArea() {
         </span>
       )}
       <button
+        ref={setControlAnchor}
         type="button"
         aria-label="Control Center"
         aria-pressed={overlay === 'controlCenter'}
@@ -48,6 +51,7 @@ export function StatusArea() {
       >
         <SlidersHorizontal aria-hidden="true" className={ICON} />
       </button>
+      {overlay === 'controlCenter' && controlAnchor && <ControlCenter anchorEl={controlAnchor} />}
       <button
         type="button"
         aria-label="Spotlight"

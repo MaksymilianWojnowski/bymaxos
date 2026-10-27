@@ -19,6 +19,7 @@ export function DesktopShell() {
   const openApp = useSystem((s) => s.openApp)
   const unlock = useSystem((s) => s.unlock)
   const keyboardLocked = useSystem((s) => s.keyboardLocked)
+  const setKeyboardLocked = useSystem((s) => s.setKeyboardLocked)
   const sheetOpen = useSystem((s) => s.overlay === 'shortcuts')
 
   useEffect(() => installSystemCommands(), [])
@@ -37,6 +38,15 @@ export function DesktopShell() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [locked, keyboardLocked, sheetOpen])
+
+  useEffect(() => {
+    // Leaving full screen by any route (Escape, browser control) releases the key lock.
+    const onChange = () => {
+      if (!document.fullscreenElement) setKeyboardLocked(false)
+    }
+    document.addEventListener('fullscreenchange', onChange)
+    return () => document.removeEventListener('fullscreenchange', onChange)
+  }, [setKeyboardLocked])
 
   useEffect(() => {
     // The viewport may have changed while the mobile shell was mounted.

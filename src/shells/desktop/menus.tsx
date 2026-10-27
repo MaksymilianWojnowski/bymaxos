@@ -1,6 +1,7 @@
 import { defaultMenus, getApp } from '../../apps/registry'
 import type { MenuContext, MenuDef, MenuItemDef } from '../../apps/types'
 import type { Command } from '../../system/commands'
+import { SystemMark } from '../../ui/SystemMark'
 import { shortcutLabel } from '../../system/shortcuts'
 import type { AppId } from '../../system/types'
 
@@ -23,21 +24,7 @@ const SEP: MenuItemDef = { separator: true }
 function systemMenu(ctx: MenuContext): MenuDef {
   return {
     id: 'system',
-    label: (
-      <svg
-        role="img"
-        aria-label="bymaxOS"
-        viewBox="0 0 16 16"
-        className="h-3.5 w-3.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M2.5 12.5V3.5L8 9l5.5-5.5v9" />
-      </svg>
-    ),
+    label: <SystemMark />,
     items: [
       { label: 'About This Mac', command: { type: 'app.open', appId: 'about' } },
       SEP,
