@@ -21,7 +21,7 @@
   --traffic-inactive: #c7c7c7;
   --sidebar-bg: rgba(226, 226, 226, 0.7);
   --text-1: #1d1d1f;
-  --text-2: rgba(60, 60, 67, 0.6);
+  --text-2: rgba(60, 60, 67, 0.8);
   --shadow-window: 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 0 0.5px rgba(0, 0, 0, 0.2);
   --shadow-window-inactive: 0 4px 14px rgba(0, 0, 0, 0.15), 0 0 0 0.5px rgba(0, 0, 0, 0.15);
 }

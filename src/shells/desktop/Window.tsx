@@ -154,6 +154,7 @@ export function Window({ win, app, focused, children }: Props) {
       onPointerCancel={endGesture}
     >
       <div
+        data-testid="titlebar"
         className="relative flex shrink-0 touch-none items-center border-b border-black/10 select-none"
         style={{ height: 'var(--tb-h)' }}
         onPointerDown={onTitlePointerDown}
@@ -207,6 +208,7 @@ export function Window({ win, app, focused, children }: Props) {
             key={dir}
             aria-hidden="true"
             data-resize={dir}
+            data-testid={`resize-${dir}`}
             className="absolute z-10 touch-none"
             style={HANDLES[dir]}
             onPointerDown={onHandlePointerDown}

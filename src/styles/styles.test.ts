@@ -31,3 +31,37 @@ describe('window-open animation', () => {
     expect(globalCss).toMatch(/\.animate-window-open\s*\{\s*animation:\s*var\(--anim-window-open\);\s*\}/)
   })
 })
+
+// WCAG 2.x contrast of secondary text (light theme) over the window and the Finder sidebar tint.
+const channel = (c: number): number => {
+  const s = c / 255
+  return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+}
+const luminance = ([r, g, b]: number[]): number =>
+  0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+const contrast = (a: number[], b: number[]): number => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
+}
+const lightToken = (name: string): string => {
+  const block = tokensCss.slice(tokensCss.indexOf(":root[data-theme='light']"))
+  const match = block.match(new RegExp(`--${name}:\\s*([^;]+);`))
+  if (!match) throw new Error(`missing token ${name}`)
+  return match[1].trim()
+}
+const hexRgb = (hex: string): number[] => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+
+describe('secondary text contrast', () => {
+  const window = hexRgb(lightToken('window-bg'))
+  const sidebar = window.map((c) => c * 0.97) // bg-black/[0.03] over the window
+  const [r, g, b, a] = (lightToken('text-2').match(/[\d.]+/g) ?? []).map(Number)
+  const text = (bg: number[]) => [r, g, b].map((c, i) => c * a + bg[i] * (1 - a))
+
+  it('meets WCAG AA (4.5:1) on the window background', () => {
+    expect(contrast(text(window), window)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('meets WCAG AA (4.5:1) on the sidebar background', () => {
+    expect(contrast(text(sidebar), sidebar)).toBeGreaterThanOrEqual(4.5)
+  })
+})
