@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Send } from 'lucide-react'
 import { getContent } from '../../content'
 import { copyText } from '../../lib/clipboard'
@@ -9,8 +9,8 @@ import { Sheet } from '../../ui/Sheet'
 import type { AppProps } from '../types'
 
 const FIELD =
-  'w-full rounded-[6px] border border-black/15 bg-white px-2 py-1 text-[13px] text-black outline-none focus:border-accent-strong dark:border-white/15 dark:bg-[#1e1e1e] dark:text-white'
-const ERROR = 'text-[12px] text-red-600 dark:text-red-400'
+  'w-full rounded-[6px] border border-black/15 bg-white px-2 py-1 text-[13px] text-black focus-visible:ring-2 focus-visible:ring-accent dark:border-white/15 dark:bg-[#1e1e1e] dark:text-white'
+const ERROR = 'text-[12px] text-red-700 dark:text-red-400'
 
 // Compose only: the draft goes to the visitor's email app. Nothing is sent from this page.
 export default function MailApp({ windowId }: AppProps) {
@@ -21,17 +21,24 @@ export default function MailApp({ windowId }: AppProps) {
   const [message, setMessage] = useState('')
   const [errors, setErrors] = useState({ subject: false, message: false })
   const [sheetOpen, setSheetOpen] = useState(false)
+  const subjectRef = useRef<HTMLInputElement>(null)
+  const messageRef = useRef<HTMLTextAreaElement>(null)
 
   const send = () => {
     const nextErrors = { subject: !subject.trim(), message: !message.trim() }
     setErrors(nextErrors)
-    if (nextErrors.subject || nextErrors.message) return
+    if (nextErrors.subject || nextErrors.message) {
+      // Subject comes first in the form, so it takes focus when both are blank.
+      const first = nextErrors.subject ? subjectRef : messageRef
+      first.current?.focus()
+      return
+    }
     const signed = name.trim() ? `\n\n— ${name.trim()}` : ''
     window.open(
       buildMailto({ to: email, subject: subject.trim(), body: message.trim() + signed }),
       '_self',
     )
-    notify('Mail', 'Draft opened in your email app — nothing has been sent yet.')
+    notify('Mail', 'Handed your draft to your email app — nothing has been sent yet.')
     setSheetOpen(true)
   }
 
@@ -82,13 +89,17 @@ export default function MailApp({ windowId }: AppProps) {
           <input
             id="mail-subject"
             className={FIELD}
+            ref={subjectRef}
             value={subject}
             aria-invalid={errors.subject}
             aria-describedby={errors.subject ? 'mail-subject-error' : undefined}
-            onChange={(e) => setSubject(e.target.value)}
+            onChange={(e) => {
+              setSubject(e.target.value)
+              setErrors((prev) => ({ ...prev, subject: false }))
+            }}
           />
           {errors.subject && (
-            <p id="mail-subject-error" className={ERROR}>
+            <p id="mail-subject-error" role="alert" className={ERROR}>
               Add a subject.
             </p>
           )}
@@ -100,13 +111,17 @@ export default function MailApp({ windowId }: AppProps) {
         <textarea
           id="mail-message"
           className={`${FIELD} min-h-0 flex-1 resize-none`}
+          ref={messageRef}
           value={message}
           aria-invalid={errors.message}
           aria-describedby={errors.message ? 'mail-message-error' : undefined}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={(e) => {
+            setMessage(e.target.value)
+            setErrors((prev) => ({ ...prev, message: false }))
+          }}
         />
         {errors.message && (
-          <p id="mail-message-error" className={ERROR}>
+          <p id="mail-message-error" role="alert" className={ERROR}>
             Write a message.
           </p>
         )}

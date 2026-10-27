@@ -92,7 +92,7 @@ export default function CalendarApp() {
                       <span
                         className={
                           isToday(day)
-                            ? 'grid h-7 w-7 place-items-center mx-auto rounded-full bg-accent-link text-white'
+                            ? 'grid h-7 w-7 place-items-center mx-auto rounded-full bg-accent-strong text-white'
                             : 'text-text-1'
                         }
                       >

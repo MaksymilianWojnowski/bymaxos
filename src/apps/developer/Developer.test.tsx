@@ -3,6 +3,20 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import DeveloperApp from './Developer'
 
+// Lets a test empty the content projects, which the fallback list is built from.
+const content = vi.hoisted(() => ({ projects: null as unknown[] | null }))
+
+vi.mock('../../content', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../content')>()
+  return {
+    ...actual,
+    getContent: (...args: Parameters<typeof actual.getContent>) => {
+      const c = actual.getContent(...args)
+      return content.projects ? { ...c, projects: content.projects } : c
+    },
+  }
+})
+
 const json = (data: unknown, status = 200) =>
   ({ ok: status >= 200 && status < 300, status, json: async () => data }) as unknown as Response
 
@@ -66,6 +80,7 @@ beforeEach(() => {
   window.sessionStorage.clear()
   apiRepos = REPOS
   apiStatus = 200
+  content.projects = null
   fetchMock.mockClear()
   vi.stubGlobal('fetch', fetchMock)
 })
@@ -82,8 +97,8 @@ describe('Developer', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Loading repositories…')
 
     const list = await screen.findByRole('listbox', { name: 'Repositories' })
-    expect(within(list).getByRole('option', { name: 'bymaxos' })).toBeInTheDocument()
-    expect(within(list).getByRole('option', { name: 'dotfiles' })).toBeInTheDocument()
+    expect(within(list).getByRole('option', { name: /^bymaxos/ })).toBeInTheDocument()
+    expect(within(list).getByRole('option', { name: /^dotfiles/ })).toBeInTheDocument()
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
@@ -92,7 +107,7 @@ describe('Developer', () => {
     render(<DeveloperApp />)
     const list = await screen.findByRole('listbox', { name: 'Repositories' })
 
-    await user.click(within(list).getByRole('option', { name: 'bymaxos' }))
+    await user.click(within(list).getByRole('option', { name: /^bymaxos/ }))
 
     expect(await screen.findByText('TypeScript 75%')).toBeInTheDocument()
     expect(screen.getByText('CSS 25%')).toBeInTheDocument()
@@ -109,7 +124,7 @@ describe('Developer', () => {
     render(<DeveloperApp />)
     const list = await screen.findByRole('listbox', { name: 'Repositories' })
 
-    await user.click(within(list).getByRole('option', { name: 'dotfiles' }))
+    await user.click(within(list).getByRole('option', { name: /^dotfiles/ }))
 
     expect(await screen.findByText('Shell 100%')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Open demo ↗' })).not.toBeInTheDocument()
@@ -123,7 +138,7 @@ describe('Developer', () => {
     list.focus()
     await user.keyboard('{ArrowDown}')
 
-    expect(within(list).getByRole('option', { name: 'dotfiles' })).toHaveAttribute('aria-selected', 'true')
+    expect(within(list).getByRole('option', { name: /^dotfiles/ })).toHaveAttribute('aria-selected', 'true')
     expect(list).toHaveAttribute('aria-activedescendant', expect.stringContaining('-1'))
   })
 
@@ -145,7 +160,7 @@ describe('Developer', () => {
     render(<DeveloperApp />)
     const list = await screen.findByRole('listbox', { name: 'Repositories' })
 
-    await user.click(within(list).getByRole('option', { name: 'broken-langs' }))
+    await user.click(within(list).getByRole('option', { name: /^broken-langs/ }))
 
     expect(await screen.findByText('Primary language: Go')).toBeInTheDocument()
     expect(screen.queryByText(/%$/)).not.toBeInTheDocument()
@@ -157,5 +172,41 @@ describe('Developer', () => {
     render(<DeveloperApp />)
 
     expect(await screen.findByText('No public repositories yet.')).toBeInTheDocument()
+  })
+
+  it('says no repositories are saved when the fallback list is empty', async () => {
+    apiStatus = 503
+    content.projects = []
+    render(<DeveloperApp />)
+
+    expect(await screen.findByText('No saved repositories.')).toBeInTheDocument()
+    expect(screen.queryByText('No public repositories yet.')).not.toBeInTheDocument()
+  })
+
+  it('opens a scheme-less homepage over https', async () => {
+    const user = userEvent.setup()
+    const open = vi.spyOn(window, 'open').mockReturnValue(null)
+    apiRepos = [{ ...REPOS[0], homepage: 'bymaxos.example' }]
+    render(<DeveloperApp />)
+
+    await user.click(await screen.findByRole('button', { name: 'Open demo ↗' }))
+
+    expect(open).toHaveBeenCalledWith('https://bymaxos.example', '_blank', 'noopener,noreferrer')
+  })
+
+  it('hides the demo button for a whitespace-only homepage', async () => {
+    apiRepos = [{ ...REPOS[0], homepage: '   ' }]
+    render(<DeveloperApp />)
+
+    expect(await screen.findByRole('button', { name: 'View on GitHub ↗' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Open demo ↗' })).not.toBeInTheDocument()
+  })
+
+  it('keeps the language label dimmed on unselected rows only', async () => {
+    render(<DeveloperApp />)
+    const list = await screen.findByRole('listbox', { name: 'Repositories' })
+
+    expect(within(list).getByText('TypeScript')).not.toHaveClass('opacity-70')
+    expect(within(list).getByText('Shell')).toHaveClass('opacity-70')
   })
 })

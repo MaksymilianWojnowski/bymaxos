@@ -27,7 +27,7 @@ function BannerCard({ banner }: { banner: Banner }) {
         type="button"
         aria-label="Dismiss notification"
         onClick={() => dismiss(banner.id)}
-        className="absolute top-2 right-2 flex h-[20px] w-[20px] items-center justify-center rounded-full text-text-2 hover:bg-black/10 dark:hover:bg-white/15"
+        className="absolute top-2 right-2 flex h-[20px] w-[20px] items-center justify-center rounded-full text-text-2 hover:bg-black/10 focus-visible:ring-2 focus-visible:ring-accent dark:hover:bg-white/15"
       >
         <X aria-hidden="true" className="h-3 w-3" />
       </button>

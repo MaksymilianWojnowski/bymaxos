@@ -11,6 +11,9 @@ const languageCache = new Map<string, Record<string, number>>()
 
 const openExternal = (url: string) => window.open(url, '_blank', 'noopener,noreferrer')
 
+// Homepages are often typed without a scheme ("example.com"); those open over https.
+const withScheme = (url: string) => (/^https?:\/\//i.test(url) ? url : `https://${url}`)
+
 // Requests carry the component's signal so leaving the app cancels them.
 const withSignal =
   (signal: AbortSignal): typeof fetch =>
@@ -96,7 +99,7 @@ export default function DeveloperApp() {
     )
   }
 
-  const homepage = active?.homepage
+  const homepage = active?.homepage?.trim() ?? ''
   const breakdown = bytes ? percentages(bytes) : []
 
   return (
@@ -106,7 +109,9 @@ export default function DeveloperApp() {
           <p className="p-3 text-text-2">GitHub is unreachable — showing a saved list.</p>
         )}
         {repos.length === 0 ? (
-          <p className="p-3 text-text-2">No public repositories yet.</p>
+          <p className="p-3 text-text-2">
+            {loaded.source === 'fallback' ? 'No saved repositories.' : 'No public repositories yet.'}
+          </p>
         ) : (
           <div
             role="listbox"
@@ -124,14 +129,15 @@ export default function DeveloperApp() {
                   id={optionId(i)}
                   role="option"
                   aria-selected={selected}
-                  aria-labelledby={`${optionId(i)}-name`}
                   onClick={() => setPicked(repo.name)}
                   className={`cursor-default rounded-md px-2 py-1 ${selected ? 'bg-accent-strong text-white' : 'hover:bg-black/5'}`}
                 >
-                  <span id={`${optionId(i)}-name`} className="block truncate">
+                  <span className="block truncate">
                     {repo.name}
                   </span>
-                  {repo.language && <span className="block truncate text-[12px] opacity-70">{repo.language}</span>}
+                  {repo.language && (
+                    <span className={`block truncate text-[12px] ${selected ? '' : 'opacity-70'}`}>{repo.language}</span>
+                  )}
                 </div>
               )
             })}
@@ -167,7 +173,7 @@ export default function DeveloperApp() {
               View on GitHub ↗
             </button>
             {homepage && (
-              <button type="button" className={BUTTON} onClick={() => openExternal(homepage)}>
+              <button type="button" className={BUTTON} onClick={() => openExternal(withScheme(homepage))}>
                 Open demo ↗
               </button>
             )}

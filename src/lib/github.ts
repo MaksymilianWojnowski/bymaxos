@@ -99,7 +99,7 @@ export async function loadRepos(
   fetchFn: typeof fetch = fetch,
 ): Promise<{ repos: Repo[]; source: RepoSource }> {
   const cached = safeStorage.get<Cached | null>('session', KEYS.github, null)
-  if (cached && cached.user === user) return { repos: cached.repos, source: 'cache' }
+  if (cached && cached.user === user && Array.isArray(cached.repos)) return { repos: cached.repos, source: 'cache' }
   try {
     const repos = await fetchRepos(user, fetchFn)
     safeStorage.set('session', KEYS.github, { user, repos })

@@ -120,6 +120,17 @@ describe('loadRepos', () => {
     expect(window.sessionStorage.getItem(KEYS.github)).not.toBeNull()
   })
 
+  it('refetches instead of trusting a malformed session cache', async () => {
+    window.sessionStorage.setItem(KEYS.github, JSON.stringify({ user: USER, repos: 'x' }))
+    const fetchFn = vi.fn(async () => response([apiRepo()]))
+
+    const result = await loadRepos(USER, projects, fetchFn as unknown as typeof fetch)
+
+    expect(result.source).toBe('api')
+    expect(result.repos).toEqual([expect.objectContaining({ name: 'bymaxos' })])
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+  })
+
   it('falls back to content projects when the API fails', async () => {
     const fetchFn = vi.fn(async () => response({}, 500))
 

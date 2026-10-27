@@ -169,5 +169,22 @@ test.describe('essential apps axe', () => {
       await scanResumeAndMail(page)
       await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
     })
+
+    test('axe passes with Calendar and a selected Developer repo open in dark mode', async ({ page }) => {
+      await page.route(GITHUB_API, (route) => {
+        if (route.request().url().includes('/languages')) return route.fulfill({ json: { TypeScript: 100 } })
+        return route.fulfill({ path: REPOS_FIXTURE, contentType: 'application/json' })
+      })
+      await unlock(page)
+      await openDock(page, 'Calendar')
+      await openDock(page, 'Developer')
+      const developer = appWindow(page, 'Developer')
+      await developer.getByRole('listbox', { name: 'Repositories' }).getByRole('option', { name: 'bymaxos' }).click()
+      await expect(developer.getByRole('button', { name: 'View on GitHub ↗' })).toBeVisible()
+      await settle(appWindow(page, 'Calendar'))
+      await settle(developer)
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+      expect((await serious(page)).map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([])
+    })
   })
 })

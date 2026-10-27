@@ -79,7 +79,7 @@ body {
     background: #fff;
   }
 
-  #root {
+  body > :not(.print-only) {
     display: none !important;
   }
 

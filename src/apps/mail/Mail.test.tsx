@@ -46,6 +46,33 @@ describe('Mail', () => {
     expect(open).not.toHaveBeenCalled()
   })
 
+  it('announces each error and moves focus to Subject after an empty Send', async () => {
+    render(<MailApp windowId="w1" />)
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }))
+
+    const alerts = screen.getAllByRole('alert')
+    expect(alerts.map((a) => a.textContent)).toEqual(['Add a subject.', 'Write a message.'])
+    expect(screen.getByRole('textbox', { name: 'Subject' })).toHaveFocus()
+  })
+
+  it('moves focus to Message when only the message is blank', async () => {
+    render(<MailApp windowId="w1" />)
+    await userEvent.type(screen.getByRole('textbox', { name: 'Subject' }), 'Hello')
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }))
+
+    expect(screen.getByRole('textbox', { name: 'Message' })).toHaveFocus()
+  })
+
+  it('clears a field error as soon as that field changes', async () => {
+    render(<MailApp windowId="w1" />)
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await userEvent.type(screen.getByRole('textbox', { name: 'Subject' }), 'Hello')
+
+    expect(screen.queryByText('Add a subject.')).not.toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Subject' })).toHaveAttribute('aria-invalid', 'false')
+    expect(screen.getByText('Write a message.')).toBeInTheDocument()
+  })
+
   it('opens the mailto draft in the same tab', async () => {
     render(<MailApp windowId="w1" />)
     await userEvent.type(screen.getByRole('textbox', { name: 'Subject' }), 'Hello')
@@ -70,7 +97,7 @@ describe('Mail', () => {
     expect(useSystem.getState().banners).toEqual([
       expect.objectContaining({
         title: 'Mail',
-        body: 'Draft opened in your email app — nothing has been sent yet.',
+        body: 'Handed your draft to your email app — nothing has been sent yet.',
       }),
     ])
   })

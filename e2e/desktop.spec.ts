@@ -144,6 +144,15 @@ test.describe('desktop', () => {
     await expect(resume).toContainText('Scrum Master')
   })
 
+  test('Space opens Quick Look for a file whose app is not installed', async ({ page }) => {
+    await unlock(page)
+    await openDock(page, 'Finder')
+    await page.getByRole('listbox', { name: 'Desktop items' }).getByRole('option', { name: 'Projects' }).dblclick()
+    await page.getByRole('listbox', { name: 'Projects items' }).getByRole('option', { name: 'LigaPWr Web App (repo).webloc' }).click()
+    await page.keyboard.press('Space')
+    await expect(page.getByRole('dialog', { name: 'LigaPWr Web App (repo).webloc', exact: true })).toBeVisible()
+  })
+
   test('control center dark mode', async ({ page }) => {
     await unlock(page)
     await page.getByRole('button', { name: 'Control Center' }).click()
