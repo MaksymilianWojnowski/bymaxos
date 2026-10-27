@@ -82,6 +82,20 @@ describe('MenuBarMenus', () => {
     expect(title('File')).toHaveFocus()
   })
 
+  it('closes an open menu on Escape even when focus is outside the bar', () => {
+    bar()
+    fireEvent.click(title('File'))
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+
+  it('names items by their label alone and exposes the shortcut as aria-keyshortcuts', () => {
+    bar()
+    fireEvent.click(title('File'))
+    const open = screen.getByRole('menuitem', { name: 'Open' })
+    expect(open).toHaveAttribute('aria-keyshortcuts', '⌘O')
+  })
+
   it('closes on pointerdown outside the menu bar', () => {
     bar()
     fireEvent.click(title('File'))
@@ -128,6 +142,23 @@ describe('ContextMenu', () => {
 })
 
 describe('Popover', () => {
+  it('ignores pointerdown on its anchor so the toggle button does not close it', () => {
+    const onClose = vi.fn()
+    const anchor = { top: 0, bottom: 24, left: 40, right: 80, width: 40, height: 24 } as DOMRect
+    const button = document.createElement('button')
+    document.body.appendChild(button)
+    render(
+      <Popover anchor={anchor} label="Status" onClose={onClose} anchorEl={button}>
+        <p>body</p>
+      </Popover>,
+    )
+    fireEvent.pointerDown(button)
+    expect(onClose).not.toHaveBeenCalled()
+    fireEvent.pointerDown(document.body)
+    expect(onClose).toHaveBeenCalledTimes(1)
+    button.remove()
+  })
+
   it('is a labelled dialog that closes on Escape', () => {
     const onClose = vi.fn()
     const anchor = { top: 0, bottom: 24, left: 40, right: 80, width: 40, height: 24 } as DOMRect

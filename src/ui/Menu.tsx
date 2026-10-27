@@ -69,6 +69,7 @@ function MenuRow({ item, onClose }: { item: Item; onClose: () => void }) {
       role={checkable ? 'menuitemcheckbox' : 'menuitem'}
       aria-checked={checkable ? item.checked : undefined}
       aria-disabled={enabled ? undefined : 'true'}
+      aria-keyshortcuts={item.shortcut}
       tabIndex={-1}
       onClick={() => {
         if (!enabled) return
@@ -89,7 +90,9 @@ function MenuRow({ item, onClose }: { item: Item; onClose: () => void }) {
       </span>
       <span className="flex-1 whitespace-nowrap">{item.label}</span>
       {item.shortcut && (
-        <span className="ml-6 text-text-2 group-focus:text-white">{item.shortcut}</span>
+        <span aria-hidden="true" className="ml-6 text-text-2 group-focus:text-white">
+          {item.shortcut}
+        </span>
       )}
     </div>
   )
@@ -114,6 +117,16 @@ export function MenuBarMenus({ menus, leading }: MenuBarMenusProps) {
     }
     document.addEventListener('pointerdown', onDown)
     return () => document.removeEventListener('pointerdown', onDown)
+  }, [openMenuId, setOpenMenu])
+
+  // Safari does not focus a clicked button, so Escape may arrive with focus outside the bar.
+  useEffect(() => {
+    if (openMenuId === null) return
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenMenu(null)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
   }, [openMenuId, setOpenMenu])
 
   const closeTo = (id: string) => {

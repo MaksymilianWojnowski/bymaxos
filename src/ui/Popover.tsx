@@ -6,9 +6,11 @@ interface Props {
   onClose: () => void
   children: ReactNode
   label: string
+  // The toggle button: a press on it must not close the popover before the button's own click reopens it.
+  anchorEl?: HTMLElement | null
 }
 
-export function Popover({ anchor, onClose, children, label }: Props) {
+export function Popover({ anchor, onClose, children, label, anchorEl }: Props) {
   const ref = useRef<HTMLDivElement>(null)
 
   useLayoutEffect(() => {
@@ -20,7 +22,9 @@ export function Popover({ anchor, onClose, children, label }: Props) {
 
   useEffect(() => {
     const onDown = (e: Event) => {
-      if (!ref.current?.contains(e.target as Node)) onClose()
+      const target = e.target as Node
+      if (ref.current?.contains(target) || anchorEl?.contains(target)) return
+      onClose()
     }
     const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -31,7 +35,7 @@ export function Popover({ anchor, onClose, children, label }: Props) {
       document.removeEventListener('pointerdown', onDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [onClose])
+  }, [onClose, anchorEl])
 
   return createPortal(
     <div

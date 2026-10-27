@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react'
+import type { ComponentType, ReactNode } from 'react'
 import type { Command } from '../system/commands'
 import type { AppId, Size, WindowState } from '../system/types'
 
@@ -13,7 +13,7 @@ export type MenuItemDef =
 
 export interface MenuDef {
   id: string
-  label: string
+  label: ReactNode
   items: MenuItemDef[]
 }
 

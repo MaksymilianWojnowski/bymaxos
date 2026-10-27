@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
-import { installSystemCommands } from '../../system/commands'
+import { dispatch, installSystemCommands } from '../../system/commands'
+import { isTextField, matchShortcut } from '../../system/shortcuts'
 import { parseDeepLink } from '../../system/shell'
 import { useSystem } from '../../system/store'
 import { LoginScreen } from './LoginScreen'
+import { MenuBar } from './MenuBar'
 import { Wallpaper } from './Wallpaper'
 import { WindowLayer } from './WindowLayer'
 
@@ -14,8 +16,22 @@ export function DesktopShell() {
   const setViewport = useSystem((s) => s.setViewport)
   const openApp = useSystem((s) => s.openApp)
   const unlock = useSystem((s) => s.unlock)
+  const keyboardLocked = useSystem((s) => s.keyboardLocked)
 
   useEffect(() => installSystemCommands(), [])
+
+  useEffect(() => {
+    if (locked) return
+    const onKey = (e: KeyboardEvent) => {
+      const cmd = matchShortcut(e, {
+        inTextField: isTextField(document.activeElement),
+        keyboardLocked,
+      })
+      if (cmd && dispatch(cmd)) e.preventDefault()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [locked, keyboardLocked])
 
   useEffect(() => {
     // The viewport may have changed while the mobile shell was mounted.
@@ -38,6 +54,7 @@ export function DesktopShell() {
     <div data-testid="desktop" className="relative h-full w-full">
       <Wallpaper />
       <WindowLayer />
+      <MenuBar />
     </div>
   )
 }

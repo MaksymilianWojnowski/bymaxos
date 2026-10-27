@@ -1,6 +1,9 @@
 @import 'tailwindcss';
 @import './tokens.css';
 
+/* dark: follows the app theme set on <html>, not the OS colour scheme. */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 html.reduce-motion *,
 html.reduce-motion *::before,
 html.reduce-motion *::after {
