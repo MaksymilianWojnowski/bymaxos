@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { resetSystem, useSystem } from '../system/store'
 import type { WindowState } from '../system/types'
-import { APPS, defaultMenus, dockItems, getApp } from './registry'
+import { APPS, defaultMenus, dockItems, getApp, launchpadApps } from './registry'
 
 const win = (id: string, title: string): WindowState => ({
   id,
@@ -21,7 +21,14 @@ beforeEach(() => {
 
 describe('registry', () => {
   it('lists dock items by group then order', () => {
-    expect(dockItems().map((a) => a.id)).toEqual(['finder', 'resume', 'mail', 'contacts', 'calendar', 'developer', 'linkedin', 'github', 'trash'])
+    expect(dockItems().map((a) => a.id)).toEqual(['launchpad', 'finder', 'resume', 'mail', 'contacts', 'calendar', 'developer', 'linkedin', 'github', 'trash'])
+  })
+
+  it('lists launchable apps for Launchpad sorted by name, leaving out hidden, file-only and overlay apps', () => {
+    const names = launchpadApps().map((a) => a.name)
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'en')))
+    expect(names).toEqual(expect.arrayContaining(['Mail', 'LinkedIn', 'Finder']))
+    expect(names).not.toEqual(expect.arrayContaining(['TextEdit', 'Quick Look', 'Launchpad', 'About This Mac', 'Trash']))
   })
 
   it('gives every loadable app a window spec and every external link https', () => {

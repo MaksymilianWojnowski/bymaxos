@@ -41,6 +41,9 @@ function activate(app: AppDefinition): void {
     case 'open':
       store.openApp(app.id)
       break
+    case 'overlay':
+      store.setOverlay(store.overlay === action.overlay ? null : action.overlay)
+      break
   }
 }
 
@@ -105,7 +108,7 @@ export function Dock() {
   const onContextMenu = (e: MouseEvent, app: AppDefinition) => {
     const items: MenuItemDef[] = app.external
       ? [{ label: 'Open', command: { type: 'dock.openLink', appId: app.id } }]
-      : app.alias
+      : app.alias || app.overlay
         ? [{ label: 'Open', command: { type: 'dock.activate', appId: app.id } }]
         : [
             { label: 'Open', command: { type: 'app.open', appId: app.id } },

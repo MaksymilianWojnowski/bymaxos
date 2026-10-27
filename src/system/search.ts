@@ -36,7 +36,7 @@ export function buildIndex(content: Content, apps: AppDefinition[]): SearchItem[
 
   // Apps that need a file to show (deepLink: false) are left out; the rest open through the Dock's dock.activate.
   for (const app of apps) {
-    if (!((app.load && app.deepLink !== false) || app.external || app.alias)) continue
+    if (!((app.load && app.deepLink !== false) || app.external || app.alias || app.overlay)) continue
     items.push({
       id: `app:${app.id}`,
       title: app.name,

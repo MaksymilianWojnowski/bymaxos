@@ -1,4 +1,5 @@
 import type { AppDefinition } from '../../apps/types'
+import type { Overlay } from '../../system/store'
 import type { AppId, WindowState, WMState } from '../../system/types'
 import { topWindowOfApp } from '../../system/wm'
 
@@ -8,6 +9,7 @@ export type DockAction =
   | { type: 'restore'; id: string }
   | { type: 'external'; url: string }
   | { type: 'alias'; appId: AppId; props?: Record<string, unknown> }
+  | { type: 'overlay'; overlay: Exclude<Overlay, null> }
 
 // Every key of `props` must equal the window's prop; a window without props matches only an empty spec.
 const matchesProps = (w: WindowState, props?: Record<string, unknown>): boolean =>
@@ -30,6 +32,7 @@ function aliasAction(wm: WMState, alias: { appId: AppId; props?: Record<string, 
 }
 
 export function dockClickAction(wm: WMState, app: AppDefinition): DockAction {
+  if (app.overlay) return { type: 'overlay', overlay: app.overlay }
   if (app.external) return { type: 'external', url: app.external }
   if (app.alias) return aliasAction(wm, app.alias)
   const visible = topWindowOfApp(wm, app.id)

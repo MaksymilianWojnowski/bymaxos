@@ -46,9 +46,10 @@ export function Spotlight() {
     }
   }, [])
 
+  // Close first: a result can open an overlay itself (Launchpad), which must survive.
   const run = (item: SearchItem) => {
-    dispatch(item.command)
     setOverlay(null)
+    dispatch(item.command)
   }
 
   const onChange = (value: string) => {

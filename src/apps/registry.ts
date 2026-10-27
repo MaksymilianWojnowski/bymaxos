@@ -1,6 +1,7 @@
 import calendarIcon from '../assets/icons/calendar.png'
 import contactsIcon from '../assets/icons/contacts.png'
 import finderIcon from '../assets/icons/finder.png'
+import launchpadIcon from '../assets/icons/launchpad.png'
 import mailIcon from '../assets/icons/mail.png'
 import previewIcon from '../assets/icons/preview.png'
 import systemInfoIcon from '../assets/icons/system-information.png'
@@ -38,6 +39,14 @@ const linkApp = (id: string, icon: AppDefinition['icon'], order: number): AppDef
 }
 
 const APP_LIST: (AppDefinition | null)[] = [
+  {
+    id: 'launchpad',
+    name: 'Launchpad',
+    icon: { image: launchpadIcon },
+    overlay: 'launchpad',
+    launchpad: false,
+    dock: { order: 0, group: 'system' },
+  },
   {
     id: 'finder',
     name: 'Finder',
@@ -161,6 +170,7 @@ const APP_LIST: (AppDefinition | null)[] = [
     name: 'About This Mac',
     icon: { image: systemInfoIcon },
     load: () => import('./about/AboutThisMac'),
+    launchpad: false,
     window: {
       defaultSize: { w: 340, h: 420 },
       minSize: { w: 340, h: 420 },
@@ -191,6 +201,7 @@ const APP_LIST: (AppDefinition | null)[] = [
     name: 'Trash',
     icon: { image: trashIcon },
     alias: { appId: 'finder', props: { folderId: 'trash' } },
+    launchpad: false,
     dock: { order: 1, group: 'trash' },
   },
 ]
@@ -199,6 +210,13 @@ export const APPS: AppDefinition[] = APP_LIST.filter((a): a is AppDefinition => 
 
 export function getApp(id: AppId): AppDefinition | undefined {
   return APPS.find((a) => a.id === id)
+}
+
+// Apps that open on their own (a window, a link or an alias), sorted by name for Launchpad.
+export function launchpadApps(): AppDefinition[] {
+  return APPS.filter(
+    (a) => ((a.load && a.deepLink !== false) || a.external || a.alias) && a.launchpad !== false,
+  ).sort((a, b) => a.name.localeCompare(b.name, 'en'))
 }
 
 type Docked = AppDefinition & { dock: NonNullable<AppDefinition['dock']> }

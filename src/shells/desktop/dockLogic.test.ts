@@ -47,6 +47,10 @@ describe('dockClickAction', () => {
     expect(dockClickAction(emptyWM, getApp('linkedin')!)).toEqual({ type: 'external', url })
   })
 
+  it('an overlay app opens its overlay', () => {
+    expect(dockClickAction(emptyWM, getApp('launchpad')!)).toEqual({ type: 'overlay', overlay: 'launchpad' })
+  })
+
   it('resolves the trash alias to its target app and props', () => {
     expect(dockClickAction(emptyWM, getApp('trash')!)).toEqual({
       type: 'alias',

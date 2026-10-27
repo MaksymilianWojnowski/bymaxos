@@ -27,6 +27,7 @@ describe('Dock', () => {
     render(<Dock />)
     const labels = screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))
     expect(labels).toEqual([
+      'Launchpad',
       'Finder',
       'Resume',
       'Mail',
@@ -115,6 +116,16 @@ describe('Dock', () => {
     expect(useSystem.getState().wm.windows).toHaveLength(1)
     fireEvent.click(screen.getByRole('button', { name: 'Trash' }))
     expect(useSystem.getState().wm.windows).toHaveLength(1)
+  })
+
+  it('opens Launchpad on click and closes it on a second click', () => {
+    render(<Dock />)
+    const launchpad = screen.getByRole('button', { name: 'Launchpad' })
+    fireEvent.click(launchpad)
+    expect(useSystem.getState().overlay).toBe('launchpad')
+    fireEvent.click(launchpad)
+    expect(useSystem.getState().overlay).toBeNull()
+    expect(useSystem.getState().wm.windows).toHaveLength(0)
   })
 
   it('opens external links in a new tab without opener access', () => {

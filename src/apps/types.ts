@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from 'react'
 import type { Command } from '../system/commands'
+import type { Overlay } from '../system/store'
 import type { AppId, Size, WindowState } from '../system/types'
 
 export interface AppProps {
@@ -54,4 +55,8 @@ export interface AppDefinition {
   mobile?: { presentation: 'fullscreen' | 'sheet' | 'external' | 'hidden' }
   // Apps that need props (a file to show) cannot be opened from a bare link.
   deepLink?: false
+  // An overlay app opens a system overlay (Launchpad) instead of a window.
+  overlay?: Exclude<Overlay, null>
+  // Hides the app from Launchpad.
+  launchpad?: false
 }

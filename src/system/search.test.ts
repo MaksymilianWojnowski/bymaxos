@@ -25,6 +25,14 @@ describe('buildIndex', () => {
     expect(index.some((i) => i.appId === 'textedit')).toBe(false)
   })
 
+  it('indexes Launchpad so it is searchable and opens via dock.activate', () => {
+    expect(find('Launchpad')).toMatchObject({
+      kind: 'app',
+      appId: 'launchpad',
+      command: { type: 'dock.activate', appId: 'launchpad' },
+    })
+  })
+
   it('indexes about documents, projects, experience, skills and folders with their open commands', () => {
     expect(find('Hello.md')).toMatchObject({
       kind: 'document',

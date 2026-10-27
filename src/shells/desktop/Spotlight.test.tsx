@@ -70,6 +70,13 @@ describe('Spotlight', () => {
     expect(useSystem.getState().overlay).toBeNull()
   })
 
+  it('opens Launchpad from a result and leaves it open', () => {
+    useSystem.setState({ overlay: 'spotlight' })
+    fireEvent.change(search(), { target: { value: 'launchpad' } })
+    fireEvent.click(screen.getByRole('option', { name: 'Launchpad' }))
+    expect(useSystem.getState().overlay).toBe('launchpad')
+  })
+
   it('shows No Results for a query with no match', () => {
     fireEvent.change(search(), { target: { value: 'zzqxnomatch' } })
     expect(screen.getByText('No Results')).toBeInTheDocument()
