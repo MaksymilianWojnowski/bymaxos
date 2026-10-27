@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useReducer, useRef, type KeyboardEvent, type MouseEvent } from 'react'
+import { Fragment, useEffect, useId, useReducer, useRef, type KeyboardEvent, type MouseEvent } from 'react'
 import {
   Briefcase,
   ChevronLeft,
@@ -63,14 +63,15 @@ const KIND: Record<FileType, string> = {
 const iconOf = (node: VNode): LucideIcon => (node.kind === 'folder' ? Folder : FILE_ICON[node.fileType])
 const kindOf = (node: VNode): string => (node.kind === 'folder' ? 'Folder' : KIND[node.fileType])
 
-const CELL_WIDTH = 96
-
 export default function FinderApp({ windowId, props }: AppProps) {
   const start = nodeById(props?.folderId)?.kind === 'folder' ? (props?.folderId as string) : 'desktop'
   const [state, send] = useReducer(finderReducer, start, initFinder)
   const setTitle = useSystem((s) => s.setTitle)
   const menu = useContextMenu()
+  // The icons grid is measured for its column count; it is the only element whose layout matters here.
   const gridRef = useRef<HTMLDivElement>(null)
+  const uid = useId()
+  const optionId = (id: string) => `${uid}-${id}`
 
   const currentId = state.history[state.index]
   const current = nodeById(currentId)
@@ -78,6 +79,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
   const children = current?.kind === 'folder' ? current.children : []
   const placeholder = current?.kind === 'folder' ? current.placeholder : undefined
   const selectedNode = nodeById(state.selected)
+  const activeId = state.selected === null ? undefined : optionId(state.selected)
   const canBack = state.index > 0
   const canForward = state.index < state.history.length - 1
 
@@ -119,13 +121,14 @@ export default function FinderApp({ windowId, props }: AppProps) {
   if (canForward) handlers['finder.forward'] = () => send({ type: 'forward' })
   useWindowCommands(windowId, handlers)
 
-  // Icons view: row-major grid, one column when the width is unknown (jsdom) or the list view is shown.
+  // Columns are the tracks the browser laid out for the icons grid; the list view and an unlaid-out grid count as one.
   const columns = (): number => {
-    const width = gridRef.current?.clientWidth ?? 0
-    return state.view === 'list' || width === 0 ? 1 : Math.max(1, Math.floor(width / CELL_WIDTH))
+    if (state.view === 'list' || !gridRef.current) return 1
+    const tracks = getComputedStyle(gridRef.current).gridTemplateColumns.split(' ').filter(Boolean).length
+    return Math.max(1, tracks)
   }
 
-  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+  const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
     const steps: Partial<Record<string, number>> = {
       ArrowLeft: -1,
       ArrowRight: 1,
@@ -161,6 +164,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
   }
 
   const itemProps = (node: VNode) => ({
+    id: optionId(node.id),
     onClick: () => send({ type: 'select', id: node.id }),
     onDoubleClick: () => openNode(node.id),
     onContextMenu: (e: MouseEvent) => onItemContextMenu(e, node),
@@ -226,18 +230,19 @@ export default function FinderApp({ windowId, props }: AppProps) {
           </div>
         </div>
 
-        <div
-          ref={gridRef}
-          tabIndex={0}
-          role={state.view === 'icons' ? 'listbox' : undefined}
-          aria-label={`${folderName} items`}
-          onKeyDown={onKeyDown}
-          className="min-h-0 flex-1 overflow-auto p-4 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
-        >
+        <div className="min-h-0 flex-1 overflow-auto p-4">
           {children.length === 0 ? (
             placeholder && <p className="text-[13px] text-text-2">{placeholder}</p>
           ) : state.view === 'icons' ? (
-            <div className="grid grid-cols-[repeat(auto-fill,96px)] gap-2">
+            <div
+              ref={gridRef}
+              role="listbox"
+              tabIndex={0}
+              aria-label={`${folderName} items`}
+              aria-activedescendant={activeId}
+              onKeyDown={onKeyDown}
+              className="grid grid-cols-[repeat(auto-fill,96px)] gap-2 outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
               {children.map((id) => {
                 const node = vfs.nodes[id]
                 const Icon = iconOf(node)
@@ -261,7 +266,14 @@ export default function FinderApp({ windowId, props }: AppProps) {
               })}
             </div>
           ) : (
-            <table className="w-full border-collapse text-left text-[13px]">
+            <table
+              role="grid"
+              tabIndex={0}
+              aria-label={`${folderName} items`}
+              aria-activedescendant={activeId}
+              onKeyDown={onKeyDown}
+              className="w-full border-collapse text-left text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
               <thead>
                 <tr className="border-b border-black/10 text-text-2">
                   <th scope="col" className="px-2 py-1 font-medium">Name</th>
@@ -276,17 +288,18 @@ export default function FinderApp({ windowId, props }: AppProps) {
                   return (
                     <tr
                       key={id}
+                      role="row"
                       aria-selected={selected}
                       {...itemProps(node)}
                       className={`cursor-default ${selected ? 'bg-accent text-white' : 'hover:bg-black/5'}`}
                     >
-                      <td className="px-2 py-1">
+                      <td role="gridcell" className="px-2 py-1">
                         <span className="flex items-center gap-2">
                           <Icon aria-hidden className="h-4 w-4 shrink-0" />
                           {node.name}
                         </span>
                       </td>
-                      <td className="px-2 py-1 opacity-70">{kindOf(node)}</td>
+                      <td role="gridcell" className="px-2 py-1 opacity-70">{kindOf(node)}</td>
                     </tr>
                   )
                 })}

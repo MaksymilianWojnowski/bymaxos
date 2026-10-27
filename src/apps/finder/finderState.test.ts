@@ -18,6 +18,13 @@ describe('finder history', () => {
     expect(forward(next)).toBe(next)
   })
 
+  it('returns the same state when navigating to the current folder', () => {
+    const s = initFinder()
+    expect(navigate(s, 'desktop')).toBe(s)
+    const deeper = navigate(s, 'projects')
+    expect(navigate(deeper, 'projects')).toBe(deeper)
+  })
+
   it('treats back at the first folder as a no-op', () => {
     const s = initFinder()
     expect(back(s)).toBe(s)

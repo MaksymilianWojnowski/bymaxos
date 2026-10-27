@@ -15,8 +15,9 @@ export function initFinder(folderId = 'desktop'): FinderState {
   return { history: [folderId], index: 0, view: 'icons', selected: null }
 }
 
-// Navigating drops any forward history, as in a browser.
+// Navigating drops any forward history, as in a browser; re-entering the current folder changes nothing.
 export function navigate(s: FinderState, folderId: string): FinderState {
+  if (s.history[s.index] === folderId) return s
   return {
     ...s,
     history: [...s.history.slice(0, s.index + 1), folderId],
