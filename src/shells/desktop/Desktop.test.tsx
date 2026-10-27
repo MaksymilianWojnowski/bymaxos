@@ -1,16 +1,30 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { DesktopShell } from './DesktopShell'
 import { KEYS } from '../../system/storage'
 import { resetSystem, useSystem } from '../../system/store'
+
+// jsdom has no pointer capture; the drag logic only needs the call to be safe. The stub is removed after this file.
+const captureDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'setPointerCapture')
+
+beforeAll(() => {
+  Object.defineProperty(Element.prototype, 'setPointerCapture', {
+    value: vi.fn(),
+    configurable: true,
+    writable: true,
+  })
+})
+
+afterAll(() => {
+  if (captureDescriptor) Object.defineProperty(Element.prototype, 'setPointerCapture', captureDescriptor)
+  else Reflect.deleteProperty(Element.prototype, 'setPointerCapture')
+})
 
 beforeEach(() => {
   window.localStorage.clear()
   window.sessionStorage.clear()
   resetSystem()
   useSystem.setState({ locked: false })
-  // jsdom has no pointer capture; the drag logic only needs the call to be safe.
-  Element.prototype.setPointerCapture = vi.fn()
 })
 
 afterEach(() => {
@@ -28,6 +42,32 @@ describe('Desktop', () => {
       .getAllByRole('option')
       .map((option) => option.textContent)
     expect(names).toEqual(['Resume.pdf', 'About Me', 'Projects', 'Contact.vcf'])
+  })
+
+  it('selects an item on a single click', () => {
+    render(<DesktopShell />)
+    const option = within(desktop()).getByRole('option', { name: 'About Me' })
+    fireEvent.click(option)
+    expect(option).toHaveAttribute('aria-selected', 'true')
+    expect(desktop()).toHaveAttribute('aria-activedescendant', option.id)
+  })
+
+  it('moves the selection with ArrowDown and ArrowUp within the column', () => {
+    render(<DesktopShell />)
+    const list = desktop()
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(within(list).getByRole('option', { name: 'Resume.pdf' })).toHaveAttribute('aria-selected', 'true')
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(within(list).getByRole('option', { name: 'About Me' })).toHaveAttribute('aria-selected', 'true')
+    fireEvent.keyDown(list, { key: 'ArrowUp' })
+    expect(within(list).getByRole('option', { name: 'Resume.pdf' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('opens the selected folder in a Finder window on Enter', async () => {
+    render(<DesktopShell />)
+    fireEvent.click(within(desktop()).getByRole('option', { name: 'Projects' }))
+    fireEvent.keyDown(desktop(), { key: 'Enter' })
+    expect(await screen.findByRole('dialog', { name: 'Projects' })).toBeInTheDocument()
   })
 
   it('opens a Finder window at the folder on double-click', async () => {

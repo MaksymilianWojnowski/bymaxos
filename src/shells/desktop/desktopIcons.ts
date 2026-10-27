@@ -84,15 +84,36 @@ const isCell = (value: unknown): value is Cell =>
   Number.isInteger((value as Cell).row) &&
   (value as Cell).row >= 0
 
-// Unknown ids are dropped and missing ones fall back to the default stack, so stale storage cannot hide icons.
-export function loadIconPositions(ids: string[]): Record<string, Cell> {
-  const positions = defaultPositions(ids)
+// Unknown ids are dropped. Stored cells are clamped to the area and kept in id order unless an earlier id
+// already holds them; missing or colliding ids go to their default cell, moved to the nearest free one.
+export function loadIconPositions(ids: string[], area: Rect): Record<string, Cell> {
   const stored = safeStorage.get<unknown>('local', KEYS.icons, null)
-  if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) return positions
-  const saved = stored as Record<string, unknown>
+  const saved: Record<string, unknown> =
+    typeof stored === 'object' && stored !== null && !Array.isArray(stored)
+      ? (stored as Record<string, unknown>)
+      : {}
+  const defaults = defaultPositions(ids)
+  const key = (c: Cell) => `${c.col}:${c.row}`
+  const taken = new Set<string>()
+  let positions: Record<string, Cell> = {}
+  const pending: string[] = []
   for (const id of ids) {
     const cell = saved[id]
-    if (isCell(cell)) positions[id] = { col: cell.col, row: cell.row }
+    if (isCell(cell)) {
+      const clamped = clampCell(cell, area)
+      if (!taken.has(key(clamped))) {
+        positions[id] = clamped
+        taken.add(key(clamped))
+        continue
+      }
+    }
+    pending.push(id)
+  }
+  for (const id of pending) {
+    const target = clampCell(defaults[id], area)
+    const next = placeIcon(positions, id, target, area)
+    // A full grid leaves placeIcon without a spot; the icon then shares its default cell rather than vanishing.
+    positions = Object.hasOwn(next, id) ? next : { ...next, [id]: target }
   }
   return positions
 }

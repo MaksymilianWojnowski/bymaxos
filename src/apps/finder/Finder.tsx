@@ -3,14 +3,10 @@ import {
   Briefcase,
   ChevronLeft,
   ChevronRight,
-  Contact,
-  FileText,
-  FileType as FileTypeIcon,
   Files,
   Folder,
   Heart,
   Image as ImageIcon,
-  Link,
   Monitor,
   Trash2,
   User,
@@ -19,6 +15,7 @@ import {
 import { dispatch, useWindowCommands, type HandlerRecord } from '../../system/commands'
 import { useSystem } from '../../system/store'
 import { pathTo, type FileType, type VNode } from '../../system/vfs'
+import { iconFor } from '../../ui/fileIcon'
 import { useContextMenu } from '../../ui/useContextMenu'
 import type { AppProps, MenuItemDef } from '../types'
 import { finderReducer, initFinder, openTarget, quickLookTarget } from './finderState'
@@ -46,13 +43,6 @@ const SIDEBAR: { label: string; items: { id: string; icon: LucideIcon }[] }[] = 
   { label: 'Locations', items: [{ id: 'trash', icon: Trash2 }] },
 ]
 
-const FILE_ICON: Record<FileType, LucideIcon> = {
-  md: FileText,
-  pdf: FileTypeIcon,
-  vcf: Contact,
-  webloc: Link,
-}
-
 const KIND: Record<FileType, string> = {
   md: 'Markdown Document',
   pdf: 'PDF Document',
@@ -60,7 +50,6 @@ const KIND: Record<FileType, string> = {
   webloc: 'Web Location',
 }
 
-const iconOf = (node: VNode): LucideIcon => (node.kind === 'folder' ? Folder : FILE_ICON[node.fileType])
 const kindOf = (node: VNode): string => (node.kind === 'folder' ? 'Folder' : KIND[node.fileType])
 
 export default function FinderApp({ windowId, props }: AppProps) {
@@ -245,7 +234,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
             >
               {children.map((id) => {
                 const node = vfs.nodes[id]
-                const Icon = iconOf(node)
+                const Icon = iconFor(node)
                 const selected = id === state.selected
                 return (
                   <div
@@ -283,7 +272,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
               <tbody>
                 {children.map((id) => {
                   const node = vfs.nodes[id]
-                  const Icon = iconOf(node)
+                  const Icon = iconFor(node)
                   const selected = id === state.selected
                   return (
                     <tr

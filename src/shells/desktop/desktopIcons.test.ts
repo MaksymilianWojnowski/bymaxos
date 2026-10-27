@@ -34,14 +34,31 @@ describe('desktop icon grid', () => {
 
   it('keeps stored positions for known ids and drops unknown ones', () => {
     safeStorage.set('local', KEYS.icons, { a: { col: 2, row: 1 }, ghost: { col: 0, row: 0 } })
-    expect(loadIconPositions(['a'])).toEqual({ a: { col: 2, row: 1 } })
+    expect(loadIconPositions(['a'], area)).toEqual({ a: { col: 2, row: 1 } })
   })
 
   it('falls back to defaults when stored data is garbage', () => {
     window.localStorage.setItem(KEYS.icons, '[1,2]')
-    expect(loadIconPositions(['a', 'b'])).toEqual(defaultPositions(['a', 'b']))
+    expect(loadIconPositions(['a', 'b'], area)).toEqual(defaultPositions(['a', 'b']))
     window.localStorage.setItem(KEYS.icons, '{not json')
-    expect(loadIconPositions(['a', 'b'])).toEqual(defaultPositions(['a', 'b']))
+    expect(loadIconPositions(['a', 'b'], area)).toEqual(defaultPositions(['a', 'b']))
+  })
+
+  it('moves a missing id off a cell that a stored id holds', () => {
+    // b is stored on the default cell of a, so a must not stack on it.
+    safeStorage.set('local', KEYS.icons, { b: { col: 0, row: 0 } })
+    expect(loadIconPositions(['a', 'b'], area)).toEqual({
+      a: { col: 0, row: 1 },
+      b: { col: 0, row: 0 },
+    })
+  })
+
+  it('keeps the first of two ids stored on one cell and moves the other', () => {
+    safeStorage.set('local', KEYS.icons, { a: { col: 0, row: 2 }, b: { col: 0, row: 2 } })
+    expect(loadIconPositions(['a', 'b'], area)).toEqual({
+      a: { col: 0, row: 2 },
+      b: { col: 0, row: 1 },
+    })
   })
 })
 

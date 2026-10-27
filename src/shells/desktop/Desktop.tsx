@@ -15,6 +15,7 @@ import { getWorkArea } from '../../system/layout'
 import { KEYS, safeStorage } from '../../system/storage'
 import { useSystem } from '../../system/store'
 import type { VNode } from '../../system/vfs'
+import { iconFor } from '../../ui/fileIcon'
 import { useContextMenu } from '../../ui/useContextMenu'
 import {
   CELL,
@@ -27,7 +28,6 @@ import {
   stepInColumn,
   type Cell,
 } from './desktopIcons'
-import { iconFor } from './fileIcon'
 
 const DRAG_THRESHOLD = 4
 const DESKTOP_IDS = vfs.desktop
@@ -62,7 +62,7 @@ export function Desktop() {
   const select = useSystem((s) => s.selectDesktopIcon)
   const blurWindows = useSystem((s) => s.blurWindows)
   const area = getWorkArea(viewport.w, viewport.h)
-  const [positions, setPositions] = useState(() => loadIconPositions(DESKTOP_IDS))
+  const [positions, setPositions] = useState(() => loadIconPositions(DESKTOP_IDS, area))
   const [drag, setDrag] = useState<{ id: string; dx: number; dy: number } | null>(null)
   const gesture = useRef<Gesture | null>(null)
   // A drag ends in a click on the icon; that click must neither select nor open.
