@@ -137,3 +137,67 @@ describe('blurWindows', () => {
     expect(activeAppId(wm)).toBe('finder')
   })
 })
+
+describe('app switcher', () => {
+  beforeEach(() => {
+    setAppResolver((id) => ({ ...spec, appId: id, title: id }))
+  })
+
+  const openAll = (...ids: string[]) => ids.forEach((id) => useSystem.getState().openApp(id))
+  const idOf = (appId: string) => useSystem.getState().wm.windows.find((w) => w.appId === appId)?.id
+
+  it('first switcherStep(1) opens the switcher on the second most recent app', () => {
+    openAll('finder', 'notes')
+    useSystem.getState().switcherStep(1)
+    const s = useSystem.getState()
+    expect(s.overlay).toBe('appSwitcher')
+    expect(s.switcher).toEqual({ appIds: ['notes', 'finder'], index: 1 })
+  })
+
+  it('with one running app the switcher opens on index 0', () => {
+    openAll('finder')
+    useSystem.getState().switcherStep(1)
+    expect(useSystem.getState().switcher).toEqual({ appIds: ['finder'], index: 0 })
+  })
+
+  it('switcherStep(-1) first opens on the last app', () => {
+    openAll('finder', 'notes', 'mail')
+    useSystem.getState().switcherStep(-1)
+    expect(useSystem.getState().switcher).toEqual({ appIds: ['mail', 'notes', 'finder'], index: 2 })
+  })
+
+  it('further steps wrap', () => {
+    openAll('finder', 'notes', 'mail')
+    const { switcherStep } = useSystem.getState()
+    switcherStep(1)
+    switcherStep(1)
+    switcherStep(1)
+    expect(useSystem.getState().switcher?.index).toBe(0)
+    switcherStep(-1)
+    expect(useSystem.getState().switcher?.index).toBe(2)
+  })
+
+  it("switcherCommit focuses the chosen app's top visible window, or restores its top minimized window, and closes the switcher", () => {
+    openAll('finder', 'notes')
+    useSystem.getState().minimize(idOf('notes') as string)
+    // Focused app leads: [finder, notes]; the first step lands on the minimized Notes.
+    useSystem.getState().switcherStep(1)
+    expect(useSystem.getState().switcher?.appIds).toEqual(['finder', 'notes'])
+    useSystem.getState().switcherCommit()
+    expect(useSystem.getState().wm.focusedId).toBe(idOf('notes'))
+    expect(useSystem.getState().wm.windows.find((w) => w.appId === 'notes')?.mode).toBe('normal')
+    expect(useSystem.getState().switcher).toBeNull()
+    expect(useSystem.getState().overlay).toBeNull()
+
+    useSystem.getState().switcherStep(1)
+    useSystem.getState().switcherCommit()
+    expect(useSystem.getState().wm.focusedId).toBe(idOf('finder'))
+  })
+
+  it('setOverlay clears the app switcher', () => {
+    openAll('finder', 'notes')
+    useSystem.getState().switcherStep(1)
+    useSystem.getState().setOverlay('spotlight')
+    expect(useSystem.getState().switcher).toBeNull()
+  })
+})

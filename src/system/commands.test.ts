@@ -111,8 +111,16 @@ describe('installSystemCommands', () => {
   it('enables overlay.open only for available overlays', () => {
     const dispose = installSystemCommands()
     expect(canDispatch({ type: 'overlay.open', overlay: 'spotlight' })).toBe(true)
-    expect(canDispatch({ type: 'overlay.open', overlay: 'appSwitcher' })).toBe(false)
+    expect(canDispatch({ type: 'overlay.open', overlay: 'notificationCenter' })).toBe(false)
     expect(canDispatch({ type: 'overlay.open', overlay: 'controlCenter' })).toBe(true)
+    dispose()
+  })
+
+  it('switcher.next is disabled with no windows', () => {
+    const dispose = installSystemCommands()
+    expect(canDispatch({ type: 'switcher.next' })).toBe(false)
+    open('finder')
+    expect(canDispatch({ type: 'switcher.next' })).toBe(true)
     dispose()
   })
 

@@ -9,6 +9,8 @@ const LABELS: Record<string, string> = {
   'app.quit': 'Quit app',
   'overlay.open:spotlight': 'Spotlight',
   'overlay.open:missionControl': 'Mission Control',
+  'switcher.next': 'Switch apps',
+  'switcher.prev': 'Switch apps backwards',
   'view.icons': 'View as icons',
   'view.list': 'View as list',
   'file.newWindow': 'New window',

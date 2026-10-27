@@ -1,4 +1,5 @@
 import { useSystem } from '../../system/store'
+import { AppSwitcher } from './AppSwitcher'
 import { Launchpad } from './Launchpad'
 import { Spotlight } from './Spotlight'
 
@@ -7,5 +8,6 @@ export function Overlays() {
   const overlay = useSystem((s) => s.overlay)
   if (overlay === 'spotlight') return <Spotlight />
   if (overlay === 'launchpad') return <Launchpad />
+  if (overlay === 'appSwitcher') return <AppSwitcher />
   return null
 }

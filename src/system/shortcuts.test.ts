@@ -52,6 +52,20 @@ describe('matchShortcut', () => {
     })
     expect(matchShortcut(key('Digit2', { altKey: true }), NONE)).toEqual({ type: 'view.list' })
   })
+
+  it('maps Option-Tab and Option-backtick to the app switcher, and Option-Shift-Tab backwards', () => {
+    expect(matchShortcut(key('Tab', { altKey: true }), NONE)).toEqual({ type: 'switcher.next' })
+    expect(matchShortcut(key('Backquote', { altKey: true }), NONE)).toEqual({ type: 'switcher.next' })
+    expect(matchShortcut(key('Tab', { altKey: true, shiftKey: true }), NONE)).toEqual({
+      type: 'switcher.prev',
+    })
+  })
+
+  it('does not match Option-Tab with Control or Command, or Shift-Tab alone', () => {
+    expect(matchShortcut(key('Tab', { altKey: true, ctrlKey: true }), NONE)).toBeNull()
+    expect(matchShortcut(key('Tab', { altKey: true, metaKey: true }), NONE)).toBeNull()
+    expect(matchShortcut(key('Tab', { shiftKey: true }), NONE)).toBeNull()
+  })
 })
 
 describe('shortcutLabel', () => {

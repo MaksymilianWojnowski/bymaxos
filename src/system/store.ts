@@ -2,6 +2,7 @@ import { create, type StoreApi, type UseBoundStore } from 'zustand'
 import { getWorkArea } from './layout'
 import { applyAppearance, defaultSettings, type Settings } from './settings'
 import { KEYS, safeStorage } from './storage'
+import { runningAppsByRecency } from './switcher'
 import * as wm from './wm'
 import type { AppId, Rect, Size, WindowSpec, WMState } from './types'
 
@@ -21,6 +22,7 @@ export const AVAILABLE_OVERLAYS = new Set<Exclude<Overlay, null>>([
   'spotlight',
   'launchpad',
   'missionControl',
+  'appSwitcher',
 ])
 
 export interface Banner {
@@ -42,6 +44,8 @@ interface SystemData {
   keyboardLocked: boolean
   selectedDesktopIcon: string | null
   banners: Banner[]
+  // The app list is a snapshot taken when the switcher opens, so stepping does not reorder it.
+  switcher: { appIds: AppId[]; index: number } | null
 }
 
 export interface SystemState extends SystemData {
@@ -66,6 +70,8 @@ export interface SystemState extends SystemData {
   updateSettings(p: Partial<Settings>): void
   setKeyboardLocked(v: boolean): void
   selectDesktopIcon(id: string | null): void
+  switcherStep(dir: 1 | -1): void
+  switcherCommit(index?: number): void
 }
 
 const DARK_QUERY = '(prefers-color-scheme: dark)'
@@ -96,7 +102,16 @@ function initialData(): SystemData {
     keyboardLocked: false,
     selectedDesktopIcon: null,
     banners: [],
+    switcher: null,
   }
+}
+
+// Same choice as the Dock: the app's top visible window gets focus, else its top minimized window is restored.
+function activateApp(s: WMState, appId: AppId): WMState {
+  const visible = wm.topWindowOfApp(s, appId)
+  if (visible) return wm.focusWindow(s, visible.id)
+  const minimized = wm.topWindowOfApp(s, appId, true)
+  return minimized ? wm.restoreWindow(s, minimized.id) : s
 }
 
 let appResolver: (id: AppId) => WindowSpec | undefined = () => undefined
@@ -198,7 +213,7 @@ export const useSystem: UseBoundStore<StoreApi<SystemState>> = create<SystemStat
     },
 
     setOverlay(o) {
-      set({ overlay: o })
+      set({ overlay: o, switcher: o === 'appSwitcher' ? get().switcher : null })
     },
 
     setOpenMenu(id) {
@@ -218,6 +233,27 @@ export const useSystem: UseBoundStore<StoreApi<SystemState>> = create<SystemStat
 
     selectDesktopIcon(id) {
       set({ selectedDesktopIcon: id })
+    },
+
+    switcherStep(dir) {
+      const { switcher } = get()
+      if (switcher) {
+        const n = switcher.appIds.length
+        set({ switcher: { ...switcher, index: (switcher.index + dir + n) % n } })
+        return
+      }
+      const appIds = runningAppsByRecency(get().wm)
+      const n = appIds.length
+      if (n === 0) return
+      // Opening starts from index 0, so the first step lands on the second app (or the last, going back).
+      set({ overlay: 'appSwitcher', switcher: { appIds, index: (dir + n) % n } })
+    },
+
+    switcherCommit(index) {
+      const { switcher } = get()
+      if (!switcher) return
+      const appId = switcher.appIds[index ?? switcher.index]
+      set({ wm: activateApp(get().wm, appId), overlay: null, switcher: null })
     },
 
     notify(title, body) {

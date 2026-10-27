@@ -23,6 +23,8 @@ export function DesktopShell() {
   const keyboardLocked = useSystem((s) => s.keyboardLocked)
   const setKeyboardLocked = useSystem((s) => s.setKeyboardLocked)
   const sheetOpen = useSystem((s) => s.overlay === 'shortcuts')
+  const setOverlay = useSystem((s) => s.setOverlay)
+  const switcherCommit = useSystem((s) => s.switcherCommit)
 
   useEffect(() => installSystemCommands(), [])
 
@@ -40,6 +42,21 @@ export function DesktopShell() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [locked, keyboardLocked, sheetOpen])
+
+  useEffect(() => {
+    if (locked) return
+    // Releasing Option picks the highlighted app; the window losing focus cancels any open overlay.
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Alt' && useSystem.getState().switcher) switcherCommit()
+    }
+    const onBlur = () => setOverlay(null)
+    window.addEventListener('keyup', onKeyUp)
+    window.addEventListener('blur', onBlur)
+    return () => {
+      window.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('blur', onBlur)
+    }
+  }, [locked, switcherCommit, setOverlay])
 
   useEffect(() => {
     // Leaving full screen by any route (Escape, browser control) releases the key lock.

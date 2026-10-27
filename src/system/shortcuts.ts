@@ -14,6 +14,7 @@ export interface ShortcutDef {
   combo: string
   code: string
   modifier: 'alt' | 'meta' | null
+  shift?: true
   command: Command
   when: 'always' | 'keyboardLocked'
 }
@@ -37,6 +38,16 @@ export const SHORTCUTS: ShortcutDef[] = [
     command: { type: 'overlay.open', overlay: 'missionControl' },
     when: 'always',
   },
+  { combo: '⌥Tab', code: 'Tab', modifier: 'alt', command: { type: 'switcher.next' }, when: 'always' },
+  {
+    combo: '⌥⇧Tab',
+    code: 'Tab',
+    modifier: 'alt',
+    shift: true,
+    command: { type: 'switcher.prev' },
+    when: 'always',
+  },
+  { combo: '⌥`', code: 'Backquote', modifier: 'alt', command: { type: 'switcher.next' }, when: 'always' },
   { combo: '⌥1', code: 'Digit1', modifier: 'alt', command: { type: 'view.icons' }, when: 'always' },
   { combo: '⌥2', code: 'Digit2', modifier: 'alt', command: { type: 'view.list' }, when: 'always' },
   { combo: '⌥N', code: 'KeyN', modifier: 'alt', command: { type: 'file.newWindow' }, when: 'always' },
@@ -50,12 +61,10 @@ export const SHORTCUTS: ShortcutDef[] = [
   { combo: '⌘N', code: 'KeyN', modifier: 'meta', command: { type: 'file.newWindow' }, when: 'keyboardLocked' },
 ]
 
-function modifiersMatch(modifier: ShortcutDef['modifier'], e: KeyLike): boolean {
-  const alt = modifier === 'alt'
-  const meta = modifier === 'meta'
-  return (
-    e.altKey === alt && e.metaKey === meta && !e.ctrlKey && !e.shiftKey
-  )
+function modifiersMatch(s: ShortcutDef, e: KeyLike): boolean {
+  const alt = s.modifier === 'alt'
+  const meta = s.modifier === 'meta'
+  return e.altKey === alt && e.metaKey === meta && !e.ctrlKey && e.shiftKey === Boolean(s.shift)
 }
 
 export function matchShortcut(
@@ -63,7 +72,7 @@ export function matchShortcut(
   ctx: { inTextField: boolean; keyboardLocked: boolean },
 ): Command | null {
   for (const s of SHORTCUTS) {
-    if (s.code !== e.code || !modifiersMatch(s.modifier, e)) continue
+    if (s.code !== e.code || !modifiersMatch(s, e)) continue
     if (s.when === 'keyboardLocked' && !ctx.keyboardLocked) continue
     // In a text field only Escape and Command shortcuts pass, so typing Option-letters still works.
     if (ctx.inTextField && s.command.type !== 'overlay.close' && s.modifier !== 'meta') continue

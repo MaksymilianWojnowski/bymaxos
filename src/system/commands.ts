@@ -79,6 +79,7 @@ export function useWindowCommands(windowId: string, handlers: HandlerRecord): vo
 const state = () => useSystem.getState()
 const focusedId = (): string | null => state().wm.focusedId
 const hasFocus = (): boolean => focusedId() !== null
+const hasWindows = (): boolean => state().wm.windows.length > 0
 const focusedIsResizable = (): boolean => {
   const id = focusedId()
   return id !== null && isResizable(id)
@@ -164,6 +165,8 @@ const SYSTEM_GLOBALS: GlobalDef[] = [
     },
     () => state().openMenuId !== null || state().overlay !== null,
   ],
+  ['switcher.next', () => state().switcherStep(1), hasWindows],
+  ['switcher.prev', () => state().switcherStep(-1), hasWindows],
 ]
 
 export function installSystemCommands(): () => void {
