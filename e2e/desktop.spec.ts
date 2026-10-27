@@ -228,6 +228,33 @@ test.describe('mobile', () => {
   })
 })
 
+test.describe('dark theme', () => {
+  test.use({ colorScheme: 'dark' })
+
+  const serious = async (page: Page) => {
+    const results = await new AxeBuilder({ page }).analyze()
+    return results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
+  }
+
+  test('mobile placeholder links pass axe in dark mode', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/')
+    await expect(page.getByText('bymaxOS for iPhone is on its way')).toBeVisible()
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+    expect((await serious(page)).map((v) => `${v.id}: ${v.nodes.length} node(s)`)).toEqual([])
+  })
+
+  test('about this mac links pass axe in dark mode', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await unlock(page)
+    await page.getByRole('menubar').getByRole('menuitem').first().click()
+    await page.getByRole('menu').getByRole('menuitem', { name: 'About This Mac' }).click()
+    await expect(page.getByRole('dialog', { name: 'About This Mac' })).toBeVisible()
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+    expect((await serious(page)).map((v) => `${v.id}: ${v.nodes.length} node(s)`)).toEqual([])
+  })
+})
+
 // Parses "rgb(r, g, b)" or "rgba(r, g, b, a)" and returns the channels.
 function rgbOf(css: string): number[] {
   return (css.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number)

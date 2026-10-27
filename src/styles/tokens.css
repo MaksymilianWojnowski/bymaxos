@@ -19,6 +19,7 @@
   --window-bg: #ececec;
   --window-fg: #1d1d1f;
   --accent-strong: #0060df;
+  --accent-link: #0060df;
   --traffic-inactive: #c7c7c7;
   --sidebar-bg: rgba(226, 226, 226, 0.7);
   --text-1: #1d1d1f;
@@ -34,6 +35,7 @@
   --window-bg: #1e1e1e;
   --window-fg: #f5f5f7;
   --accent-strong: #0060df;
+  --accent-link: #4da3ff;
   --traffic-inactive: #4d4d4d;
   --sidebar-bg: rgba(40, 40, 40, 0.7);
   --text-1: #f5f5f7;
@@ -45,6 +47,7 @@
 @theme inline {
   --color-accent: var(--accent);
   --color-accent-strong: var(--accent-strong);
+  --color-accent-link: var(--accent-link);
   --color-window: var(--window-bg);
   --color-window-fg: var(--window-fg);
   --color-sidebar: var(--sidebar-bg);

@@ -14,14 +14,14 @@ export function MobilePlaceholder() {
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-accent-strong underline"
+              className="text-accent-link underline"
             >
               {link.label}
             </a>
           </li>
         ))}
         <li>
-          <a href={`mailto:${profile.email}`} className="text-accent-strong underline">
+          <a href={`mailto:${profile.email}`} className="text-accent-link underline">
             {profile.email}
           </a>
         </li>

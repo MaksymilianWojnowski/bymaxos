@@ -83,4 +83,14 @@ describe('accent contrast', () => {
   it('gives the strong accent as text 4.5:1 or better on the light window', () => {
     expect(contrast(hexRgb(lightToken('accent-strong')), hexRgb(lightToken('window-bg')))).toBeGreaterThanOrEqual(4.5)
   })
+
+  it('maps the link accent token to Tailwind', () => {
+    expect(tokensCss).toMatch(/--color-accent-link:\s*var\(--accent-link\)/)
+  })
+
+  it('gives the link accent as text 4.5:1 or better on the window in both themes', () => {
+    for (const theme of ['light', 'dark'] as const) {
+      expect(contrast(hexRgb(themeToken(theme, 'accent-link')), hexRgb(themeToken(theme, 'window-bg'))), theme).toBeGreaterThanOrEqual(4.5)
+    }
+  })
 })
