@@ -17,6 +17,15 @@ export type Overlay =
 
 export const AVAILABLE_OVERLAYS = new Set<Exclude<Overlay, null>>(['controlCenter', 'shortcuts'])
 
+export interface Banner {
+  id: string
+  title: string
+  body?: string
+}
+
+const MAX_BANNERS = 3
+let bannerSeq = 0
+
 interface SystemData {
   wm: WMState
   viewport: Size
@@ -26,9 +35,12 @@ interface SystemData {
   settings: Settings
   keyboardLocked: boolean
   selectedDesktopIcon: string | null
+  banners: Banner[]
 }
 
 export interface SystemState extends SystemData {
+  notify(title: string, body?: string): string
+  dismissBanner(id: string): void
   setViewport(w: number, h: number): void
   openApp(appId: AppId, props?: Record<string, unknown>): string | null
   focus(id: string): void
@@ -77,6 +89,7 @@ function initialData(): SystemData {
     settings,
     keyboardLocked: false,
     selectedDesktopIcon: null,
+    banners: [],
   }
 }
 
@@ -199,6 +212,16 @@ export const useSystem: UseBoundStore<StoreApi<SystemState>> = create<SystemStat
 
     selectDesktopIcon(id) {
       set({ selectedDesktopIcon: id })
+    },
+
+    notify(title, body) {
+      const id = `banner-${++bannerSeq}`
+      set((s) => ({ banners: [...s.banners, { id, title, body }].slice(-MAX_BANNERS) }))
+      return id
+    },
+
+    dismissBanner(id) {
+      set((s) => ({ banners: s.banners.filter((b) => b.id !== id) }))
     },
   }
 })

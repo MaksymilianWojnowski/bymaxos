@@ -3,6 +3,7 @@ import { dispatch, installSystemCommands } from '../../system/commands'
 import { isTextField, matchShortcut } from '../../system/shortcuts'
 import { parseDeepLink } from '../../system/shell'
 import { useSystem } from '../../system/store'
+import { Banners } from './Banners'
 import { Desktop } from './Desktop'
 import { Dock } from './Dock'
 import { LoginScreen } from './LoginScreen'
@@ -72,6 +73,7 @@ export function DesktopShell() {
       <WindowLayer />
       <MenuBar />
       <Dock />
+      <Banners />
     </div>
   )
 }

@@ -109,6 +109,25 @@ describe('closing windows', () => {
   })
 })
 
+describe('banners', () => {
+  it('notify appends a banner with title and body', () => {
+    const id = useSystem.getState().notify('Contacts', 'Email copied.')
+    expect(useSystem.getState().banners).toEqual([{ id, title: 'Contacts', body: 'Email copied.' }])
+  })
+
+  it('dismissBanner removes only that banner', () => {
+    const a = useSystem.getState().notify('A')
+    const b = useSystem.getState().notify('B')
+    useSystem.getState().dismissBanner(a)
+    expect(useSystem.getState().banners.map((x) => x.id)).toEqual([b])
+  })
+
+  it('keeps at most 3 banners, dropping the oldest', () => {
+    ;['1', '2', '3', '4'].forEach((t) => useSystem.getState().notify(t))
+    expect(useSystem.getState().banners.map((x) => x.title)).toEqual(['2', '3', '4'])
+  })
+})
+
 describe('blurWindows', () => {
   it('clears focus and leaves Finder as the active app', () => {
     useSystem.getState().openApp('finder')
