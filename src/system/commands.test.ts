@@ -20,6 +20,15 @@ const specs: Record<string, WindowSpec> = {
     defaultSize: { w: 800, h: 500 },
     minSize: { w: 400, h: 260 },
     singleInstance: false,
+    resizable: true,
+  },
+  about: {
+    appId: 'about',
+    title: 'About This Mac',
+    defaultSize: { w: 340, h: 420 },
+    minSize: { w: 340, h: 420 },
+    singleInstance: true,
+    resizable: false,
   },
   notes: {
     appId: 'notes',
@@ -27,6 +36,7 @@ const specs: Record<string, WindowSpec> = {
     defaultSize: { w: 600, h: 400 },
     minSize: { w: 300, h: 200 },
     singleInstance: false,
+    resizable: true,
   },
 }
 
@@ -192,6 +202,20 @@ describe('useWindowCommands', () => {
     expect(dispatch({ type: 'notes.back' })).toBe(false)
     expect(back).not.toHaveBeenCalled()
     expect(canDispatch({ type: 'notes.forward' })).toBe(true)
+  })
+})
+
+describe('window.zoom', () => {
+  const zoom = { type: 'window.zoom' }
+
+  it('needs a focused window that is resizable', () => {
+    const dispose = installSystemCommands()
+    expect(canDispatch(zoom)).toBe(false)
+    open('about')
+    expect(canDispatch(zoom)).toBe(false)
+    open('finder')
+    expect(canDispatch(zoom)).toBe(true)
+    dispose()
   })
 })
 

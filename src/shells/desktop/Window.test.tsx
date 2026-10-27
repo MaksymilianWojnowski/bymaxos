@@ -40,6 +40,7 @@ const spec: WindowSpec = {
   defaultSize: { w: 600, h: 400 },
   minSize: { w: 300, h: 200 },
   singleInstance: false,
+  resizable: true,
 }
 
 function openFinder() {

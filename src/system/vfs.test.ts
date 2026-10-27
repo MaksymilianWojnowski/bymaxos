@@ -93,6 +93,18 @@ describe('buildVfs', () => {
   })
 })
 
+describe('node ids', () => {
+  it('are unique, so a duplicate id is an error rather than a silent overwrite', () => {
+    const ids = Object.values(vfs.nodes).map((n) => n.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(Object.keys(vfs.nodes)).toEqual(ids)
+
+    const content = structuredClone(getContent())
+    content.documents.push({ ...content.documents[0] })
+    expect(() => buildVfs(content)).toThrow(/duplicate vfs node id: doc-hello/)
+  })
+})
+
 describe('pathTo', () => {
   it('returns ancestor ids from root to the node', () => {
     expect(pathTo(vfs, 'doc-hello')).toEqual(['root', 'about', 'doc-hello'])

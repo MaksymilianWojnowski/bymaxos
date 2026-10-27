@@ -31,7 +31,7 @@ export class AppErrorBoundary extends Component<Props, State> {
         <button
           type="button"
           onClick={this.reopen}
-          className="rounded-md bg-accent px-3 py-1 text-white"
+          className="rounded-md bg-accent-strong px-3 py-1 text-white"
         >
           Reopen
         </button>

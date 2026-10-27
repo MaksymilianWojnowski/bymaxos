@@ -4,7 +4,7 @@ export function MobilePlaceholder() {
   const { profile, links } = getContent()
 
   return (
-    <main className="flex h-full w-full flex-col items-center justify-center gap-4 p-4 text-center text-text-1">
+    <main className="flex h-full w-full flex-col items-center justify-center gap-4 bg-window p-4 text-center text-text-1">
       <h1 className="text-2xl font-semibold">bymaxOS for iPhone is on its way</h1>
       <p className="text-text-2">Meanwhile, here&apos;s how to reach me:</p>
       <ul className="flex flex-col gap-2">
@@ -14,14 +14,14 @@ export function MobilePlaceholder() {
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-accent underline"
+              className="text-accent-strong underline"
             >
               {link.label}
             </a>
           </li>
         ))}
         <li>
-          <a href={`mailto:${profile.email}`} className="text-accent underline">
+          <a href={`mailto:${profile.email}`} className="text-accent-strong underline">
             {profile.email}
           </a>
         </li>

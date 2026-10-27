@@ -82,6 +82,12 @@ function initialData(): SystemData {
 
 let appResolver: (id: AppId) => WindowSpec | undefined = () => undefined
 
+// Zoom is offered only where the window's app allows resizing (About This Mac does not).
+export function isResizable(id: string): boolean {
+  const win = useSystem.getState().wm.windows.find((w) => w.id === id)
+  return win !== undefined && appResolver(win.appId)?.resizable === true
+}
+
 export function setAppResolver(fn: (id: AppId) => WindowSpec | undefined): void {
   appResolver = fn
 }
@@ -139,6 +145,7 @@ export const useSystem: UseBoundStore<StoreApi<SystemState>> = create<SystemStat
     },
 
     toggleMaximize(id) {
+      if (!isResizable(id)) return
       set({ wm: wm.toggleMaximize(get().wm, id, area()) })
     },
 

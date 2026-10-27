@@ -26,6 +26,7 @@ const spec: WindowSpec = {
   defaultSize: { w: 800, h: 500 },
   minSize: { w: 400, h: 260 },
   singleInstance: false,
+  resizable: true,
 }
 const notesSpec: WindowSpec = { ...spec, appId: 'notes', title: 'Notes' }
 

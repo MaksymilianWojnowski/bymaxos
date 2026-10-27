@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { MenuItemDef } from '../apps/types'
 import { MenuList } from './Menu'
@@ -12,6 +12,17 @@ interface Props {
 
 export function ContextMenu({ x, y, items, onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null)
+
+  // The element focused when the menu mounts is the opener; the menu has not moved focus yet at this point.
+  const [opener] = useState(() => document.activeElement as HTMLElement | null)
+
+  // Passive cleanup runs after the menu is removed, so focus that was in the menu has fallen to the body.
+  useEffect(() => {
+    return () => {
+      const active = document.activeElement
+      if (opener?.isConnected && (active === null || active === document.body)) opener.focus()
+    }
+  }, [opener])
 
   // Measured after mount so the right and bottom edges can be kept inside the viewport.
   useLayoutEffect(() => {

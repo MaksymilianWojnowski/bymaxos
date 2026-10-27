@@ -10,6 +10,7 @@ const spec: WindowSpec = {
   defaultSize: { w: 800, h: 500 },
   minSize: { w: 400, h: 260 },
   singleInstance: false,
+  resizable: true,
 }
 
 beforeEach(() => {
@@ -30,6 +31,21 @@ describe('openApp', () => {
 
     expect(useSystem.getState().openApp('nope')).toBeNull()
     expect(useSystem.getState().wm.windows).toHaveLength(1)
+  })
+})
+
+describe('toggleMaximize', () => {
+  it('leaves a non-resizable window (About This Mac) at its size', () => {
+    const about: WindowSpec = { ...spec, appId: 'about', title: 'About', resizable: false }
+    setAppResolver((id) => (id === 'about' ? about : id === 'finder' ? spec : undefined))
+    const id = useSystem.getState().openApp('about') as string
+    const before = useSystem.getState().wm.windows[0].rect
+
+    useSystem.getState().toggleMaximize(id)
+
+    const [w] = useSystem.getState().wm.windows
+    expect(w.mode).toBe('normal')
+    expect(w.rect).toEqual(before)
   })
 })
 

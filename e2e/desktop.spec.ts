@@ -152,10 +152,45 @@ test.describe('desktop', () => {
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   })
 
+  test('control center opens and closes from the keyboard', async ({ page }) => {
+    await unlock(page)
+    const status = page.getByRole('button', { name: 'Control Center' })
+    await status.focus()
+    await page.keyboard.press('Enter')
+    const panel = page.getByRole('dialog', { name: 'Control Center' })
+    await expect(panel).toBeVisible()
+    await expect(panel.getByRole('radio', { name: 'Auto' })).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(panel).toBeHidden()
+    await expect(status).toBeFocused()
+  })
+
+  test('favicon and theme colour are declared', async ({ page }) => {
+    await page.goto('/')
+    const icon = page.locator('link[rel="icon"]')
+    await expect(icon).toHaveAttribute('href', /favicon\.svg$/)
+    const href = await icon.getAttribute('href')
+    const res = await page.request.get(new URL(href ?? '', page.url()).toString())
+    expect(res.ok()).toBe(true)
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#1e1e1e')
+  })
+
   test('axe scan has no serious or critical violations', async ({ page }) => {
     await unlock(page)
     await openDock(page, 'Finder')
     await settle(desktopWindow(page))
+    const results = await new AxeBuilder({ page }).analyze()
+    const blocking = results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
+    expect(blocking.map((v) => `${v.id}: ${v.nodes.length} node(s)`)).toEqual([])
+  })
+
+  test('axe scan stays clean with a selected item and an open menu', async ({ page }) => {
+    await unlock(page)
+    await openDock(page, 'Finder')
+    await settle(desktopWindow(page))
+    await page.getByRole('listbox', { name: 'Desktop items' }).getByRole('option', { name: 'Resume.pdf' }).click()
+    await page.getByRole('menubar').getByRole('menuitem', { name: 'File', exact: true }).click()
+    await expect(page.getByRole('menu').first()).toBeVisible()
     const results = await new AxeBuilder({ page }).analyze()
     const blocking = results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
     expect(blocking.map((v) => `${v.id}: ${v.nodes.length} node(s)`)).toEqual([])
@@ -173,10 +208,40 @@ test.describe('desktop', () => {
 })
 
 test.describe('mobile', () => {
-  test.use({ viewport: { width: 390, height: 844 } })
+  test.use({ viewport: { width: 390, height: 844 }, colorScheme: 'light' })
 
   test('mobile placeholder', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('bymaxOS for iPhone is on its way')).toBeVisible()
   })
+
+  test('mobile placeholder heading is readable in light mode', async ({ page }) => {
+    await page.goto('/')
+    const heading = page.getByRole('heading', { level: 1 })
+    await expect(heading).toBeVisible()
+    const colours = await heading.evaluate((h) => ({
+      text: getComputedStyle(h).color,
+      background: getComputedStyle(h.closest('main') as HTMLElement).backgroundColor,
+    }))
+    expect(colours.background).not.toBe('rgb(0, 0, 0)')
+    expect(contrastRatio(rgbOf(colours.text), rgbOf(colours.background))).toBeGreaterThanOrEqual(4.5)
+  })
 })
+
+// Parses "rgb(r, g, b)" or "rgba(r, g, b, a)" and returns the channels.
+function rgbOf(css: string): number[] {
+  return (css.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number)
+}
+
+// WCAG 2.x contrast ratio between two sRGB colours.
+function contrastRatio(a: number[], b: number[]): number {
+  const lum = (c: number[]) => {
+    const [r, g, bl] = c.map((v) => {
+      const s = v / 255
+      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+    })
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl
+  }
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
+}

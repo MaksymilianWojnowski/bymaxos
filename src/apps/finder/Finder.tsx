@@ -96,9 +96,6 @@ export default function FinderApp({ windowId, props }: AppProps) {
   // Menu and shortcut commands. Back and forward exist only when they can run, so their menu items disable.
   const handlers: HandlerRecord = {
     'file.newWindow': () => useSystem.getState().openApp('finder'),
-    'finder.open': () => {
-      if (state.selected !== null) openNode(state.selected)
-    },
     'finder.navigate': (cmd) => {
       const folderId = cmd.folderId
       if (typeof folderId === 'string' && nodeById(folderId)?.kind === 'folder') goTo(folderId)
@@ -106,6 +103,9 @@ export default function FinderApp({ windowId, props }: AppProps) {
     'view.icons': () => send({ type: 'view', view: 'icons' }),
     'view.list': () => send({ type: 'view', view: 'list' }),
   }
+  // Open needs a selection; without one the File and context menu entries render disabled.
+  const selected = state.selected
+  if (selected !== null) handlers['finder.open'] = () => openNode(selected)
   if (canBack) handlers['finder.back'] = () => send({ type: 'back' })
   if (canForward) handlers['finder.forward'] = () => send({ type: 'forward' })
   useWindowCommands(windowId, handlers)
@@ -246,7 +246,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
                   >
                     <Icon aria-hidden className="h-12 w-12 text-accent" />
                     <span
-                      className={`line-clamp-2 rounded px-1 text-center text-[12px] break-words ${selected ? 'bg-accent text-white' : ''}`}
+                      className={`line-clamp-2 rounded px-1 text-center text-[12px] break-words ${selected ? 'bg-accent-strong text-white' : ''}`}
                     >
                       {node.name}
                     </span>
@@ -280,7 +280,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
                       role="row"
                       aria-selected={selected}
                       {...itemProps(node)}
-                      className={`cursor-default ${selected ? 'bg-accent text-white' : 'hover:bg-black/5'}`}
+                      className={`cursor-default ${selected ? 'bg-accent-strong text-white' : 'hover:bg-black/5'}`}
                     >
                       <td role="gridcell" className="px-2 py-1">
                         <span className="flex items-center gap-2">

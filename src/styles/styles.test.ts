@@ -43,13 +43,15 @@ const contrast = (a: number[], b: number[]): number => {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
   return (hi + 0.05) / (lo + 0.05)
 }
-const lightToken = (name: string): string => {
-  const block = tokensCss.slice(tokensCss.indexOf(":root[data-theme='light']"))
+const themeToken = (theme: 'light' | 'dark', name: string): string => {
+  const block = tokensCss.slice(tokensCss.indexOf(`:root[data-theme='${theme}']`))
   const match = block.match(new RegExp(`--${name}:\\s*([^;]+);`))
-  if (!match) throw new Error(`missing token ${name}`)
+  if (!match) throw new Error(`missing ${theme} token ${name}`)
   return match[1].trim()
 }
+const lightToken = (name: string): string => themeToken('light', name)
 const hexRgb = (hex: string): number[] => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+const WHITE = [255, 255, 255]
 
 describe('secondary text contrast', () => {
   const window = hexRgb(lightToken('window-bg'))
@@ -63,5 +65,22 @@ describe('secondary text contrast', () => {
 
   it('meets WCAG AA (4.5:1) on the sidebar background', () => {
     expect(contrast(text(sidebar), sidebar)).toBeGreaterThanOrEqual(4.5)
+  })
+})
+
+// Filled accent backgrounds carry white text, and accent-coloured text sits on the window; both need AA.
+describe('accent contrast', () => {
+  it('maps the strong accent token to Tailwind', () => {
+    expect(tokensCss).toMatch(/--color-accent-strong:\s*var\(--accent-strong\)/)
+  })
+
+  it('gives white text on the strong accent 4.5:1 or better in both themes', () => {
+    for (const theme of ['light', 'dark'] as const) {
+      expect(contrast(WHITE, hexRgb(themeToken(theme, 'accent-strong'))), theme).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('gives the strong accent as text 4.5:1 or better on the light window', () => {
+    expect(contrast(hexRgb(lightToken('accent-strong')), hexRgb(lightToken('window-bg')))).toBeGreaterThanOrEqual(4.5)
   })
 })

@@ -14,7 +14,17 @@ describe('enterFullScreen', () => {
     const doc = fakeDoc(async () => {})
     const nav = { keyboard: { lock } } as unknown as Navigator
     await expect(enterFullScreen(doc, nav)).resolves.toEqual({ fullscreen: true, keyboardLocked: true })
-    expect(lock).toHaveBeenCalledWith(expect.arrayContaining(['MetaLeft', 'KeyW', 'Tab']))
+    // Only the Command-based keys are reserved; Tab and Space stay with the page.
+    expect(lock).toHaveBeenCalledWith([
+      'MetaLeft',
+      'MetaRight',
+      'KeyW',
+      'KeyQ',
+      'KeyM',
+      'KeyN',
+      'Digit1',
+      'Digit2',
+    ])
   })
 
   it('stays unlocked when the Keyboard Lock API is absent', async () => {

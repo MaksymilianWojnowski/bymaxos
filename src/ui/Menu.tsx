@@ -85,7 +85,7 @@ function MenuRow({ item, onClose }: { item: Item; onClose: () => void }) {
       onMouseDown={(e) => {
         if (!enabled) e.preventDefault()
       }}
-      className="group flex h-[22px] cursor-default items-center gap-2 rounded-[4px] px-3 outline-none focus:bg-accent focus:text-white aria-disabled:opacity-40"
+      className="group flex h-[22px] cursor-default items-center gap-2 rounded-[4px] px-3 outline-none focus:bg-accent-strong focus:text-white aria-disabled:opacity-40"
     >
       <span aria-hidden="true" className="w-3 text-center">
         {item.checked ? '✓' : ''}
@@ -189,7 +189,7 @@ export function MenuBarMenus({ menus, leading }: MenuBarMenusProps) {
                 setOpenMenu(menu.id)
                 if (barRef.current?.contains(document.activeElement)) e.currentTarget.focus()
               }}
-              className={`h-[var(--mb-h)] rounded-[4px] px-2 ${open ? 'bg-accent text-white' : ''}`}
+              className={`h-[var(--mb-h)] rounded-[4px] px-2 ${open ? 'bg-accent-strong text-white' : ''}`}
             >
               {menu.label}
             </button>

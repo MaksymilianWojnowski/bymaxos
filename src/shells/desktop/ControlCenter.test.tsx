@@ -4,6 +4,7 @@ import { DesktopShell } from './DesktopShell'
 import { resetSystem, useSystem } from '../../system/store'
 
 beforeEach(() => {
+  window.localStorage.clear()
   resetSystem()
   useSystem.setState({ locked: false })
   render(<DesktopShell />)
@@ -43,6 +44,36 @@ describe('ControlCenter', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Graphite' }))
     expect(useSystem.getState().settings.wallpaperId).toBe('graphite')
     expect(screen.getByRole('button', { name: 'Graphite' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('takes keyboard focus on open and returns it to the status button on Escape', () => {
+    const status = screen.getByRole('button', { name: 'Control Center' })
+    status.focus()
+    fireEvent.keyDown(status, { key: 'Enter' })
+    fireEvent.click(status)
+    expect(screen.getByRole('radio', { name: 'Auto' })).toHaveFocus()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(status).toHaveFocus()
+  })
+
+  it('makes only the selected appearance tabbable and moves the selection with arrow keys', () => {
+    openControlCenter()
+    const group = screen.getByRole('radiogroup', { name: 'Appearance' })
+    expect(screen.getByRole('radio', { name: 'Auto' })).toHaveAttribute('tabindex', '0')
+    expect(screen.getByRole('radio', { name: 'Light' })).toHaveAttribute('tabindex', '-1')
+
+    fireEvent.keyDown(group, { key: 'ArrowLeft' })
+    expect(useSystem.getState().settings.appearance).toBe('dark')
+    expect(screen.getByRole('radio', { name: 'Dark' })).toHaveFocus()
+    expect(screen.getByRole('radio', { name: 'Dark' })).toHaveAttribute('tabindex', '0')
+
+    fireEvent.keyDown(group, { key: 'ArrowDown' })
+    expect(useSystem.getState().settings.appearance).toBe('auto')
+
+    fireEvent.keyDown(group, { key: 'ArrowRight' })
+    expect(useSystem.getState().settings.appearance).toBe('light')
+    expect(screen.getByRole('radio', { name: 'Light' })).toHaveFocus()
   })
 
   it('hides the full screen button when the browser cannot enter full screen', () => {

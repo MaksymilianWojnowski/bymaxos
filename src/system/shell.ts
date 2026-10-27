@@ -43,7 +43,8 @@ export function parseDeepLink(search: string): { appId: AppId; item?: string } |
   const params = new URLSearchParams(search)
   const appId = params.get('app')
   if (appId === null || !SAFE_ID.test(appId)) return null
-  if (!getApp(appId)?.load) return null
+  const app = getApp(appId)
+  if (!app?.load || app.deepLink === false) return null
   const item = params.get('item')
   return item !== null && SAFE_ID.test(item) ? { appId, item } : { appId }
 }

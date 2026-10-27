@@ -144,7 +144,12 @@ export function buildVfs(c: Content): Vfs {
     ...projectNodes,
   ]
 
-  const nodes: Record<string, VNode> = Object.fromEntries(nodeList.map((n) => [n.id, n]))
+  const nodes: Record<string, VNode> = {}
+  for (const n of nodeList) {
+    // Object.fromEntries would keep the last of two nodes with the same id without a word.
+    if (Object.hasOwn(nodes, n.id)) throw new Error(`duplicate vfs node id: ${n.id}`)
+    nodes[n.id] = n
+  }
   return {
     nodes,
     sidebar: ['desktop', 'documents', 'about', 'work', 'projects', 'photos', 'interests', 'trash'],

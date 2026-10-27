@@ -17,6 +17,8 @@ export interface MenuDef {
   items: MenuItemDef[]
 }
 
+// Contract: MenuBar memoizes menus on window ids/titles, focusedId, keyboardLocked and openMenuId,
+// so app.menus must not depend on any other window or store field.
 export interface MenuContext {
   focused: WindowState | null
   windows: WindowState[]
@@ -40,4 +42,6 @@ export interface AppDefinition {
   menus?: (ctx: MenuContext) => MenuDef[]
   dock?: { order: number; group: 'system' | 'apps' | 'links' | 'trash' }
   mobile?: { presentation: 'fullscreen' | 'sheet' | 'external' | 'hidden' }
+  // Apps that need props (a file to show) cannot be opened from a bare link.
+  deepLink?: false
 }

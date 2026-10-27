@@ -1,5 +1,5 @@
 import { SHORTCUTS } from '../../system/shortcuts'
-import { useSystem } from '../../system/store'
+import { AVAILABLE_OVERLAYS, useSystem, type Overlay } from '../../system/store'
 import { Sheet } from '../../ui/Sheet'
 
 // Keyed by command type, plus the overlay for overlay.open entries.
@@ -23,7 +23,13 @@ const labelOf = (type: string, overlay?: unknown): string => {
 export function ShortcutsSheet() {
   const keyboardLocked = useSystem((s) => s.keyboardLocked)
   const setOverlay = useSystem((s) => s.setOverlay)
-  const rows = SHORTCUTS.filter((s) => s.when === 'always' || keyboardLocked)
+  // An overlay.open entry for an overlay that is not built yet would do nothing, so it is not listed.
+  const rows = SHORTCUTS.filter(
+    (s) =>
+      (s.when === 'always' || keyboardLocked) &&
+      (s.command.type !== 'overlay.open' ||
+        AVAILABLE_OVERLAYS.has(s.command.overlay as Exclude<Overlay, null>)),
+  )
 
   return (
     <Sheet title="Keyboard Shortcuts" onClose={() => setOverlay(null)}>

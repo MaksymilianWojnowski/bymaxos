@@ -136,6 +136,16 @@ describe('Finder', () => {
     expect(canDispatch({ type: 'finder.forward' })).toBe(true)
   })
 
+  it('offers Open only when an item is selected', async () => {
+    useSystem.getState().openApp('finder')
+    render(<WindowLayer />)
+    const desktop = await screen.findByRole('listbox', { name: 'Desktop items' })
+    expect(canDispatch({ type: 'finder.open' })).toBe(false)
+
+    fireEvent.click(within(desktop).getByRole('option', { name: 'Resume.pdf' }))
+    expect(canDispatch({ type: 'finder.open' })).toBe(true)
+  })
+
   it('opens Quick Look for the selected file on Space', async () => {
     useSystem.getState().openApp('finder')
     render(<WindowLayer />)

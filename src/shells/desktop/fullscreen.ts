@@ -1,5 +1,5 @@
 // Keys the Keyboard Lock API takes over while full screen, so Cmd-based shortcuts reach the desktop.
-const LOCKED_KEYS = ['MetaLeft', 'MetaRight', 'KeyW', 'KeyQ', 'KeyM', 'KeyN', 'Digit1', 'Digit2', 'Tab', 'Space']
+const LOCKED_KEYS = ['MetaLeft', 'MetaRight', 'KeyW', 'KeyQ', 'KeyM', 'KeyN', 'Digit1', 'Digit2']
 
 // The Keyboard Lock API is Chromium-only and missing from the DOM typings.
 type KeyboardLockNavigator = Navigator & { keyboard?: { lock?(keys: string[]): Promise<void> } }

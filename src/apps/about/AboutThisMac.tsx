@@ -35,7 +35,7 @@ export default function AboutThisMacApp() {
         <Row label="Build">{BUILD_DATE}</Row>
         {site.repoUrl && (
           <Row label="Source">
-            <a href={site.repoUrl} target="_blank" rel="noopener noreferrer" className="text-accent underline">
+            <a href={site.repoUrl} target="_blank" rel="noopener noreferrer" className="text-accent-strong underline">
               Repository
             </a>
           </Row>

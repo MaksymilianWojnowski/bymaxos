@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { getContent } from '../../content'
 import { Popover } from '../../ui/Popover'
 import { useSystem } from '../../system/store'
@@ -10,6 +10,8 @@ const APPEARANCES: { value: Appearance; label: string }[] = [
   { value: 'dark', label: 'Dark' },
   { value: 'auto', label: 'Auto' },
 ]
+
+const STEP: Record<string, number> = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }
 
 const GLASS = {
   background: 'var(--glass-bg)',
@@ -71,6 +73,17 @@ export function ControlCenter({ anchorEl }: { anchorEl: HTMLElement }) {
     return () => document.removeEventListener('fullscreenchange', sync)
   }, [])
 
+  // Radio group: arrows move and select (wrapping), and only the selected radio is in the tab order.
+  const onAppearanceKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const step = STEP[e.key]
+    if (step === undefined) return
+    e.preventDefault()
+    const current = APPEARANCES.findIndex((a) => a.value === settings.appearance)
+    const next = (current + step + APPEARANCES.length) % APPEARANCES.length
+    updateSettings({ appearance: APPEARANCES[next].value })
+    e.currentTarget.querySelectorAll<HTMLElement>('[role="radio"]')[next]?.focus()
+  }
+
   const toggleFullScreen = async () => {
     if (fullscreen) {
       await exitFullScreen()
@@ -90,6 +103,7 @@ export function ControlCenter({ anchorEl }: { anchorEl: HTMLElement }) {
           <div
             role="radiogroup"
             aria-label="Appearance"
+            onKeyDown={onAppearanceKey}
             className="grid grid-cols-3 gap-1 rounded-[8px] bg-black/5 p-0.5 dark:bg-white/10"
           >
             {APPEARANCES.map((a) => {
@@ -100,6 +114,7 @@ export function ControlCenter({ anchorEl }: { anchorEl: HTMLElement }) {
                   type="button"
                   role="radio"
                   aria-checked={checked}
+                  tabIndex={checked ? 0 : -1}
                   onClick={() => updateSettings({ appearance: a.value })}
                   className={`h-[24px] rounded-[6px] text-[12px] ${
                     checked ? 'bg-white font-medium text-black shadow dark:bg-white/25 dark:text-white' : 'text-text-1'

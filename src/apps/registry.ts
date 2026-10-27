@@ -50,6 +50,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'quicklook',
     name: 'Quick Look',
+    deepLink: false,
     icon: {
       glyph: Eye,
       background: 'linear-gradient(180deg, #f5f5f7 0%, #c7c7cc 100%)',
@@ -135,6 +136,7 @@ function resolveWindowSpec(id: AppId): WindowSpec | undefined {
     defaultSize: app.window.defaultSize,
     minSize: app.window.minSize,
     singleInstance: app.window.singleInstance,
+    resizable: app.window.resizable,
   }
 }
 setAppResolver(resolveWindowSpec)

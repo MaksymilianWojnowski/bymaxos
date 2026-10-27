@@ -1,6 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
+// Controls that can take focus; roving radios with tabindex -1 are reached with arrow keys instead.
+const FOCUSABLE =
+  'button:not([tabindex="-1"]), [href], input:not([tabindex="-1"]), select, textarea, [tabindex]:not([tabindex="-1"])'
+
 interface Props {
   anchor: DOMRect
   onClose: () => void
@@ -19,6 +23,16 @@ export function Popover({ anchor, onClose, children, label, anchorEl }: Props) {
     const { width } = el.getBoundingClientRect()
     el.style.left = `${Math.max(4, Math.min(anchor.left, window.innerWidth - width - 4))}px`
   }, [anchor])
+
+  // Focus moves into the panel on open and returns to the toggle on close, but only when focus was
+  // lost with the panel, so a click that moved focus elsewhere keeps it there.
+  useEffect(() => {
+    ref.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus()
+    return () => {
+      const active = document.activeElement
+      if (anchorEl?.isConnected && (active === null || active === document.body)) anchorEl.focus()
+    }
+  }, [anchorEl])
 
   useEffect(() => {
     const onDown = (e: Event) => {

@@ -205,7 +205,7 @@ export function Desktop() {
                 <Icon aria-hidden className="h-9 w-9" />
               </div>
               <span
-                className={`line-clamp-2 max-w-full break-words rounded px-1 text-center text-[12px] leading-tight text-white ${isSelected ? 'bg-accent' : ''}`}
+                className={`line-clamp-2 max-w-full break-words rounded px-1 text-center text-[12px] leading-tight text-white ${isSelected ? 'bg-accent-strong' : ''}`}
                 style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.6)' }}
               >
                 {node.name}

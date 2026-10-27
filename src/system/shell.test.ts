@@ -25,6 +25,8 @@ describe('parseDeepLink', () => {
     expect(parseDeepLink('?app=trash')).toBeNull()
     expect(parseDeepLink('?app=<script>')).toBeNull()
     expect(parseDeepLink('?app=nope')).toBeNull()
+    // Quick Look needs a file to preview, so a bare link would open an empty window.
+    expect(parseDeepLink('?app=quicklook')).toBeNull()
     expect(parseDeepLink('')).toBeNull()
   })
 

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { KEYS, safeStorage } from './storage'
-import { AVAILABLE_OVERLAYS, useSystem, type Overlay } from './store'
+import { AVAILABLE_OVERLAYS, isResizable, useSystem, type Overlay } from './store'
 import { activeAppId, emptyWM, raiseAppWindows } from './wm'
 
 export type Command = { type: string; [key: string]: unknown }
@@ -79,6 +79,10 @@ export function useWindowCommands(windowId: string, handlers: HandlerRecord): vo
 const state = () => useSystem.getState()
 const focusedId = (): string | null => state().wm.focusedId
 const hasFocus = (): boolean => focusedId() !== null
+const focusedIsResizable = (): boolean => {
+  const id = focusedId()
+  return id !== null && isResizable(id)
+}
 const onFocused =
   (fn: (id: string) => void): Handler =>
   () => {
@@ -108,7 +112,7 @@ type GlobalDef = [type: string, handler: Handler, enabled?: (cmd: Command) => bo
 const SYSTEM_GLOBALS: GlobalDef[] = [
   ['window.close', onFocused((id) => state().close(id)), hasFocus],
   ['window.minimize', onFocused((id) => state().minimize(id)), hasFocus],
-  ['window.zoom', onFocused((id) => state().toggleMaximize(id)), hasFocus],
+  ['window.zoom', onFocused((id) => state().toggleMaximize(id)), focusedIsResizable],
   [
     'window.focus',
     (cmd) => {
