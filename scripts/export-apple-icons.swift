@@ -22,6 +22,8 @@ let icons: [(String, Source)] = [
   ("contacts", .icns("/System/Applications/Contacts.app/Contents/Resources/Contacts.icns")),
   ("calendar", .icns("/System/Applications/Calendar.app/Contents/Resources/AppIcon.icns")),
   ("xcode", .icns("/Applications/Xcode.app/Contents/Resources/Xcode.icns")),
+  ("launchpad", .icns("/System/Applications/Apps.app/Contents/Resources/AppIcon.icns")),
+  ("system-settings", .icns("/System/Applications/System Settings.app/Contents/Resources/Settings.icns")),
   ("trash", .icns(coreTypes + "TrashIcon.icns")),
   ("folder", .icns(coreTypes + "GenericFolderIcon.icns")),
   ("folder-desktop", .icns(coreTypes + "DesktopFolderIcon.icns")),
