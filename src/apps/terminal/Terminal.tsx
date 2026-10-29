@@ -98,7 +98,8 @@ export default function TerminalApp() {
         ref={outputRef}
         role="log"
         aria-label="Terminal output"
-        className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words px-3 pt-3"
+        tabIndex={0}
+        className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words px-3 pt-3 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white focus-visible:outline-none"
       >
         {rows.map((row) => (
           <div key={row.id}>

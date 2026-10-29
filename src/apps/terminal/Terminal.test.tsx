@@ -89,4 +89,9 @@ describe('Terminal', () => {
     expect(input()).toBeInTheDocument()
     expect(log()).toHaveAttribute('aria-label', 'Terminal output')
   })
+
+  it('makes the output keyboard-focusable so overflowing output can be scrolled', () => {
+    render(<TerminalApp />)
+    expect(log()).toHaveAttribute('tabindex', '0')
+  })
 })
