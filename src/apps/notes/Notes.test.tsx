@@ -48,6 +48,21 @@ describe('Notes', () => {
     expect(titleField()).toHaveValue(lookingFor.title)
   })
 
+  it('renders the seed notes when stored edits have a corrupt updated date', () => {
+    window.localStorage.setItem(
+      KEYS.notes,
+      JSON.stringify({
+        edits: { 'working-style': { title: 'Broken', body: 'x', updated: 'foo' } },
+        added: [{ id: 'bad', title: 'Bad', body: '', updated: 'foo' }],
+        deleted: [],
+      }),
+    )
+    openNotes()
+    const list = screen.getByRole('list', { name: 'Notes' })
+    expect(within(list).getByRole('button', { name: new RegExp(workingStyle.title) })).toBeInTheDocument()
+    expect(within(list).queryByRole('button', { name: /Bad|Broken/ })).not.toBeInTheDocument()
+  })
+
   it('persists edits under KEYS.notes, survives a remount and shows the footer note', async () => {
     const user = userEvent.setup()
     const first = openNotes()

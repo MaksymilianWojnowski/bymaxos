@@ -18,6 +18,14 @@ export function emptyStoredNotes(): StoredNotes {
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
 
+// A real calendar day as YYYY-MM-DD; Feb 30 and friends are rejected by the round trip.
+export function isDay(v: unknown): v is string {
+  if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false
+  const [y, m, d] = v.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d
+}
+
 // Reads whatever localStorage returned and keeps only well-formed entries.
 export function parseStoredNotes(raw: unknown): StoredNotes {
   if (!isRecord(raw)) return emptyStoredNotes()
@@ -29,27 +37,35 @@ export function parseStoredNotes(raw: unknown): StoredNotes {
         isRecord(e) &&
         typeof e.title === 'string' &&
         typeof e.body === 'string' &&
-        typeof e.updated === 'string'
+        isDay(e.updated)
       ) {
         edits[id] = { title: e.title, body: e.body, updated: e.updated }
       }
     }
   }
 
+  // A malformed `updated` drops the whole note: it would otherwise break the list's date line.
   const added: Note[] = Array.isArray(raw.added)
-    ? raw.added.flatMap((n): Note[] =>
-        isRecord(n) && typeof n.id === 'string' && typeof n.title === 'string' && typeof n.body === 'string'
-          ? [
-              {
-                id: n.id,
-                folder: NOTES_FOLDER,
-                title: n.title,
-                body: n.body,
-                ...(typeof n.updated === 'string' ? { updated: n.updated } : {}),
-              },
-            ]
-          : [],
-      )
+    ? raw.added.flatMap((n): Note[] => {
+        if (
+          !isRecord(n) ||
+          typeof n.id !== 'string' ||
+          typeof n.title !== 'string' ||
+          typeof n.body !== 'string' ||
+          (n.updated !== undefined && !isDay(n.updated))
+        ) {
+          return []
+        }
+        return [
+          {
+            id: n.id,
+            folder: NOTES_FOLDER,
+            title: n.title,
+            body: n.body,
+            ...(isDay(n.updated) ? { updated: n.updated } : {}),
+          },
+        ]
+      })
     : []
 
   const deleted = Array.isArray(raw.deleted)
@@ -78,7 +94,8 @@ export function mergeNotes(seed: Note[], stored: StoredNotes): VisibleNote[] {
   const added: VisibleNote[] = stored.added
     .filter((n) => !hidden.has(n.id))
     .map((n) => ({ ...n, local: true }))
-  return [...seeded, ...added].sort(byUpdatedDesc)
+  // Added notes come first, so on a same-day tie (the stable sort) a new note stays above an edited seed note.
+  return [...added, ...seeded].sort(byUpdatedDesc)
 }
 
 // Edits to a visitor note rewrite its own entry; edits to a seed note go to `edits`.
@@ -130,6 +147,7 @@ const DAY = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', y
 
 // Parses the date as local time: new Date('YYYY-MM-DD') would read it as UTC and can show the day before.
 export function formatNoteDay(day: string): string {
+  if (!isDay(day)) return ''
   const [year, month, date] = day.split('-').map(Number)
   return DAY.format(new Date(year, month - 1, date))
 }

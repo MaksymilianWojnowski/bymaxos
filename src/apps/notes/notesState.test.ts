@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { getContent } from '../../content'
-import { emptyStoredNotes, localDay, mergeNotes, parseStoredNotes, previewLine } from './notesState'
+import {
+  emptyStoredNotes,
+  formatNoteDay,
+  localDay,
+  mergeNotes,
+  parseStoredNotes,
+  previewLine,
+} from './notesState'
 
 const seed = getContent().notes
 
@@ -31,6 +38,25 @@ describe('parseStoredNotes', () => {
     })
     expect(parsed.edits).toEqual({ 'working-style': good })
     expect(parsed.deleted).toEqual(['looking-for'])
+  })
+
+  it('drops entries whose updated is not a real YYYY-MM-DD day', () => {
+    const parsed = parseStoredNotes({
+      edits: {
+        'working-style': { title: 'T', body: 'B', updated: 'foo' },
+        'looking-for': { title: 'T', body: 'B', updated: '2026-02-30' },
+      },
+      added: [{ id: 'x', title: 'X', body: '', updated: 'foo' }],
+    })
+    expect(parsed.edits).toEqual({})
+    expect(parsed.added).toEqual([])
+  })
+})
+
+describe('formatNoteDay', () => {
+  it('returns an empty string for a value that is not a day', () => {
+    expect(formatNoteDay('foo')).toBe('')
+    expect(formatNoteDay('2026-10-29')).not.toBe('')
   })
 })
 
@@ -78,6 +104,16 @@ describe('mergeNotes', () => {
       deleted: [],
     })
     expect(merged.map((n) => n.id)).toEqual(['n', 'looking-for', 'working-style'])
+  })
+
+  it('puts an added note first even when a seed note was edited the same day', () => {
+    const today = '2026-10-29'
+    const merged = mergeNotes(seed, {
+      edits: { 'looking-for': { title: 'x', body: '', updated: today } },
+      added: [{ id: 'new', folder: 'Notes', title: 'New Note', body: '', updated: today }],
+      deleted: [],
+    })
+    expect(merged[0].id).toBe('new')
   })
 })
 

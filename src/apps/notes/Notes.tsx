@@ -187,7 +187,7 @@ export default function NotesApp({ windowId, props }: AppProps) {
               placeholder="Search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full rounded-[6px] border border-black/15 bg-white px-2 py-1 text-black focus-visible:ring-2 focus-visible:ring-accent-link dark:border-white/15 dark:bg-[#1e1e1e] dark:text-white"
+              className="w-full rounded-[6px] border border-black/15 bg-window px-2 py-1 text-text-1 placeholder:text-text-2 focus-visible:ring-2 focus-visible:ring-accent-link dark:border-white/15"
             />
           </div>
           <ul aria-label="Notes" className="min-h-0 flex-1 overflow-auto px-2 pb-2">
