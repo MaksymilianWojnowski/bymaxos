@@ -38,6 +38,7 @@ describe('Dock', () => {
       'Mail',
       'Contacts',
       'Calendar',
+      'Notes',
       'Developer',
       'Terminal',
       'System Settings',

@@ -1,9 +1,10 @@
+import { previewLine } from '../apps/notes/notesState'
 import type { AppDefinition } from '../apps/types'
 import type { Content } from '../content/types'
 import type { Command } from './commands'
 import type { AppId } from './types'
 
-export type SearchKind = 'app' | 'document' | 'project' | 'experience' | 'skill' | 'folder'
+export type SearchKind = 'app' | 'document' | 'note' | 'project' | 'experience' | 'skill' | 'folder'
 
 export interface SearchItem {
   id: string
@@ -16,7 +17,7 @@ export interface SearchItem {
 }
 
 // Ties in score are broken by this order, then by title.
-const KIND_ORDER: SearchKind[] = ['app', 'document', 'project', 'experience', 'skill', 'folder']
+const KIND_ORDER: SearchKind[] = ['app', 'document', 'note', 'project', 'experience', 'skill', 'folder']
 const FOLDERS: [folderId: string, name: string][] = [
   ['about', 'About Me'],
   ['work', 'Work'],
@@ -56,6 +57,16 @@ export function buildIndex(content: Content, apps: AppDefinition[]): SearchItem[
       kind: 'document',
       nodeId: `doc-${d.id}`,
       command: openInTextEdit(`doc-${d.id}`),
+    })
+  }
+
+  for (const n of content.notes) {
+    items.push({
+      id: `note:${n.id}`,
+      title: n.title,
+      subtitle: previewLine(n.body) || n.folder,
+      kind: 'note',
+      command: { type: 'app.open', appId: 'notes', props: { item: n.id } },
     })
   }
 

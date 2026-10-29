@@ -3,6 +3,7 @@ import contactsIcon from '../assets/icons/contacts.png'
 import finderIcon from '../assets/icons/finder.png'
 import launchpadIcon from '../assets/icons/launchpad.png'
 import mailIcon from '../assets/icons/mail.png'
+import notesIcon from '../assets/icons/notes.png'
 import previewIcon from '../assets/icons/preview.png'
 import systemInfoIcon from '../assets/icons/system-information.png'
 import systemSettingsIcon from '../assets/icons/system-settings.png'
@@ -17,6 +18,7 @@ import type { Command } from '../system/commands'
 import type { AppId, WindowSpec } from '../system/types'
 import { GitHubGlyph, LinkedInGlyph } from '../ui/glyphs'
 import { finderMenus } from './finder/menus'
+import { notesMenus } from './notes/menus'
 import { resumeMenus } from './resume/menus'
 import type { AppDefinition, MenuContext, MenuDef, MenuItemDef } from './types'
 
@@ -153,6 +155,20 @@ const APP_LIST: (AppDefinition | null)[] = [
       singleInstance: true,
     },
     dock: { order: 4, group: 'apps' },
+  },
+  {
+    id: 'notes',
+    name: 'Notes',
+    icon: { image: notesIcon },
+    load: () => import('./notes/Notes'),
+    menus: notesMenus,
+    window: {
+      defaultSize: { w: 860, h: 560 },
+      minSize: { w: 600, h: 360 },
+      resizable: true,
+      singleInstance: true,
+    },
+    dock: { order: 5, group: 'apps' },
   },
   {
     id: 'developer',

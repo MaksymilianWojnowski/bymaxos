@@ -15,6 +15,16 @@ const item = (over: Partial<SearchItem> & Pick<SearchItem, 'title'>): SearchItem
 })
 
 describe('buildIndex', () => {
+  it('indexes seed notes as kind note opening Notes at that note', () => {
+    for (const n of getContent().notes) {
+      expect(index.find((i) => i.id === `note:${n.id}`)).toMatchObject({
+        title: n.title,
+        kind: 'note',
+        command: { type: 'app.open', appId: 'notes', props: { item: n.id } },
+      })
+    }
+  })
+
   it('indexes launchable apps with dock.activate', () => {
     expect(find('Mail')).toMatchObject({
       kind: 'app',
