@@ -22,6 +22,7 @@ const sidebar = () => screen.getByRole('navigation', { name: 'Albums' })
 const dialog = () => screen.queryByRole('dialog')
 const thumb = (alt: string) => screen.getByRole('button', { name: alt })
 const lightboxButton = (name: string) => within(dialog() as HTMLElement).getByRole('button', { name })
+const isAriaDisabled = (name: string) => lightboxButton(name).getAttribute('aria-disabled') === 'true'
 
 beforeEach(() => {
   state.albums = [trips, city]
@@ -61,7 +62,8 @@ describe('Photos', () => {
     await userEvent.click(thumb('Alpha'))
 
     expect(dialog()).toHaveAccessibleName('Alpha')
-    expect(lightboxButton('Previous photo')).toBeDisabled()
+    expect(dialog()).toHaveAttribute('aria-modal', 'true')
+    expect(isAriaDisabled('Previous photo')).toBe(true)
 
     await userEvent.keyboard('{ArrowRight}')
     expect(dialog()).toHaveAccessibleName('Beta')
@@ -69,10 +71,13 @@ describe('Photos', () => {
     expect(dialog()).toHaveAccessibleName('Gamma')
     expect(within(dialog() as HTMLElement).getByText('Dusk')).toBeInTheDocument()
 
-    // All Photos ends with Delta from the City album.
+    // All Photos ends with Delta from the City album; Next stays focusable but is aria-disabled.
     await userEvent.keyboard('{ArrowRight}')
     expect(dialog()).toHaveAccessibleName('Delta')
-    expect(lightboxButton('Next photo')).toBeDisabled()
+    expect(isAriaDisabled('Next photo')).toBe(true)
+    await userEvent.click(lightboxButton('Next photo'))
+    expect(dialog()).toHaveAccessibleName('Delta')
+    expect(lightboxButton('Next photo')).toHaveFocus()
 
     await userEvent.keyboard('{Escape}')
     expect(dialog()).toBeNull()
@@ -95,5 +100,46 @@ describe('Photos', () => {
   it('props.item opens the lightbox on that photo', () => {
     render(<PhotosApp windowId="w1" props={{ item: 't2' }} />)
     expect(dialog()).toHaveAccessibleName('Beta')
+  })
+
+  it('a new props.item while Photos is open shows that photo', () => {
+    const { rerender } = render(<PhotosApp windowId="w1" props={{ item: 't2' }} />)
+    expect(dialog()).toHaveAccessibleName('Beta')
+
+    rerender(<PhotosApp windowId="w1" props={{ item: 'c1' }} />)
+    expect(dialog()).toHaveAccessibleName('Delta')
+    expect(within(sidebar()).getByRole('button', { name: 'All Photos' })).toHaveAttribute('aria-current', 'true')
+  })
+
+  it('keys outside the lightbox are not taken: ArrowRight and Escape from a focused input elsewhere do nothing', async () => {
+    render(
+      <>
+        <input aria-label="Outside" />
+        <PhotosApp windowId="w1" />
+      </>,
+    )
+    await userEvent.click(thumb('Alpha'))
+    await userEvent.click(screen.getByRole('textbox', { name: 'Outside' }))
+
+    await userEvent.keyboard('{ArrowRight}')
+    expect(dialog()).toHaveAccessibleName('Alpha')
+    await userEvent.keyboard('{Escape}')
+    expect(dialog()).toHaveAccessibleName('Alpha')
+  })
+
+  it('while the lightbox is open the sidebar and grid are inert, and Tab wraps within the lightbox buttons', async () => {
+    render(<PhotosApp windowId="w1" />)
+    await userEvent.click(thumb('Alpha'))
+
+    expect(sidebar()).toHaveAttribute('inert')
+    // The grid is inert as a whole, so its thumbnails sit under an inert ancestor.
+    expect(thumb('Beta').closest('[inert]')).not.toBeNull()
+
+    lightboxButton('Next photo').focus()
+    await userEvent.tab()
+    expect(lightboxButton('Close')).toHaveFocus()
+
+    await userEvent.tab({ shift: true })
+    expect(lightboxButton('Next photo')).toHaveFocus()
   })
 })
