@@ -5,6 +5,7 @@ import launchpadIcon from '../assets/icons/launchpad.png'
 import mailIcon from '../assets/icons/mail.png'
 import notesIcon from '../assets/icons/notes.png'
 import previewIcon from '../assets/icons/preview.png'
+import safariIcon from '../assets/icons/safari.png'
 import systemInfoIcon from '../assets/icons/system-information.png'
 import systemSettingsIcon from '../assets/icons/system-settings.png'
 import terminalIcon from '../assets/icons/terminal.png'
@@ -105,6 +106,19 @@ const APP_LIST: (AppDefinition | null)[] = [
       singleInstance: false,
       documentKey: 'fileId',
     },
+  },
+  {
+    id: 'safari',
+    name: 'Safari',
+    icon: { image: safariIcon },
+    load: () => import('./safari/Safari'),
+    window: {
+      defaultSize: { w: 960, h: 620 },
+      minSize: { w: 520, h: 360 },
+      resizable: true,
+      singleInstance: false,
+    },
+    dock: { order: 1, group: 'apps' },
   },
   {
     id: 'mail',

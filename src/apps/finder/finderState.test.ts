@@ -54,7 +54,7 @@ describe('openTarget', () => {
   })
 
   it('opens a file in Quick Look when its app is not registered', () => {
-    const node = { ...vfs.nodes['resume-pdf'], open: { appId: 'safari' } } as VNode
+    const node = { ...vfs.nodes['resume-pdf'], open: { appId: 'not-installed' } } as VNode
     expect(openTarget(node)).toEqual({
       type: 'app.open',
       appId: 'quicklook',

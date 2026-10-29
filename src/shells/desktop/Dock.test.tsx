@@ -35,6 +35,7 @@ describe('Dock', () => {
       'Launchpad',
       'Finder',
       'Resume',
+      'Safari',
       'Mail',
       'Contacts',
       'Calendar',
