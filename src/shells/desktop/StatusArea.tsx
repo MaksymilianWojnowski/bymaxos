@@ -63,7 +63,16 @@ export function StatusArea() {
       >
         <Search aria-hidden="true" className={ICON} />
       </button>
-      <time dateTime={now.toISOString()}>{formatMenuClock(now)}</time>
+      <button
+        type="button"
+        aria-label="Notification Center"
+        aria-expanded={overlay === 'notificationCenter'}
+        data-notification-toggle
+        onClick={() => setOverlay(overlay === 'notificationCenter' ? null : 'notificationCenter')}
+        className="flex h-[var(--mb-h)] items-center rounded-[4px] px-1"
+      >
+        <time dateTime={now.toISOString()}>{formatMenuClock(now)}</time>
+      </button>
     </div>
   )
 }

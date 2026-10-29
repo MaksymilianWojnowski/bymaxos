@@ -40,4 +40,5 @@ export const KEYS = {
   windows: 'bymaxos.windows',
   icons: 'bymaxos.icons',
   github: 'bymaxos.github',
+  notifications: 'bymaxos.notifications',
 } as const;

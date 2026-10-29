@@ -2,6 +2,7 @@ import { documents } from './en/documents'
 import { education } from './en/education'
 import { experience } from './en/experience'
 import { links } from './en/links'
+import { notifications } from './en/notifications'
 import { profile } from './en/profile'
 import { projects } from './en/projects'
 import { site } from './en/site'
@@ -10,6 +11,7 @@ import type { Content, Locale } from './types'
 
 const en: Content = {
   profile,
+  notifications,
   links,
   experience,
   education,

@@ -79,6 +79,15 @@ html.reduce-transparency .launchpad-backdrop {
   }
 }
 
+@keyframes notification-slide {
+  from {
+    transform: translateX(16px);
+  }
+  to {
+    transform: none;
+  }
+}
+
 @keyframes window-open {
   from {
     opacity: 0;

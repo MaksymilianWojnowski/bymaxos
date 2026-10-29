@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { getApp } from '../apps/registry'
 import { getContent } from './index'
 
 const content = getContent()
@@ -51,6 +52,16 @@ describe('content', () => {
 
   it('includes a default wallpaper', () => {
     expect(ids(content.site.wallpapers)).toContain('default')
+  })
+
+  it('notification ids are unique, titles and bodies non-empty, appIds exist in the registry', () => {
+    const list = content.notifications
+    expect(new Set(ids(list)).size).toBe(list.length)
+    for (const n of list) {
+      expect(n.title.trim()).not.toBe('')
+      expect(n.body.trim()).not.toBe('')
+      if (n.appId !== undefined) expect(getApp(n.appId)).toBeDefined()
+    }
   })
 
   it('meeting type ids are unique and slugs non-empty', () => {

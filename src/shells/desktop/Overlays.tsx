@@ -1,6 +1,7 @@
 import { useSystem } from '../../system/store'
 import { AppSwitcher } from './AppSwitcher'
 import { Launchpad } from './Launchpad'
+import { NotificationCenter } from './NotificationCenter'
 import { Spotlight } from './Spotlight'
 
 // Mount point for system overlays: only the open one renders, since overlay holds a single value.
@@ -9,5 +10,6 @@ export function Overlays() {
   if (overlay === 'spotlight') return <Spotlight />
   if (overlay === 'launchpad') return <Launchpad />
   if (overlay === 'appSwitcher') return <AppSwitcher />
+  if (overlay === 'notificationCenter') return <NotificationCenter />
   return null
 }

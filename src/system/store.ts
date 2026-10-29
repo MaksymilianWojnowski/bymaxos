@@ -22,6 +22,7 @@ export const AVAILABLE_OVERLAYS = new Set<Exclude<Overlay, null>>([
   'spotlight',
   'launchpad',
   'missionControl',
+  'notificationCenter',
   'appSwitcher',
 ])
 

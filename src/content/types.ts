@@ -85,8 +85,16 @@ export interface Site {
   scheduling: { calUrl?: string; meetingTypes: MeetingType[] }
 }
 
+export interface NotificationItem {
+  id: string
+  title: string
+  body: string
+  appId?: string
+}
+
 export interface Content {
   profile: Profile
+  notifications: NotificationItem[]
   links: Link[]
   experience: Experience[]
   education: Education[]
