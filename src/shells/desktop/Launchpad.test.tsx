@@ -46,6 +46,32 @@ describe('Launchpad', () => {
     expect(panel().getByText('No Results')).toBeInTheDocument()
   })
 
+  it('returns focus to the opener when the overlay closes', () => {
+    cleanup()
+    render(<button type="button">Opener</button>)
+    const opener = screen.getByRole('button', { name: 'Opener' })
+    opener.focus()
+    const { unmount } = render(<Launchpad />)
+    expect(search()).toHaveFocus()
+    unmount()
+    expect(opener).toHaveFocus()
+  })
+
+  it('keeps Tab inside the panel: from the last app it wraps to the search field, and Shift+Tab goes back', () => {
+    const buttons = appButtons()
+    const last = buttons[buttons.length - 1]
+    last.focus()
+    fireEvent.keyDown(last, { key: 'Tab' })
+    expect(search()).toHaveFocus()
+    fireEvent.keyDown(search(), { key: 'Tab', shiftKey: true })
+    expect(last).toHaveFocus()
+  })
+
+  it('uses a white focus ring, which stays visible over the dark scrim', () => {
+    expect(search()).toHaveClass('focus-visible:ring-white')
+    expect(appButtons()[0]).toHaveClass('focus-visible:ring-white')
+  })
+
   it('clicking an app opens it and fades Launchpad out', async () => {
     fireEvent.click(panel().getByRole('button', { name: 'Mail' }))
     expect(useSystem.getState().wm.windows.some((w) => w.appId === 'mail')).toBe(true)

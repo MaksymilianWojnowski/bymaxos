@@ -33,7 +33,7 @@ const DRAG_THRESHOLD = 4
 const DESKTOP_IDS = vfs.desktop
 
 const EMPTY_MENU: MenuItemDef[] = [
-  { label: 'Change Wallpaper…', command: { type: 'overlay.open', overlay: 'controlCenter' } },
+  { label: 'Change Wallpaper…', command: { type: 'app.open', appId: 'settings', props: { item: 'wallpaper' } } },
   { label: 'Clean Up', command: { type: 'desktop.cleanUp' } },
   { separator: true },
   { label: 'About bymaxOS', command: { type: 'app.open', appId: 'about' } },
@@ -170,7 +170,7 @@ export function Desktop() {
         onKeyDown={onKeyDown}
         onClick={onSurfaceClick}
         onContextMenu={onSurfaceContextMenu}
-        className="absolute inset-0 outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="absolute inset-0 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
       >
         {DESKTOP_IDS.map((id) => {
           const node = vfs.nodes[id]

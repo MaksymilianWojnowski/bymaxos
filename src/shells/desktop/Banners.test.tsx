@@ -23,6 +23,12 @@ describe('Banners', () => {
     expect(region).toHaveTextContent('Email copied.')
   })
 
+  it('uses the opaque window colour for the card so its body text keeps AA contrast', () => {
+    useSystem.getState().notify('Contacts', 'Email copied.')
+    render(<Banners />)
+    expect(screen.getByText('Email copied.').parentElement).toHaveStyle({ background: 'var(--window-bg)' })
+  })
+
   it('dismiss button removes the banner', () => {
     useSystem.getState().notify('Contacts')
     render(<Banners />)

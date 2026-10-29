@@ -64,6 +64,9 @@ function RadioGroup<T extends string>({
   itemClass: string
   showText?: boolean
 }) {
+  // A stale value (an id no option has) leaves no selected radio, so the first one takes the tab stop.
+  const tabStop = options.some((o) => o.value === value) ? value : options[0]?.value
+
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
     const step = STEP[e.key]
     if (step === undefined) return
@@ -86,7 +89,7 @@ function RadioGroup<T extends string>({
             aria-checked={checked}
             aria-label={o.label}
             title={o.label}
-            tabIndex={checked ? 0 : -1}
+            tabIndex={o.value === tabStop ? 0 : -1}
             onClick={() => onChange(o.value)}
             style={o.style}
             className={itemClass}

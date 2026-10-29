@@ -82,6 +82,14 @@ describe('Desktop', () => {
     expect(screen.getByRole('menuitem', { name: 'Clean Up' })).toBeInTheDocument()
   })
 
+  it('opens System Settings at the Wallpaper section from Change Wallpaper', () => {
+    render(<DesktopShell />)
+    fireEvent.contextMenu(desktop())
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Change Wallpaper…' }))
+    const settings = useSystem.getState().wm.windows.find((w) => w.appId === 'settings')
+    expect(settings?.props).toEqual({ item: 'wallpaper' })
+  })
+
   it('deselects the windows when empty space is clicked, making Finder the menu bar app', () => {
     render(<DesktopShell />)
     act(() => {

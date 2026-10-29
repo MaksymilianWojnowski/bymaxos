@@ -31,6 +31,12 @@ describe('AppSwitcher', () => {
     expect(screen.queryByText('Contacts')).toBeNull()
   })
 
+  it('marks the selected cell with a text-coloured ring, visible on the light glass', () => {
+    render(<AppSwitcher />)
+    expect(screen.getByRole('option', { name: 'TextEdit' })).toHaveClass('ring-2', 'ring-text-1', 'bg-black/15')
+    expect(screen.getByRole('option', { name: 'Contacts' })).not.toHaveClass('ring-2')
+  })
+
   it('clicking an option commits that app', async () => {
     render(<AppSwitcher />)
     await userEvent.click(screen.getByRole('option', { name: 'Contacts' }))

@@ -5,11 +5,8 @@ import { useSystem, type Banner } from '../../system/store'
 
 export const BANNER_MS = 5000
 
-const GLASS = {
-  background: 'var(--glass-bg)',
-  backdropFilter: 'blur(var(--glass-blur))',
-  borderColor: 'var(--glass-border)',
-}
+// Opaque window colour, so the 12px body text keeps AA contrast over any wallpaper.
+const SOLID = { background: 'var(--window-bg)', borderColor: 'var(--glass-border)' }
 
 function BannerCard({ banner }: { banner: Banner }) {
   const dismiss = useSystem((s) => s.dismissBanner)
@@ -20,7 +17,7 @@ function BannerCard({ banner }: { banner: Banner }) {
   }, [banner.id, dismiss])
 
   return (
-    <div className="relative w-[340px] rounded-[12px] border p-3 pr-9 shadow-lg" style={GLASS}>
+    <div className="relative w-[340px] rounded-[12px] border p-3 pr-9 shadow-lg" style={SOLID}>
       <p className="text-[13px] font-semibold text-text-1">{banner.title}</p>
       {banner.body && <p className="mt-0.5 text-[12px] text-text-2">{banner.body}</p>}
       <button

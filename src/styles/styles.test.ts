@@ -121,6 +121,15 @@ describe('accent overrides', () => {
   })
 })
 
+// The checked switch knob is the window colour in dark mode, so it stays 3:1 against each accent track.
+describe('switch knob contrast (dark)', () => {
+  it.each(['blue', ...ACCENT_NAMES])('gives the dark knob 3:1 or better on the %s track', (accent) => {
+    const track =
+      accent === 'blue' ? declaredIn(':root', 'accent') : declaredIn(`:root[data-accent='${accent}']`, 'accent')
+    expect(contrast(hexRgb(themeToken('dark', 'window-bg')), hexRgb(track))).toBeGreaterThanOrEqual(3)
+  })
+})
+
 // The on-track fill and the window focus rings are non-text UI, so they need 3:1 against the light window.
 describe('accent non-text contrast (light)', () => {
   it.each(['blue', ...ACCENT_NAMES])('gives %s the strong accent 3:1 or better on #ececec', (accent) => {

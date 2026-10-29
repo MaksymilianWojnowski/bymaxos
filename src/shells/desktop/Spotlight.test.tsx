@@ -58,6 +58,17 @@ describe('Spotlight', () => {
     expect(useSystem.getState().overlay).toBeNull()
   })
 
+  it('ignores Enter while an IME composition is in progress', () => {
+    fireEvent.change(search(), { target: { value: 'resume' } })
+    fireEvent.keyDown(search(), { key: 'Enter', isComposing: true })
+    expect(useSystem.getState().wm.windows.some((w) => w.appId === 'resume')).toBe(false)
+    expect(useSystem.getState().overlay).toBe('spotlight')
+  })
+
+  it('uses the opaque window colour for the panel so its secondary text keeps AA contrast', () => {
+    expect(screen.getByRole('dialog', { name: 'Spotlight' }).style.background).toContain('--window-bg')
+  })
+
   it('clicking a result runs it', () => {
     fireEvent.change(search(), { target: { value: 'mail' } })
     fireEvent.click(screen.getByRole('option', { name: 'Mail' }))

@@ -32,7 +32,7 @@ export function AppSwitcher() {
               aria-selected={isSelected}
               aria-label={app?.name ?? appId}
               onClick={() => switcherCommit(i)}
-              className={`flex h-[112px] w-[112px] items-center justify-center rounded-[14px] ${isSelected ? 'bg-white/25' : ''}`}
+              className={`flex h-[112px] w-[112px] items-center justify-center rounded-[14px] ${isSelected ? 'bg-black/15 ring-2 ring-text-1 dark:bg-white/25' : ''}`}
             >
               {app && <AppIcon app={app} size={96} />}
             </button>

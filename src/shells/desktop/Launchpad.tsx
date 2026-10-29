@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { launchpadApps } from '../../apps/registry'
 import { dispatch } from '../../system/commands'
 import { useSystem } from '../../system/store'
@@ -22,9 +22,30 @@ export function Launchpad() {
   const apps = needle === '' ? APPS : APPS.filter((a) => a.name.toLocaleLowerCase('en').includes(needle))
 
   useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null
     inputRef.current?.focus()
-    return () => window.clearTimeout(timer.current)
+    return () => {
+      window.clearTimeout(timer.current)
+      // Focus goes back to the opener only when the panel lost it; a window that took focus keeps it.
+      const active = document.activeElement
+      if (opener?.isConnected && (active === null || active === document.body)) opener.focus()
+    }
   }, [])
+
+  // Tab cycles through the search field and the app buttons only, so focus cannot leave the full-screen panel.
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Tab') return
+    const items = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('input, button'))
+    const first = items[0]
+    const last = items[items.length - 1]
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
 
   // Fades out, then closes; under reduce-motion it closes at once. Esc and the dock toggle close instantly, via the store.
   const close = () => {
@@ -51,7 +72,12 @@ export function Launchpad() {
         if (!(e.target as Element).closest('button, input')) close()
       }}
     >
-      <div role="dialog" aria-label="Launchpad" className="flex w-full max-w-[960px] flex-col items-center px-4 pt-14 pb-10">
+      <div
+        role="dialog"
+        aria-label="Launchpad"
+        onKeyDown={onKeyDown}
+        className="flex w-full max-w-[960px] flex-col items-center px-4 pt-14 pb-10"
+      >
         <input
           ref={inputRef}
           type="search"
@@ -61,7 +87,7 @@ export function Launchpad() {
           onChange={(e) => setQuery(e.target.value)}
           autoComplete="off"
           spellCheck={false}
-          className="mb-10 w-[220px] rounded-[8px] bg-black/40 px-3 py-1.5 text-center text-[13px] text-white outline-none placeholder:text-white/80 focus-visible:ring-2 focus-visible:ring-accent"
+          className="mb-10 w-[220px] rounded-[8px] bg-black/40 px-3 py-1.5 text-center text-[13px] text-white outline-none placeholder:text-white/80 focus-visible:ring-2 focus-visible:ring-white"
           style={LABEL_SHADOW}
         />
 
@@ -74,7 +100,7 @@ export function Launchpad() {
               <button
                 type="button"
                 onClick={() => run(app.id)}
-                className="flex w-[120px] flex-col items-center gap-2 rounded-[12px] p-2 outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="flex w-[120px] flex-col items-center gap-2 rounded-[12px] p-2 outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 <AppIcon app={app} size={80} />
                 <span className="text-[13px] text-white" style={LABEL_SHADOW}>

@@ -85,6 +85,14 @@ describe('SettingsApp', () => {
     expect(settings()).toMatchObject({ reduceMotion: true, reduceTransparency: true })
   })
 
+  it('gives the first wallpaper radio the tab stop when the stored id matches no wallpaper', () => {
+    useSystem.setState({ settings: { ...settings(), wallpaperId: 'no-such-wallpaper' } })
+    renderApp({ item: 'wallpaper' })
+    const radios = screen.getAllByRole('radio')
+    expect(radios[0]).toHaveAttribute('tabindex', '0')
+    expect(radios.slice(1).every((r) => r.getAttribute('tabindex') === '-1')).toBe(true)
+  })
+
   it('sets the dock size from the slider and toggles magnification from the Dock switch', () => {
     renderApp({ item: 'dock' })
     const slider = screen.getByLabelText('Size')

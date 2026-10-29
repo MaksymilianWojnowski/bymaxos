@@ -12,11 +12,8 @@ import { iconFor } from '../../ui/fileIcon'
 // Content and the app registry are static, so the index is built once per page load.
 const INDEX = buildIndex(getContent(), APPS)
 
-const GLASS = {
-  background: 'var(--glass-bg)',
-  backdropFilter: 'blur(var(--glass-blur))',
-  borderColor: 'var(--glass-border)',
-}
+// Text sits on the opaque window colour, not on the translucent glass, so its contrast is fixed (AA in both themes).
+const SOLID = { background: 'var(--window-bg)', borderColor: 'var(--glass-border)' }
 
 function ResultIcon({ item }: { item: SearchItem }) {
   if (item.appId) {
@@ -63,7 +60,7 @@ export function Spotlight() {
       e.preventDefault()
       const step = e.key === 'ArrowDown' ? 1 : -1
       setActive((a) => (a + step + results.length) % results.length)
-    } else if (e.key === 'Enter' && activeItem) {
+    } else if (e.key === 'Enter' && activeItem && !e.nativeEvent.isComposing) {
       e.preventDefault()
       run(activeItem)
     }
@@ -84,7 +81,7 @@ export function Spotlight() {
         role="dialog"
         aria-label="Spotlight"
         className="absolute top-[20vh] left-1/2 flex w-[640px] max-w-[calc(100vw-32px)] -translate-x-1/2 flex-col overflow-hidden rounded-[14px] border font-sans text-text-1 shadow-lg"
-        style={GLASS}
+        style={SOLID}
       >
         <div className="flex items-center gap-3 px-4 py-3">
           <Search aria-hidden="true" className="h-5 w-5 shrink-0 text-text-2" />

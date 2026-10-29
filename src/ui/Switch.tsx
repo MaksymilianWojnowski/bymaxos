@@ -17,7 +17,7 @@ export function Switch({ label, checked, onChange }: { label: string; checked: b
       >
         <span
           className={`absolute top-[2px] h-[16px] w-[16px] rounded-full bg-white transition-transform ${
-            checked ? 'translate-x-[16px]' : 'translate-x-[2px]'
+            checked ? 'translate-x-[16px] dark:bg-window' : 'translate-x-[2px]'
           }`}
         />
       </span>

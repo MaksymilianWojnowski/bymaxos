@@ -152,7 +152,7 @@ export function Dock() {
                   aria-label={external ? `${app.name} (opens in new tab)` : app.name}
                   onClick={() => activate(app)}
                   onContextMenu={(e) => onContextMenu(e, app)}
-                  className="peer relative flex rounded-[22.5%] outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  className="peer relative flex rounded-[22.5%] outline-none focus-visible:ring-2 focus-visible:ring-accent-link"
                   style={{
                     width: size,
                     height: size,
