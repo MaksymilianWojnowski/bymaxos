@@ -4,6 +4,7 @@ import finderIcon from '../assets/icons/finder.png'
 import launchpadIcon from '../assets/icons/launchpad.png'
 import mailIcon from '../assets/icons/mail.png'
 import notesIcon from '../assets/icons/notes.png'
+import photosIcon from '../assets/icons/photos.png'
 import previewIcon from '../assets/icons/preview.png'
 import safariIcon from '../assets/icons/safari.png'
 import systemInfoIcon from '../assets/icons/system-information.png'
@@ -183,6 +184,19 @@ const APP_LIST: (AppDefinition | null)[] = [
       singleInstance: true,
     },
     dock: { order: 5, group: 'apps' },
+  },
+  {
+    id: 'photos',
+    name: 'Photos',
+    icon: { image: photosIcon },
+    load: () => import('./photos/Photos'),
+    window: {
+      defaultSize: { w: 900, h: 600 },
+      minSize: { w: 520, h: 360 },
+      resizable: true,
+      singleInstance: true,
+    },
+    dock: { order: 6, group: 'apps' },
   },
   {
     id: 'developer',

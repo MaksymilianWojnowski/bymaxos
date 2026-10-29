@@ -48,6 +48,7 @@ const KIND: Record<FileType, string> = {
   pdf: 'PDF Document',
   vcf: 'vCard',
   webloc: 'Web Location',
+  image: 'Image',
 }
 
 const kindOf = (node: VNode): string => (node.kind === 'folder' ? 'Folder' : KIND[node.fileType])

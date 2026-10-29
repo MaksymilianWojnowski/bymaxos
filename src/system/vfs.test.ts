@@ -93,6 +93,33 @@ describe('buildVfs', () => {
   })
 })
 
+describe('photos folder', () => {
+  const photo = (id: string, alt: string, caption?: string) => ({ id, src: `photos/${id}.jpg`, alt, width: 3, height: 2, caption })
+  const withPhotos = () => {
+    const content = structuredClone(getContent())
+    content.photoAlbums = [{ id: 'trips', title: 'Trips', photos: [photo('a', 'Harbour'), photo('b', 'Dune', 'Sand')] }]
+    return buildVfs(content)
+  }
+
+  it('Photos folder lists image nodes opening Photos at that photo', () => {
+    const v = withPhotos()
+    expect(v.nodes.photos).toMatchObject({ kind: 'folder', children: ['photo-a', 'photo-b'] })
+    expect(v.nodes['photo-b']).toEqual({
+      id: 'photo-b',
+      name: 'Sand.jpg',
+      kind: 'file',
+      fileType: 'image',
+      open: { appId: 'photos', props: { item: 'b' } },
+      preview: { kind: 'text', title: 'Sand.jpg', body: 'Dune' },
+      src: `${import.meta.env.BASE_URL}photos/b.jpg`,
+    })
+  })
+
+  it('with no photos the folder keeps its placeholder', () => {
+    expect(folder('photos')).toMatchObject({ children: [], placeholder: "Photos will appear here once they're added." })
+  })
+})
+
 describe('node ids', () => {
   it('are unique, so a duplicate id is an error rather than a silent overwrite', () => {
     const ids = Object.values(vfs.nodes).map((n) => n.id)

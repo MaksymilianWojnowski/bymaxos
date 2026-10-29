@@ -14,6 +14,8 @@ const FILE_ICON: Record<FileType, string> = {
   pdf: docPdf,
   vcf: docVcf,
   webloc: docWebloc,
+  // Fallback only: image nodes carry their photo and show it.
+  image: docMd,
 }
 
 // Folders macOS draws with their own artwork.
@@ -26,4 +28,4 @@ const FOLDER_ICON: Record<string, string> = {
 
 // Image URL of the icon Finder shows for this node.
 export const iconFor = (node: VNode): string =>
-  node.kind === 'folder' ? (FOLDER_ICON[node.id] ?? folder) : FILE_ICON[node.fileType]
+  node.kind === 'folder' ? (FOLDER_ICON[node.id] ?? folder) : (node.src ?? FILE_ICON[node.fileType])

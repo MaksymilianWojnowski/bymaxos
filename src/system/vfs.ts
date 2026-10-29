@@ -1,7 +1,8 @@
-import type { Content, DocumentFile, Experience, Project } from '../content/types'
+import type { Content, DocumentFile, Experience, Photo, Project } from '../content/types'
+import { allPhotos, photoUrl } from './photos'
 import type { AppId } from './types'
 
-export type FileType = 'md' | 'pdf' | 'vcf' | 'webloc'
+export type FileType = 'md' | 'pdf' | 'vcf' | 'webloc' | 'image'
 export type Preview =
   | { kind: 'text'; title: string; body: string }
   | { kind: 'link'; title: string; url: string; description: string }
@@ -15,6 +16,8 @@ export type VNode =
       fileType: FileType
       open: { appId: AppId; props?: Record<string, unknown> }
       preview: Preview
+      // Image nodes only: the photo's resolved URL, which Finder draws as the icon.
+      src?: string
     }
 
 export interface Vfs {
@@ -87,6 +90,19 @@ const projectFiles = (p: Project): VNode[] => {
 const docFile = (d: DocumentFile): VNode =>
   file(`doc-${d.id}`, d.name, 'md', { appId: 'textedit', props: { fileId: `doc-${d.id}` } }, textPreview(d.name, d.body))
 
+const photoNode = (p: Photo): VNode => {
+  const name = `${p.caption || p.alt}.jpg`
+  return {
+    id: `photo-${p.id}`,
+    name,
+    kind: 'file',
+    fileType: 'image',
+    open: { appId: 'photos', props: { item: p.id } },
+    preview: textPreview(name, p.alt),
+    src: photoUrl(p.src),
+  }
+}
+
 // Desktop children are aliases of nodes that live in their real folders.
 const DESKTOP_CHILDREN = ['resume-pdf', 'about', 'projects', 'contact-vcf']
 
@@ -94,6 +110,7 @@ export function buildVfs(c: Content): Vfs {
   const interests = c.documents.filter((d) => d.folder === 'interests')
   const { profile } = c
   const projectNodes = c.projects.flatMap(projectFiles)
+  const photoNodes = allPhotos(c.photoAlbums).map(photoNode)
 
   const nodeList: VNode[] = [
     folder('root', 'bymaxOS', ['desktop', 'documents', 'about', 'work', 'projects', 'photos', 'interests', 'trash']),
@@ -131,7 +148,12 @@ export function buildVfs(c: Content): Vfs {
       'Projects',
       projectNodes.map((n) => n.id),
     ),
-    folder('photos', 'Photos', [], "Photos will appear here once they're added."),
+    folder(
+      'photos',
+      'Photos',
+      photoNodes.map((n) => n.id),
+      photoNodes.length === 0 ? "Photos will appear here once they're added." : undefined,
+    ),
     folder(
       'interests',
       'Interests',
@@ -142,6 +164,7 @@ export function buildVfs(c: Content): Vfs {
     ...c.documents.filter((d) => d.folder === 'about' || d.folder === 'interests').map(docFile),
     ...c.experience.map(workFile),
     ...projectNodes,
+    ...photoNodes,
   ]
 
   const nodes: Record<string, VNode> = {}
