@@ -67,7 +67,7 @@ describe('NotificationCenter', () => {
   })
 
   it('the clock button closes an open panel instead of reopening it', () => {
-    const clock = screen.getByRole('button', { name: 'Notification Center' })
+    const clock = screen.getByRole('button', { name: /^Notification Center, / })
     fireEvent.mouseDown(clock)
     fireEvent.click(clock)
     expect(useSystem.getState().overlay).toBeNull()
@@ -81,7 +81,7 @@ describe('NotificationCenter', () => {
 
   it('returns focus to the clock button when Escape closes the panel', () => {
     act(() => useSystem.getState().setOverlay(null))
-    const clock = screen.getByRole('button', { name: 'Notification Center' })
+    const clock = screen.getByRole('button', { name: /^Notification Center, / })
     clock.focus()
     act(() => useSystem.getState().setOverlay('notificationCenter'))
     expect(screen.getByRole('dialog', { name: 'Notification Center' })).toHaveFocus()

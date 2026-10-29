@@ -14,7 +14,7 @@ afterEach(() => {
 
 describe('StatusArea', () => {
   it('the clock is a button named Notification Center that toggles the panel', () => {
-    const clock = screen.getByRole('button', { name: 'Notification Center' })
+    const clock = screen.getByRole('button', { name: /^Notification Center, / })
     expect(clock).toHaveAttribute('aria-expanded', 'false')
     expect(clock.querySelector('time')).not.toBeNull()
 

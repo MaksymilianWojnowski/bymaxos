@@ -65,7 +65,8 @@ export function StatusArea() {
       </button>
       <button
         type="button"
-        aria-label="Notification Center"
+        // The name carries the visible time too, since axe requires visible text to be part of the label.
+        aria-label={`Notification Center, ${formatMenuClock(now)}`}
         aria-expanded={overlay === 'notificationCenter'}
         data-notification-toggle
         onClick={() => setOverlay(overlay === 'notificationCenter' ? null : 'notificationCenter')}
