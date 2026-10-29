@@ -146,22 +146,29 @@ test.describe('system overlays axe', () => {
   const scanOverlays = async (page: Page) => {
     await unlock(page)
 
+    const spotlight = page.getByRole('combobox', { name: 'Spotlight Search' })
     await page.getByRole('button', { name: 'Spotlight', exact: true }).click()
-    await page.getByRole('combobox', { name: 'Spotlight Search' }).fill('resume')
+    await spotlight.fill('resume')
     await expect(page.getByRole('option').first()).toBeVisible()
     expect(await blocking(page)).toEqual([])
     await page.keyboard.press('Escape')
+    await expect(spotlight).toBeHidden()
 
+    const launchpad = page.getByRole('dialog', { name: 'Launchpad', exact: true })
     await openDock(page, 'Launchpad')
-    await expect(page.getByRole('dialog', { name: 'Launchpad', exact: true })).toBeVisible()
+    await expect(launchpad).toBeVisible()
+    await settle(launchpad)
     expect(await blocking(page)).toEqual([])
     await page.keyboard.press('Escape')
-    await expect(page.getByRole('dialog', { name: 'Launchpad', exact: true })).toBeHidden()
+    await expect(launchpad).toBeHidden()
 
+    const notifications = page.getByRole('dialog', { name: 'Notification Center', exact: true })
     await page.getByRole('button', { name: /^Notification Center, / }).click()
-    await expect(page.getByRole('dialog', { name: 'Notification Center', exact: true })).toBeVisible()
+    await expect(notifications).toBeVisible()
+    await settle(notifications)
     expect(await blocking(page)).toEqual([])
     await page.keyboard.press('Escape')
+    await expect(notifications).toBeHidden()
 
     await openDock(page, 'System Settings')
     await settle(appWindow(page, 'System Settings'))
