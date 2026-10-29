@@ -69,4 +69,59 @@ describe('content', () => {
     expect(new Set(ids(types)).size).toBe(types.length)
     for (const t of types) expect(t.slug.trim()).not.toBe('')
   })
+
+  it('ids are unique within notes, places, bookmarks, albums and photos (across albums)', () => {
+    const photoIds = content.photoAlbums.flatMap((a) => a.photos.map((p) => p.id))
+    const lists = [
+      content.notes,
+      content.places,
+      content.bookmarks,
+      content.photoAlbums,
+      content.music.artists,
+      content.music.albums,
+      content.music.playlists,
+    ]
+    for (const list of lists) expect(new Set(ids(list)).size).toBe(list.length)
+    expect(new Set(photoIds).size).toBe(photoIds.length)
+  })
+
+  it('bookmarks and music URLs are https; spotifyId matches /^[A-Za-z0-9]{22}$/ when set', () => {
+    const urls = [
+      ...content.bookmarks.map((b) => b.url),
+      ...content.music.artists.map((a) => a.url),
+      ...content.music.albums.map((a) => a.url),
+      ...content.music.playlists.flatMap((p) => [p.spotifyUrl, p.appleMusicUrl]),
+    ].filter((u): u is string => typeof u === 'string')
+    for (const url of urls) expect(url).toMatch(/^https:\/\//)
+    for (const p of content.music.playlists) {
+      if (p.spotifyId !== undefined) expect(p.spotifyId).toMatch(/^[A-Za-z0-9]{22}$/)
+    }
+  })
+
+  it('places have lat in [-90, 90] and lon in [-180, 180]; from/to match YYYY-MM when set', () => {
+    for (const place of content.places) {
+      expect(place.lat).toBeGreaterThanOrEqual(-90)
+      expect(place.lat).toBeLessThanOrEqual(90)
+      expect(place.lon).toBeGreaterThanOrEqual(-180)
+      expect(place.lon).toBeLessThanOrEqual(180)
+      for (const date of [place.from, place.to]) {
+        if (date !== undefined) expect(date).toMatch(/^\d{4}-\d{2}$/)
+      }
+    }
+  })
+
+  it('photos have non-empty alt and positive width/height', () => {
+    for (const photo of content.photoAlbums.flatMap((a) => a.photos)) {
+      expect(photo.alt.trim()).not.toBe('')
+      expect(photo.width).toBeGreaterThan(0)
+      expect(photo.height).toBeGreaterThan(0)
+    }
+  })
+
+  it('seed: notes has the two CV-derived notes, places has Wrocław and Tokyo, music and photoAlbums are empty', () => {
+    expect(ids(content.notes)).toEqual(['working-style', 'looking-for'])
+    expect(ids(content.places)).toEqual(['wroclaw', 'tokyo'])
+    expect(content.music).toEqual({ artists: [], albums: [], playlists: [] })
+    expect(content.photoAlbums).toEqual([])
+  })
 })

@@ -85,6 +85,70 @@ export interface Site {
   scheduling: { calUrl?: string; meetingTypes: MeetingType[] }
 }
 
+export interface Note {
+  id: string
+  folder: string
+  title: string
+  body: string /* light markdown, same subset as DocumentFile */
+  updated?: string /* YYYY-MM-DD */
+}
+
+export interface MusicArtist {
+  id: string
+  name: string
+  url?: string
+}
+
+export interface MusicAlbum {
+  id: string
+  title: string
+  artist: string
+  year?: number
+  url?: string
+}
+
+export interface MusicPlaylist {
+  id: string
+  title: string
+  description?: string
+  spotifyId?: string
+  spotifyUrl?: string
+  appleMusicUrl?: string
+}
+
+export interface Place {
+  id: string
+  name: string
+  country: string
+  lat: number
+  lon: number
+  from?: string /* 'YYYY-MM' */
+  to?: string /* 'YYYY-MM' */
+  note: string
+}
+
+export interface Photo {
+  id: string
+  src: string
+  alt: string
+  width: number
+  height: number
+  caption?: string
+}
+
+export interface PhotoAlbum {
+  id: string
+  title: string
+  photos: Photo[]
+}
+
+export interface Bookmark {
+  id: string
+  title: string
+  url: string
+  embeddable: boolean
+}
+
 export interface NotificationItem {
   id: string
   title: string
@@ -103,6 +167,11 @@ export interface Content {
   languages: Language[]
   projects: Project[]
   documents: DocumentFile[]
+  notes: Note[]
+  music: { artists: MusicArtist[]; albums: MusicAlbum[]; playlists: MusicPlaylist[] }
+  places: Place[]
+  photoAlbums: PhotoAlbum[]
+  bookmarks: Bookmark[]
   site: Site
 }
 

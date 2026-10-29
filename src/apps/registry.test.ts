@@ -24,6 +24,17 @@ describe('registry', () => {
     expect(dockItems().map((a) => a.id)).toEqual(['launchpad', 'finder', 'resume', 'mail', 'contacts', 'calendar', 'developer', 'settings', 'linkedin', 'github', 'trash'])
   })
 
+  it('numbers the apps dock group as Mail 2, Contacts 3, Calendar 4, Developer 9, System Settings 11', () => {
+    const apps = dockItems().filter((a) => a.dock.group === 'apps')
+    expect(apps.map((a) => [a.name, a.dock.order])).toEqual([
+      ['Mail', 2],
+      ['Contacts', 3],
+      ['Calendar', 4],
+      ['Developer', 9],
+      ['System Settings', 11],
+    ])
+  })
+
   it('lists launchable apps for Launchpad sorted by name, leaving out hidden, file-only and overlay apps', () => {
     const names = launchpadApps().map((a) => a.name)
     expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'en')))

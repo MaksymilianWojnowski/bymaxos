@@ -125,7 +125,7 @@ const APP_LIST: (AppDefinition | null)[] = [
       resizable: true,
       singleInstance: true,
     },
-    dock: { order: 1, group: 'apps' },
+    dock: { order: 2, group: 'apps' },
   },
   {
     id: 'contacts',
@@ -138,7 +138,7 @@ const APP_LIST: (AppDefinition | null)[] = [
       resizable: true,
       singleInstance: true,
     },
-    dock: { order: 2, group: 'apps' },
+    dock: { order: 3, group: 'apps' },
   },
   {
     id: 'calendar',
@@ -151,7 +151,7 @@ const APP_LIST: (AppDefinition | null)[] = [
       resizable: true,
       singleInstance: true,
     },
-    dock: { order: 3, group: 'apps' },
+    dock: { order: 4, group: 'apps' },
   },
   {
     id: 'developer',
@@ -164,7 +164,7 @@ const APP_LIST: (AppDefinition | null)[] = [
       resizable: true,
       singleInstance: true,
     },
-    dock: { order: 4, group: 'apps' },
+    dock: { order: 9, group: 'apps' },
   },
   {
     id: 'settings',
@@ -177,7 +177,7 @@ const APP_LIST: (AppDefinition | null)[] = [
       resizable: true,
       singleInstance: true,
     },
-    dock: { order: 5, group: 'apps' },
+    dock: { order: 11, group: 'apps' },
   },
   {
     id: 'about',
