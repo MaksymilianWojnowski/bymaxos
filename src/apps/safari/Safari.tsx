@@ -64,15 +64,32 @@ export default function SafariApp({ props }: AppProps) {
     select({ id, url: null })
   }
 
-  const closeTab = (tab: Tab) => {
-    if (tabs.length === 1) return
+  // Removes a tab (never the last one) and returns the neighbour that takes its place.
+  const removeTab = (tab: Tab): Tab => {
+    const index = tabs.indexOf(tab)
     const rest = tabs.filter((t) => t.id !== tab.id)
     setTabs(rest)
-    if (tab.id === active.id) select(rest[Math.max(0, tabs.indexOf(tab) - 1)])
+    const neighbour = rest[Math.max(0, index - 1)]
+    if (tab.id === active.id) select(neighbour)
+    return neighbour
   }
 
   // Roving focus: arrows wrap, Home and End jump; the newly selected tab takes focus.
+  // Delete or Backspace closes the focused tab and focuses its neighbour.
   const onTablistKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const target = e.target
+    if (!(target instanceof HTMLElement) || target.getAttribute('role') !== 'tab') return
+    const focused = tabs.find((t) => tabId(t.id) === target.id)
+    if (!focused) return
+
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (tabs.length === 1) return
+      e.preventDefault()
+      const neighbour = removeTab(focused)
+      document.getElementById(tabId(neighbour.id))?.focus()
+      return
+    }
+
     const index = tabs.findIndex((t) => t.id === active.id)
     let next: number
     if (e.key === 'ArrowRight') next = (index + 1) % tabs.length
@@ -108,10 +125,9 @@ export default function SafariApp({ props }: AppProps) {
             const selected = tab.id === active.id
             const label = titleOf(tab.url, bookmarks)
             return (
-              // Wrapper is presentational so the tablist owns only the tab; the close button stays reachable by Tab.
+              // The mouse-only close button is aria-hidden, so the tablist's accessible children are tabs only.
               <div
                 key={tab.id}
-                role="presentation"
                 className={`flex shrink-0 items-center rounded-[6px] ${selected ? 'bg-white shadow-sm dark:bg-white/15' : ''}`}
               >
                 <button
@@ -120,6 +136,7 @@ export default function SafariApp({ props }: AppProps) {
                   id={tabId(tab.id)}
                   aria-selected={selected}
                   aria-controls={`${ids}-panel`}
+                  aria-keyshortcuts="Delete"
                   tabIndex={selected ? 0 : -1}
                   onClick={() => select(tab)}
                   className={`${PILL} ${selected ? 'text-text-1' : 'text-text-2'}`}
@@ -128,9 +145,11 @@ export default function SafariApp({ props }: AppProps) {
                 </button>
                 <button
                   type="button"
+                  aria-hidden="true"
+                  tabIndex={-1}
                   aria-label={`Close ${label}`}
                   disabled={tabs.length === 1}
-                  onClick={() => closeTab(tab)}
+                  onClick={() => removeTab(tab)}
                   className={ICON_BUTTON}
                 >
                   <X className="h-3.5 w-3.5" aria-hidden />

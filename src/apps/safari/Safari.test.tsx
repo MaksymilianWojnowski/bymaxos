@@ -28,6 +28,9 @@ const bookmarksBar = () => screen.getByRole('navigation', { name: 'Bookmarks' })
 const address = () => screen.getByRole('textbox', { name: 'Address' })
 const cannotShow = () => screen.queryByText("This site can't be shown inside bymaxOS")
 const frame = () => document.querySelector('iframe')
+// Close buttons are aria-hidden, so their accessible name is empty and role queries cannot find them.
+const closeButton = (label: string) =>
+  document.querySelector<HTMLButtonElement>(`button[aria-label="Close ${label}"]`) as HTMLButtonElement
 const reload = () => screen.queryByRole('button', { name: 'Reload page' })
 
 async function go(url: string) {
@@ -119,11 +122,11 @@ describe('Safari', () => {
     expect(tabs[1]).toHaveAttribute('aria-selected', 'true')
     expect(favorites()).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Close Favorites' }))
+    await userEvent.click(closeButton('Favorites'))
     expect(screen.getAllByRole('tab')).toHaveLength(1)
     expect(cannotShow()).toBeInTheDocument()
 
-    expect(screen.getByRole('button', { name: `Close ${plain.title}` })).toBeDisabled()
+    expect(closeButton(plain.title)).toBeDisabled()
   })
 
   it('tabs sit in a tablist, and the active page is in a tabpanel labelled by its tab', () => {
@@ -183,16 +186,71 @@ describe('Safari tablist keyboard', () => {
     expect(second).toHaveFocus()
   })
 
-  it('New tab sits outside the tablist; close buttons sit in presentation wrappers, not as tabs', async () => {
+  it('New tab sits outside the tablist; the mouse-only close buttons are aria-hidden and not tabbable', async () => {
     render(<SafariApp windowId="w1" />)
     await userEvent.click(screen.getByRole('button', { name: 'New tab' }))
     const tablist = screen.getByRole('tablist')
 
     expect(tablist.contains(screen.getByRole('button', { name: 'New tab' }))).toBe(false)
     expect(within(tablist).getAllByRole('tab')).toHaveLength(2)
-    const closeButtons = within(tablist).getAllByRole('button', { name: /^Close / })
+    // getByRole skips aria-hidden subtrees, so the close buttons are found by label in the DOM.
+    const closeButtons = tablist.querySelectorAll<HTMLButtonElement>('button[aria-label^="Close "]')
     expect(closeButtons).toHaveLength(2)
-    for (const close of closeButtons) expect(close.parentElement).toHaveAttribute('role', 'presentation')
+    for (const close of closeButtons) {
+      expect(close).toHaveAttribute('aria-hidden', 'true')
+      expect(close).toHaveAttribute('tabindex', '-1')
+    }
+  })
+
+  it('Delete on a focused tab closes it and focuses the neighbour', async () => {
+    render(<SafariApp windowId="w1" />)
+    await userEvent.click(screen.getByRole('button', { name: 'New tab' }))
+    const [first, second] = screen.getAllByRole('tab')
+
+    await userEvent.click(second)
+    await userEvent.keyboard('{Delete}')
+
+    const tabs = screen.getAllByRole('tab')
+    expect(tabs).toHaveLength(1)
+    expect(tabs[0]).toBe(first)
+    expect(first).toHaveAttribute('aria-selected', 'true')
+    expect(first).toHaveFocus()
+  })
+
+  it('Backspace also closes the focused tab', async () => {
+    render(<SafariApp windowId="w1" />)
+    await userEvent.click(screen.getByRole('button', { name: 'New tab' }))
+    const [first, second] = screen.getAllByRole('tab')
+
+    await userEvent.click(first)
+    await userEvent.keyboard('{Backspace}')
+
+    expect(screen.getAllByRole('tab')).toEqual([second])
+    expect(second).toHaveFocus()
+  })
+
+  it('Delete does nothing on the last remaining tab', async () => {
+    render(<SafariApp windowId="w1" />)
+    const only = screen.getByRole('tab')
+
+    await userEvent.click(only)
+    await userEvent.keyboard('{Delete}')
+
+    expect(screen.getAllByRole('tab')).toEqual([only])
+    expect(only).toHaveFocus()
+  })
+
+  it('arrow keys pressed on a non-tab child of the tablist do not change the selection', async () => {
+    render(<SafariApp windowId="w1" />)
+    await userEvent.click(screen.getByRole('button', { name: 'New tab' }))
+    const [first, second] = screen.getAllByRole('tab')
+    const close = screen.getByRole('tablist').querySelector<HTMLButtonElement>('button[aria-label="Close Favorites"]') as HTMLButtonElement
+
+    close.focus()
+    await userEvent.keyboard('{ArrowLeft}')
+
+    expect(second).toHaveAttribute('aria-selected', 'true')
+    expect(first).toHaveAttribute('aria-selected', 'false')
   })
 })
 
