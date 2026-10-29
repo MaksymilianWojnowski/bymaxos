@@ -42,6 +42,7 @@ describe('Dock', () => {
       'Notes',
       'Photos',
       'Music',
+      'Maps',
       'Developer',
       'Terminal',
       'System Settings',
