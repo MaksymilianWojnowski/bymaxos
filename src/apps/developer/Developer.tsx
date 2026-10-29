@@ -119,7 +119,7 @@ export default function DeveloperApp() {
             aria-label="Repositories"
             aria-activedescendant={active ? optionId(activeIndex) : undefined}
             onKeyDown={onKeyDown}
-            className="min-h-0 flex-1 overflow-auto p-1.5 outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="min-h-0 flex-1 overflow-auto p-1.5 outline-none focus-visible:ring-2 focus-visible:ring-accent-link"
           >
             {repos.map((repo, i) => {
               const selected = repo === active

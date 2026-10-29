@@ -164,7 +164,7 @@ export default function SettingsApp({ props }: AppProps) {
                 value={settings.accent}
                 onChange={(v) => updateSettings({ accent: v })}
                 className="flex flex-wrap gap-3"
-                itemClass="h-[24px] w-[24px] rounded-full ring-offset-2 ring-offset-window aria-checked:ring-2 aria-checked:ring-accent"
+                itemClass="h-[24px] w-[24px] rounded-full ring-offset-2 ring-offset-window aria-checked:ring-2 aria-checked:ring-accent-link"
               />
             </Row>
           </>
@@ -177,7 +177,7 @@ export default function SettingsApp({ props }: AppProps) {
             value={settings.wallpaperId}
             onChange={(v) => updateSettings({ wallpaperId: v })}
             className="grid grid-cols-2 gap-3"
-            itemClass="h-[72px] rounded-[8px] ring-offset-2 ring-offset-window aria-checked:ring-2 aria-checked:ring-accent"
+            itemClass="h-[72px] rounded-[8px] ring-offset-2 ring-offset-window aria-checked:ring-2 aria-checked:ring-accent-link"
           />
         )}
 
@@ -207,7 +207,7 @@ export default function SettingsApp({ props }: AppProps) {
                 step={4}
                 value={settings.dockSize}
                 onChange={(e) => updateSettings({ dockSize: Number(e.target.value) })}
-                className="flex-1 accent-accent"
+                className="flex-1 accent-accent-strong dark:accent-accent"
               />
             </label>
             <Switch

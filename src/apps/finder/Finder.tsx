@@ -173,7 +173,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
                 type="button"
                 aria-current={id === currentId ? 'page' : undefined}
                 onClick={() => goTo(id)}
-                className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-accent ${id === currentId ? 'bg-black/10' : 'hover:bg-black/5'}`}
+                className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-accent-link ${id === currentId ? 'bg-black/10' : 'hover:bg-black/5'}`}
               >
                 <Icon aria-hidden className="h-4 w-4 shrink-0 text-accent" />
                 <span className="truncate">{vfs.nodes[id]?.name}</span>
@@ -190,7 +190,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
             aria-label="Back"
             disabled={!canBack}
             onClick={() => send({ type: 'back' })}
-            className="flex h-7 w-7 items-center justify-center rounded-md outline-none hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40"
+            className="flex h-7 w-7 items-center justify-center rounded-md outline-none hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-accent-link disabled:opacity-40"
           >
             <ChevronLeft aria-hidden className="h-4 w-4" />
           </button>
@@ -199,7 +199,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
             aria-label="Forward"
             disabled={!canForward}
             onClick={() => send({ type: 'forward' })}
-            className="flex h-7 w-7 items-center justify-center rounded-md outline-none hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40"
+            className="flex h-7 w-7 items-center justify-center rounded-md outline-none hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-accent-link disabled:opacity-40"
           >
             <ChevronRight aria-hidden className="h-4 w-4" />
           </button>
@@ -211,7 +211,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
                 type="button"
                 aria-pressed={state.view === view}
                 onClick={() => send({ type: 'view', view })}
-                className={`rounded px-2 py-0.5 text-[12px] outline-none focus-visible:ring-2 focus-visible:ring-accent ${state.view === view ? 'bg-white shadow-sm dark:bg-white/20' : ''}`}
+                className={`rounded px-2 py-0.5 text-[12px] outline-none focus-visible:ring-2 focus-visible:ring-accent-link ${state.view === view ? 'bg-white shadow-sm dark:bg-white/20' : ''}`}
               >
                 {view === 'icons' ? 'Icons' : 'List'}
               </button>
@@ -230,7 +230,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
               aria-label={`${folderName} items`}
               aria-activedescendant={activeId}
               onKeyDown={onKeyDown}
-              className="grid grid-cols-[repeat(auto-fill,96px)] gap-2 outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="grid grid-cols-[repeat(auto-fill,96px)] gap-2 outline-none focus-visible:ring-2 focus-visible:ring-accent-link"
             >
               {children.map((id) => {
                 const node = vfs.nodes[id]
@@ -260,7 +260,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
               aria-label={`${folderName} items`}
               aria-activedescendant={activeId}
               onKeyDown={onKeyDown}
-              className="w-full border-collapse text-left text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="w-full border-collapse text-left text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-accent-link"
             >
               <thead>
                 <tr className="border-b border-black/10 text-text-2">
@@ -302,7 +302,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
               {i === path.length - 1 ? (
                 <span aria-current="location">{vfs.nodes[id]?.name}</span>
               ) : (
-                <button type="button" onClick={() => goTo(id)} className="rounded px-1 hover:underline outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                <button type="button" onClick={() => goTo(id)} className="rounded px-1 hover:underline outline-none focus-visible:ring-2 focus-visible:ring-accent-link">
                   {vfs.nodes[id]?.name}
                 </button>
               )}

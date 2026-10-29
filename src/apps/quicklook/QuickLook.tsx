@@ -33,7 +33,7 @@ export default function QuickLookApp({ windowId, props }: AppProps) {
             <button
               type="button"
               onClick={() => window.open(preview.url, '_blank', 'noopener,noreferrer')}
-              className="rounded-md bg-accent-strong px-3 py-1.5 text-[13px] text-white outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="rounded-md bg-accent-strong px-3 py-1.5 text-[13px] text-white outline-none focus-visible:ring-2 focus-visible:ring-accent-link"
             >
               Open in new tab ↗
             </button>

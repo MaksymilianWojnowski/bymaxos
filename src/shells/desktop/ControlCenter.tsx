@@ -142,7 +142,7 @@ export function ControlCenter({ anchorEl }: { anchorEl: HTMLElement }) {
                 aria-pressed={settings.wallpaperId === w.id}
                 title={w.name}
                 onClick={() => updateSettings({ wallpaperId: w.id })}
-                className="h-[40px] flex-1 rounded-[8px] aria-pressed:ring-2 aria-pressed:ring-accent aria-pressed:ring-offset-2"
+                className="h-[40px] flex-1 rounded-[8px] aria-pressed:ring-2 aria-pressed:ring-accent-link aria-pressed:ring-offset-2"
                 style={{ backgroundImage: w.gradient }}
               />
             ))}

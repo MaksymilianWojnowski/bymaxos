@@ -187,7 +187,7 @@ export function Window({ win, app, focused, children, mission }: Props) {
                 aria-label={name}
                 disabled={disabled}
                 onClick={onClick}
-                className="flex h-3 w-3 items-center justify-center rounded-full text-black/60 outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40"
+                className="flex h-3 w-3 items-center justify-center rounded-full text-black/60 outline-none focus-visible:ring-2 focus-visible:ring-accent-link disabled:opacity-40"
                 style={{ background: focused ? color : 'var(--traffic-inactive)' }}
               >
                 <Glyph
@@ -230,7 +230,7 @@ export function Window({ win, app, focused, children, mission }: Props) {
           type="button"
           aria-label={`Show ${win.title}`}
           onClick={mission.onPick}
-          className="absolute inset-0 z-20 outline-none hover:ring-4 hover:ring-inset hover:ring-accent focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-accent"
+          className="absolute inset-0 z-20 outline-none hover:ring-4 hover:ring-inset hover:ring-accent-link focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-accent-link"
         />
       )}
     </div>

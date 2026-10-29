@@ -12,7 +12,7 @@ export function Switch({ label, checked, onChange }: { label: string; checked: b
       <span
         aria-hidden="true"
         className={`relative h-[20px] w-[34px] shrink-0 rounded-full transition-colors ${
-          checked ? 'bg-accent' : 'bg-black/20 dark:bg-white/25'
+          checked ? 'bg-accent-strong dark:bg-accent' : 'bg-black/20 dark:bg-white/25'
         }`}
       >
         <span

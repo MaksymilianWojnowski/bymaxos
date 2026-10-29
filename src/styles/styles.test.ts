@@ -120,3 +120,12 @@ describe('accent overrides', () => {
     expect(contrast(hexRgb(link), hexRgb(themeToken('dark', 'window-bg')))).toBeGreaterThanOrEqual(4.5)
   })
 })
+
+// The on-track fill and the window focus rings are non-text UI, so they need 3:1 against the light window.
+describe('accent non-text contrast (light)', () => {
+  it.each(['blue', ...ACCENT_NAMES])('gives %s the strong accent 3:1 or better on #ececec', (accent) => {
+    const strong =
+      accent === 'blue' ? lightToken('accent-strong') : declaredIn(`:root[data-accent='${accent}']`, 'accent-strong')
+    expect(contrast(hexRgb(strong), hexRgb('#ececec'))).toBeGreaterThanOrEqual(3)
+  })
+})

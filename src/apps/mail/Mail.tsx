@@ -9,7 +9,7 @@ import { Sheet } from '../../ui/Sheet'
 import type { AppProps } from '../types'
 
 const FIELD =
-  'w-full rounded-[6px] border border-black/15 bg-white px-2 py-1 text-[13px] text-black focus-visible:ring-2 focus-visible:ring-accent dark:border-white/15 dark:bg-[#1e1e1e] dark:text-white'
+  'w-full rounded-[6px] border border-black/15 bg-white px-2 py-1 text-[13px] text-black focus-visible:ring-2 focus-visible:ring-accent-link dark:border-white/15 dark:bg-[#1e1e1e] dark:text-white'
 const ERROR = 'text-[12px] text-red-700 dark:text-red-400'
 
 // Compose only: the draft goes to the visitor's email app. Nothing is sent from this page.
