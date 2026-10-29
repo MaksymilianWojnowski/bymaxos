@@ -27,6 +27,13 @@ const favorites = () => screen.getByRole('region', { name: 'Favorites' })
 const bookmarksBar = () => screen.getByRole('navigation', { name: 'Bookmarks' })
 const address = () => screen.getByRole('textbox', { name: 'Address' })
 const cannotShow = () => screen.queryByText("This site can't be shown inside bymaxOS")
+const frame = () => document.querySelector('iframe')
+const reload = () => screen.queryByRole('button', { name: 'Reload page' })
+
+async function go(url: string) {
+  await userEvent.clear(address())
+  await userEvent.type(address(), `${url}{Enter}`)
+}
 
 let open: ReturnType<typeof vi.spyOn>
 
@@ -55,7 +62,7 @@ describe('Safari', () => {
     await userEvent.click(within(favorites()).getByRole('button', { name: new RegExp(`^${plain.title}`) }))
 
     expect(cannotShow()).toBeInTheDocument()
-    expect(document.querySelector('iframe')).toBeNull()
+    expect(frame()).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: 'Open in new tab ↗' }))
     expect(open).toHaveBeenCalledWith(plain.url, '_blank', 'noopener,noreferrer')
   })
@@ -66,10 +73,10 @@ describe('Safari', () => {
 
     await userEvent.click(within(favorites()).getByRole('button', { name: new RegExp(`^${demo.title}`) }))
 
-    const frame = screen.getByTitle(demo.title)
-    expect(frame.tagName).toBe('IFRAME')
-    expect(frame).toHaveAttribute('src', demo.url)
-    expect(frame).toHaveAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-forms')
+    const framed = screen.getByTitle(demo.title)
+    expect(framed.tagName).toBe('IFRAME')
+    expect(framed).toHaveAttribute('src', demo.url)
+    expect(framed).toHaveAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-forms')
     expect(cannotShow()).not.toBeInTheDocument()
   })
 
@@ -78,7 +85,14 @@ describe('Safari', () => {
 
     expect(screen.queryByRole('region', { name: 'Favorites' })).not.toBeInTheDocument()
     expect(cannotShow()).toBeInTheDocument()
-    expect(document.querySelector('iframe')).toBeNull()
+    expect(frame()).toBeNull()
+  })
+
+  it('props.url with a javascript: scheme falls back to Favorites', () => {
+    render(<SafariApp windowId="w1" props={{ url: 'javascript:alert(1)' }} />)
+
+    expect(favorites()).toBeInTheDocument()
+    expect(frame()).toBeNull()
   })
 
   it('address bar: invalid input shows the error and changes nothing; a valid URL shows the card', async () => {
@@ -128,5 +142,111 @@ describe('Safari', () => {
 
     expect(screen.getAllByRole('tab')).toHaveLength(1)
     expect(cannotShow()).toBeInTheDocument()
+  })
+})
+
+describe('Safari tablist keyboard', () => {
+  it('only the selected tab is in the tab order (roving tabindex)', async () => {
+    render(<SafariApp windowId="w1" />)
+    await userEvent.click(screen.getByRole('button', { name: 'New tab' }))
+
+    const [first, second] = screen.getAllByRole('tab')
+    expect(first).toHaveAttribute('tabindex', '-1')
+    expect(second).toHaveAttribute('tabindex', '0')
+  })
+
+  it('ArrowRight, ArrowLeft, Home and End select and focus tabs, with wrap-around', async () => {
+    render(<SafariApp windowId="w1" />)
+    await userEvent.click(screen.getByRole('button', { name: 'New tab' }))
+    const [first, second] = screen.getAllByRole('tab')
+
+    await userEvent.click(first)
+    expect(first).toHaveFocus()
+
+    await userEvent.keyboard('{ArrowRight}')
+    expect(second).toHaveAttribute('aria-selected', 'true')
+    expect(second).toHaveFocus()
+
+    await userEvent.keyboard('{Home}')
+    expect(first).toHaveAttribute('aria-selected', 'true')
+    expect(first).toHaveFocus()
+
+    await userEvent.keyboard('{End}')
+    expect(second).toHaveAttribute('aria-selected', 'true')
+    expect(second).toHaveFocus()
+
+    await userEvent.keyboard('{ArrowRight}')
+    expect(first).toHaveAttribute('aria-selected', 'true')
+    expect(first).toHaveFocus()
+
+    await userEvent.keyboard('{ArrowLeft}')
+    expect(second).toHaveFocus()
+  })
+
+  it('New tab sits outside the tablist; close buttons sit in presentation wrappers, not as tabs', async () => {
+    render(<SafariApp windowId="w1" />)
+    await userEvent.click(screen.getByRole('button', { name: 'New tab' }))
+    const tablist = screen.getByRole('tablist')
+
+    expect(tablist.contains(screen.getByRole('button', { name: 'New tab' }))).toBe(false)
+    expect(within(tablist).getAllByRole('tab')).toHaveLength(2)
+    const closeButtons = within(tablist).getAllByRole('button', { name: /^Close / })
+    expect(closeButtons).toHaveLength(2)
+    for (const close of closeButtons) expect(close.parentElement).toHaveAttribute('role', 'presentation')
+  })
+})
+
+describe('Safari framing rule', () => {
+  beforeEach(() => {
+    extra.bookmarks = [demo]
+  })
+
+  it('frames a deeper path on the embeddable origin', async () => {
+    render(<SafariApp windowId="w1" />)
+    await go('https://demo.example/docs/page')
+
+    expect(frame()).toHaveAttribute('src', 'https://demo.example/docs/page')
+    expect(cannotShow()).not.toBeInTheDocument()
+  })
+
+  it('frames a typed URL on the embeddable origin', async () => {
+    render(<SafariApp windowId="w1" />)
+    await go('https://demo.example/')
+
+    expect(frame()).toHaveAttribute('src', 'https://demo.example/')
+  })
+
+  it.each([
+    'http://demo.example/',
+    'https://demo.example:8443/',
+    'https://sub.demo.example/',
+    'https://demo.example@evil.com/',
+    'https://demo.example.evil.com/',
+  ])('does not frame %s', async (url) => {
+    render(<SafariApp windowId="w1" />)
+    await go(url)
+
+    expect(frame()).toBeNull()
+    expect(cannotShow()).toBeInTheDocument()
+  })
+
+  it("never frames bymaxOS's own origin, even when a bookmark marks it embeddable", async () => {
+    extra.bookmarks = [{ id: 'self', title: 'Self', url: `${window.location.origin}/`, embeddable: true }]
+    render(<SafariApp windowId="w1" />)
+    await go(`${window.location.origin}/page`)
+
+    expect(frame()).toBeNull()
+    expect(cannotShow()).toBeInTheDocument()
+  })
+
+  it('Reload is absent without an iframe and present while one is shown', async () => {
+    render(<SafariApp windowId="w1" />)
+    expect(reload()).toBeNull()
+
+    await go('https://example.org/')
+    expect(reload()).toBeNull()
+
+    await go('https://demo.example/')
+    expect(reload()).toBeInTheDocument()
   })
 })

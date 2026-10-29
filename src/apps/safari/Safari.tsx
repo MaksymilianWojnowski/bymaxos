@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from 'react'
+import { useId, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { Plus, RotateCw, X } from 'lucide-react'
 import { getContent } from '../../content'
 import type { Bookmark } from '../../content/types'
@@ -23,10 +23,10 @@ const hostOf = (url: string) => new URL(url).hostname
 const titleOf = (url: string | null, bookmarks: Bookmark[]) =>
   url === null ? 'Favorites' : (bookmarks.find((b) => b.url === url)?.title ?? hostOf(url))
 
-// Only a site that an embeddable bookmark covers (same origin) is framed; everything else gets the card.
+// Only a site on the origin of an embeddable bookmark is framed; bymaxOS's own origin never is.
 const embeddable = (url: string, bookmarks: Bookmark[]) => {
   const origin = new URL(url).origin
-  return bookmarks.some((b) => b.embeddable && new URL(b.url).origin === origin)
+  return origin !== window.location.origin && bookmarks.some((b) => b.embeddable && new URL(b.url).origin === origin)
 }
 
 export default function SafariApp({ props }: AppProps) {
@@ -71,6 +71,20 @@ export default function SafariApp({ props }: AppProps) {
     if (tab.id === active.id) select(rest[Math.max(0, tabs.indexOf(tab) - 1)])
   }
 
+  // Roving focus: arrows wrap, Home and End jump; the newly selected tab takes focus.
+  const onTablistKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const index = tabs.findIndex((t) => t.id === active.id)
+    let next: number
+    if (e.key === 'ArrowRight') next = (index + 1) % tabs.length
+    else if (e.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = tabs.length - 1
+    else return
+    e.preventDefault()
+    select(tabs[next])
+    document.getElementById(tabId(tabs[next].id))?.focus()
+  }
+
   const submit = (e: FormEvent) => {
     e.preventDefault()
     const result = parseAddress(address)
@@ -84,13 +98,20 @@ export default function SafariApp({ props }: AppProps) {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center gap-2 border-b border-black/10 px-3 pt-2 pb-1.5 dark:border-white/10">
-        <div role="tablist" aria-label="Tabs" className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+        <div
+          role="tablist"
+          aria-label="Tabs"
+          onKeyDown={onTablistKey}
+          className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-1 py-1"
+        >
           {tabs.map((tab) => {
             const selected = tab.id === active.id
             const label = titleOf(tab.url, bookmarks)
             return (
+              // Wrapper is presentational so the tablist owns only the tab; the close button stays reachable by Tab.
               <div
                 key={tab.id}
+                role="presentation"
                 className={`flex shrink-0 items-center rounded-[6px] ${selected ? 'bg-white shadow-sm dark:bg-white/15' : ''}`}
               >
                 <button
@@ -99,6 +120,7 @@ export default function SafariApp({ props }: AppProps) {
                   id={tabId(tab.id)}
                   aria-selected={selected}
                   aria-controls={`${ids}-panel`}
+                  tabIndex={selected ? 0 : -1}
                   onClick={() => select(tab)}
                   className={`${PILL} ${selected ? 'text-text-1' : 'text-text-2'}`}
                 >
@@ -116,10 +138,10 @@ export default function SafariApp({ props }: AppProps) {
               </div>
             )
           })}
-          <button type="button" aria-label="New tab" onClick={openTab} className={ICON_BUTTON}>
-            <Plus className="h-4 w-4" aria-hidden />
-          </button>
         </div>
+        <button type="button" aria-label="New tab" onClick={openTab} className={ICON_BUTTON}>
+          <Plus className="h-4 w-4" aria-hidden />
+        </button>
       </div>
 
       <div className="flex items-center gap-2 px-3 py-2">
@@ -134,7 +156,7 @@ export default function SafariApp({ props }: AppProps) {
               setError(null)
             }}
             placeholder="Enter a web address"
-            className="w-full rounded-[6px] bg-white px-3 py-1 text-[13px] text-text-1 shadow-inner outline-none focus-visible:ring-2 focus-visible:ring-accent-link dark:bg-black/30"
+            className="w-full rounded-[6px] bg-white px-3 py-1 text-[13px] text-text-1 shadow-inner outline-none placeholder:text-text-2 focus-visible:ring-2 focus-visible:ring-accent-link dark:bg-black/30"
           />
           {error && (
             <p id={`${ids}-error`} role="alert" className="mt-1 text-[12px] text-text-1">
@@ -154,7 +176,10 @@ export default function SafariApp({ props }: AppProps) {
         )}
       </div>
 
-      <nav aria-label="Bookmarks" className="flex gap-1 overflow-x-auto border-b border-black/10 px-3 pb-2 dark:border-white/10">
+      <nav
+        aria-label="Bookmarks"
+        className="flex gap-1 overflow-x-auto border-b border-black/10 px-3 py-1 dark:border-white/10"
+      >
         {bookmarks.map((b) => (
           <button
             key={b.id}
