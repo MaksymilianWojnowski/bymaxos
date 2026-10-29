@@ -70,4 +70,12 @@ describe('buildMenus', () => {
     customApp(() => [{ id: 'edit', label: 'Edit', items: [] }])
     expect(idsOf(buildMenus(ctx, 'custom'))).not.toContain('edit')
   })
+
+  it('System Settings… opens the settings app', () => {
+    const items = buildMenus(ctx, 'about')[0].items
+    expect(items).toContainEqual(
+      expect.objectContaining({ label: 'System Settings…', command: { type: 'app.open', appId: 'settings' } }),
+    )
+    expect(items.find((i) => 'label' in i && i.label === 'System Settings…')).not.toHaveProperty('disabled', true)
+  })
 })

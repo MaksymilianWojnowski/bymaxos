@@ -1,7 +1,10 @@
 export type Appearance = 'light' | 'dark' | 'auto';
+export type Accent = 'blue' | 'purple' | 'pink' | 'red' | 'orange' | 'yellow' | 'green' | 'graphite';
+export const ACCENTS: Accent[] = ['blue', 'purple', 'pink', 'red', 'orange', 'yellow', 'green', 'graphite'];
 
 export interface Settings {
   appearance: Appearance;
+  accent: Accent;
   reduceMotion: boolean;
   reduceTransparency: boolean;
   wallpaperId: string;
@@ -12,6 +15,7 @@ export interface Settings {
 export function defaultSettings(env: { prefersReducedMotion: boolean }): Settings {
   return {
     appearance: 'auto',
+    accent: 'blue',
     reduceMotion: env.prefersReducedMotion,
     reduceTransparency: false,
     wallpaperId: 'default',
@@ -27,6 +31,7 @@ export function applyAppearance(
 ): void {
   const dark = s.appearance === 'dark' || (s.appearance === 'auto' && prefersDark);
   root.dataset.theme = dark ? 'dark' : 'light';
+  root.dataset.accent = s.accent;
   root.classList.toggle('reduce-motion', s.reduceMotion);
   root.classList.toggle('reduce-transparency', s.reduceTransparency);
 }

@@ -94,3 +94,29 @@ describe('accent contrast', () => {
     }
   })
 })
+
+// Each non-blue accent overrides the strong and link tokens; blue keeps the :root and theme values.
+const ACCENT_NAMES = ['purple', 'pink', 'red', 'orange', 'yellow', 'green', 'graphite'] as const
+const declaredIn = (selector: string, name: string): string => {
+  const start = tokensCss.indexOf(`${selector} {`)
+  if (start === -1) throw new Error(`missing block ${selector}`)
+  const block = tokensCss.slice(start, tokensCss.indexOf('}', start))
+  const match = block.match(new RegExp(`--${name}:\\s*([^;]+);`))
+  if (!match) throw new Error(`missing ${name} in ${selector}`)
+  return match[1].trim()
+}
+
+describe('accent overrides', () => {
+  it.each(ACCENT_NAMES)('gives %s white text on the strong accent 4.5:1 or better', (accent) => {
+    expect(contrast(WHITE, hexRgb(declaredIn(`:root[data-accent='${accent}']`, 'accent-strong')))).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it.each(ACCENT_NAMES)('gives %s link text 4.5:1 or better on the light window', (accent) => {
+    expect(contrast(hexRgb(declaredIn(`:root[data-accent='${accent}']`, 'accent-link')), hexRgb(lightToken('window-bg')))).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it.each(ACCENT_NAMES)('gives %s link text 4.5:1 or better on the dark window', (accent) => {
+    const link = declaredIn(`:root[data-theme='dark'][data-accent='${accent}']`, 'accent-link')
+    expect(contrast(hexRgb(link), hexRgb(themeToken('dark', 'window-bg')))).toBeGreaterThanOrEqual(4.5)
+  })
+})

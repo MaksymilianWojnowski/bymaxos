@@ -28,11 +28,23 @@ describe('applyAppearance', () => {
   })
 })
 
+describe('applyAppearance accent', () => {
+  it('sets data-accent on the root', () => {
+    const root = document.createElement('div')
+    applyAppearance({ ...base, accent: 'purple' }, false, root)
+    expect(root.dataset.accent).toBe('purple')
+  })
+})
+
 describe('defaultSettings', () => {
   it('seeds reduceMotion from the environment and sets the dock defaults', () => {
     const s = defaultSettings({ prefersReducedMotion: true })
     expect(s.reduceMotion).toBe(true)
     expect(s.appearance).toBe('auto')
     expect(s.dockSize).toBe(52)
+  })
+
+  it('default accent is blue', () => {
+    expect(defaultSettings({ prefersReducedMotion: false }).accent).toBe('blue')
   })
 })

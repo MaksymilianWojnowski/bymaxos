@@ -80,6 +80,20 @@ describe('settings', () => {
     resetSystem()
     expect(useSystem.getState().settings.dockSize).toBe(52)
   })
+
+  it('loads a missing or unknown stored accent as blue', () => {
+    safeStorage.set('local', KEYS.settings, { dockSize: 60 })
+    resetSystem()
+    expect(useSystem.getState().settings.accent).toBe('blue')
+
+    safeStorage.set('local', KEYS.settings, { accent: 'magenta' })
+    resetSystem()
+    expect(useSystem.getState().settings.accent).toBe('blue')
+
+    safeStorage.set('local', KEYS.settings, { accent: 'pink' })
+    resetSystem()
+    expect(useSystem.getState().settings.accent).toBe('pink')
+  })
 })
 
 describe('lock state', () => {

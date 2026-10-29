@@ -44,6 +44,64 @@
   --shadow-window-inactive: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
 }
 
+/* Accent overrides follow the theme blocks; blue is the default :root and theme values. The dark link selector outranks the light one. */
+:root[data-accent='purple'] {
+  --accent: #a550a7;
+  --accent-strong: #a550a7;
+  --accent-link: #994a9b;
+}
+:root[data-theme='dark'][data-accent='purple'] {
+  --accent-link: #b76cb9;
+}
+:root[data-accent='pink'] {
+  --accent: #f74f9e;
+  --accent-strong: #e20a70;
+  --accent-link: #cd0965;
+}
+:root[data-theme='dark'][data-accent='pink'] {
+  --accent-link: #f74f9e;
+}
+:root[data-accent='red'] {
+  --accent: #ff5257;
+  --accent-strong: #eb0007;
+  --accent-link: #d40006;
+}
+:root[data-theme='dark'][data-accent='red'] {
+  --accent-link: #ff5257;
+}
+:root[data-accent='orange'] {
+  --accent: #f7821b;
+  --accent-strong: #ba5a07;
+  --accent-link: #a65106;
+}
+:root[data-theme='dark'][data-accent='orange'] {
+  --accent-link: #f7821b;
+}
+:root[data-accent='yellow'] {
+  --accent: #ffc600;
+  --accent-strong: #8f6f00;
+  --accent-link: #826500;
+}
+:root[data-theme='dark'][data-accent='yellow'] {
+  --accent-link: #ffc600;
+}
+:root[data-accent='green'] {
+  --accent: #62ba46;
+  --accent-strong: #458331;
+  --accent-link: #3e762c;
+}
+:root[data-theme='dark'][data-accent='green'] {
+  --accent-link: #62ba46;
+}
+:root[data-accent='graphite'] {
+  --accent: #8c8c8c;
+  --accent-strong: #757575;
+  --accent-link: #686868;
+}
+:root[data-theme='dark'][data-accent='graphite'] {
+  --accent-link: #8c8c8c;
+}
+
 @theme inline {
   --color-accent: var(--accent);
   --color-accent-strong: var(--accent-strong);

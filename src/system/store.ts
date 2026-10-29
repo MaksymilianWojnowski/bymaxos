@@ -1,6 +1,6 @@
 import { create, type StoreApi, type UseBoundStore } from 'zustand'
 import { getWorkArea } from './layout'
-import { applyAppearance, defaultSettings, type Settings } from './settings'
+import { ACCENTS, applyAppearance, defaultSettings, type Settings } from './settings'
 import { KEYS, safeStorage } from './storage'
 import { runningAppsByRecency } from './switcher'
 import * as wm from './wm'
@@ -87,10 +87,11 @@ function initialData(): SystemData {
   const viewport = { w: window.innerWidth, h: window.innerHeight }
   const defaults = defaultSettings({ prefersReducedMotion: matches(REDUCED_MOTION_QUERY) })
   const stored = safeStorage.get<unknown>('local', KEYS.settings, null)
-  const settings =
+  const merged =
     typeof stored === 'object' && stored !== null && !Array.isArray(stored)
       ? { ...defaults, ...stored }
       : defaults
+  const settings = ACCENTS.includes(merged.accent) ? merged : { ...merged, accent: defaults.accent }
   const saved = safeStorage.get<unknown>('session', KEYS.windows, null)
   const hydrated = wm.hydrate(saved, getWorkArea(viewport.w, viewport.h))
   return {

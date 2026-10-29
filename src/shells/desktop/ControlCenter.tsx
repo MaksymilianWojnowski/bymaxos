@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type KeyboardEvent, type ReactNode } 
 import { getContent } from '../../content'
 import { dispatch } from '../../system/commands'
 import { Popover } from '../../ui/Popover'
+import { Switch } from '../../ui/Switch'
 import { useSystem } from '../../system/store'
 import type { Appearance } from '../../system/settings'
 import { enterFullScreen, exitFullScreen } from './fullscreen'
@@ -25,33 +26,6 @@ function Tile({ children }: { children: ReactNode }) {
     <section className="rounded-[12px] border p-3" style={GLASS}>
       {children}
     </section>
-  )
-}
-
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={() => onChange(!checked)}
-      className="flex h-[26px] w-full items-center justify-between text-left"
-    >
-      <span aria-hidden="true">{label}</span>
-      <span
-        aria-hidden="true"
-        className={`relative h-[20px] w-[34px] shrink-0 rounded-full transition-colors ${
-          checked ? 'bg-accent' : 'bg-black/20 dark:bg-white/25'
-        }`}
-      >
-        <span
-          className={`absolute top-[2px] h-[16px] w-[16px] rounded-full bg-white transition-transform ${
-            checked ? 'translate-x-[16px]' : 'translate-x-[2px]'
-          }`}
-        />
-      </span>
-    </button>
   )
 }
 
@@ -140,17 +114,17 @@ export function ControlCenter({ anchorEl }: { anchorEl: HTMLElement }) {
 
         <Tile>
           <div className="flex flex-col gap-1">
-            <Toggle
+            <Switch
               label="Reduce motion"
               checked={settings.reduceMotion}
               onChange={(v) => updateSettings({ reduceMotion: v })}
             />
-            <Toggle
+            <Switch
               label="Reduce transparency"
               checked={settings.reduceTransparency}
               onChange={(v) => updateSettings({ reduceTransparency: v })}
             />
-            <Toggle
+            <Switch
               label="Dock magnification"
               checked={settings.dockMagnification}
               onChange={(v) => updateSettings({ dockMagnification: v })}

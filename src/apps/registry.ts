@@ -5,6 +5,7 @@ import launchpadIcon from '../assets/icons/launchpad.png'
 import mailIcon from '../assets/icons/mail.png'
 import previewIcon from '../assets/icons/preview.png'
 import systemInfoIcon from '../assets/icons/system-information.png'
+import systemSettingsIcon from '../assets/icons/system-settings.png'
 import texteditIcon from '../assets/icons/textedit.png'
 import trashIcon from '../assets/icons/trash.png'
 import xcodeIcon from '../assets/icons/xcode.png'
@@ -164,6 +165,19 @@ const APP_LIST: (AppDefinition | null)[] = [
       singleInstance: true,
     },
     dock: { order: 4, group: 'apps' },
+  },
+  {
+    id: 'settings',
+    name: 'System Settings',
+    icon: { image: systemSettingsIcon },
+    load: () => import('./settings/Settings'),
+    window: {
+      defaultSize: { w: 680, h: 520 },
+      minSize: { w: 560, h: 420 },
+      resizable: true,
+      singleInstance: true,
+    },
+    dock: { order: 5, group: 'apps' },
   },
   {
     id: 'about',

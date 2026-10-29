@@ -21,7 +21,7 @@ beforeEach(() => {
 
 describe('registry', () => {
   it('lists dock items by group then order', () => {
-    expect(dockItems().map((a) => a.id)).toEqual(['launchpad', 'finder', 'resume', 'mail', 'contacts', 'calendar', 'developer', 'linkedin', 'github', 'trash'])
+    expect(dockItems().map((a) => a.id)).toEqual(['launchpad', 'finder', 'resume', 'mail', 'contacts', 'calendar', 'developer', 'settings', 'linkedin', 'github', 'trash'])
   })
 
   it('lists launchable apps for Launchpad sorted by name, leaving out hidden, file-only and overlay apps', () => {

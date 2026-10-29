@@ -28,7 +28,7 @@ function systemMenu(ctx: MenuContext): MenuDef {
     items: [
       { label: 'About This Mac', command: { type: 'app.open', appId: 'about' } },
       SEP,
-      withShortcut('System Settings…', { type: 'overlay.open', overlay: 'controlCenter' }, ctx),
+      withShortcut('System Settings…', { type: 'app.open', appId: 'settings' }, ctx),
       SEP,
       { label: 'Lock Screen', command: { type: 'system.lock' } },
       { label: 'Restart…', command: { type: 'system.restart' } },
