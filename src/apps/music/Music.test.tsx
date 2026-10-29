@@ -104,6 +104,22 @@ describe('Music', () => {
     expect(frame).toHaveAttribute('allow', 'encrypted-media')
   })
 
+  it('after the Spotify player loads, focus moves to the iframe (mouse and keyboard)', async () => {
+    render(<MusicApp windowId="w1" />)
+    await userEvent.click(within(sidebar()).getByRole('button', { name: 'Morning' }))
+
+    await userEvent.click(within(detail()).getByRole('button', { name: 'Load Spotify player' }))
+    expect(screen.getByTitle('Spotify player — Morning')).toHaveFocus()
+
+    cleanup()
+    render(<MusicApp windowId="w1" />)
+    await userEvent.click(within(sidebar()).getByRole('button', { name: 'Morning' }))
+    const load = within(detail()).getByRole('button', { name: 'Load Spotify player' })
+    load.focus()
+    await userEvent.keyboard('{Enter}')
+    expect(screen.getByTitle('Spotify player — Morning')).toHaveFocus()
+  })
+
   it('a playlist without spotifyId never offers the Spotify embed', async () => {
     render(<MusicApp windowId="w1" />)
     await userEvent.click(within(sidebar()).getByRole('button', { name: 'Night' }))

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getContent } from '../../content'
 import type { AppProps } from '../types'
 
@@ -21,6 +21,12 @@ export default function MusicApp({ props }: AppProps) {
   })
   // The Spotify embed loads only after a click, and is reset whenever the selection changes.
   const [embedded, setEmbedded] = useState(false)
+  const frameRef = useRef<HTMLIFrameElement>(null)
+
+  // The Load button unmounts on click, so focus moves to the player it reveals (WCAG 2.4.3).
+  useEffect(() => {
+    if (embedded) frameRef.current?.focus()
+  }, [embedded])
 
   const choose = (next: Selection | null) => {
     setSelected(next)
@@ -117,6 +123,7 @@ export default function MusicApp({ props }: AppProps) {
             </div>
             {playlist.spotifyId && embedded && (
               <iframe
+                ref={frameRef}
                 key={playlist.id}
                 title={`Spotify player — ${playlist.title}`}
                 src={`https://open.spotify.com/embed/playlist/${playlist.spotifyId}`}
