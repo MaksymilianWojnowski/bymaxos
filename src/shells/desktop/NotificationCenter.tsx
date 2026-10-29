@@ -17,6 +17,15 @@ const GLASS = {
   borderColor: 'var(--glass-border)',
 }
 
+// Text sits on the opaque window colour, not on the translucent glass, so its contrast is fixed (AA in both themes).
+const SOLID = { background: 'var(--window-bg)', borderColor: 'var(--glass-border)' }
+
+// Session storage is untrusted input: anything but a list of ids is treated as nothing dismissed.
+function readDismissed(): string[] {
+  const value = safeStorage.get<unknown>('session', KEYS.notifications, [])
+  return Array.isArray(value) && value.every((id) => typeof id === 'string') ? value : []
+}
+
 function Card({ item, onOpen, onDismiss }: { item: NotificationItem; onOpen: (appId: string) => void; onDismiss: () => void }) {
   const app = item.appId !== undefined ? getApp(item.appId) : undefined
   const content = (
@@ -30,7 +39,7 @@ function Card({ item, onOpen, onDismiss }: { item: NotificationItem; onOpen: (ap
   )
 
   return (
-    <div className="relative rounded-[12px] border bg-black/5 p-3 dark:bg-white/10" style={{ borderColor: 'var(--glass-border)' }}>
+    <div className="relative rounded-[12px] border p-3" style={SOLID}>
       {app ? (
         <button type="button" onClick={() => onOpen(app.id)} className="flex w-full items-start gap-3 pr-6 text-left">
           {content}
@@ -54,13 +63,23 @@ function Card({ item, onOpen, onDismiss }: { item: NotificationItem; onOpen: (ap
 export function NotificationCenter() {
   const setOverlay = useSystem((s) => s.setOverlay)
   const ref = useRef<HTMLDivElement>(null)
-  const [dismissed, setDismissed] = useState<string[]>(() => safeStorage.get('session', KEYS.notifications, []))
+  const [dismissed, setDismissed] = useState<string[]>(readDismissed)
   const visible = NOTIFICATIONS.filter((n) => !dismissed.includes(n.id))
 
   const saveDismissed = (ids: string[]) => {
     setDismissed(ids)
     safeStorage.set('session', KEYS.notifications, ids)
   }
+
+  // Focus moves into the panel on open and returns to the opener on close, but only when focus was lost with the panel.
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null
+    ref.current?.focus()
+    return () => {
+      const active = document.activeElement
+      if (opener?.isConnected && (active === null || active === document.body)) opener.focus()
+    }
+  }, [])
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -83,9 +102,10 @@ export function NotificationCenter() {
   return (
     <div
       ref={ref}
+      tabIndex={-1}
       role="dialog"
       aria-label="Notification Center"
-      className="fixed right-2 z-50 flex w-[356px] flex-col gap-2 overflow-y-auto rounded-[14px] border p-3 font-sans text-text-1 shadow-lg"
+      className="fixed right-2 z-50 flex w-[356px] flex-col gap-2 overflow-y-auto rounded-[14px] border p-3 font-sans text-text-1 shadow-lg outline-none"
       style={{
         ...GLASS,
         top: MENU_BAR_H + 8,
@@ -93,8 +113,8 @@ export function NotificationCenter() {
         animation: 'notification-slide 200ms ease-out',
       }}
     >
-      <div className="flex items-center justify-between px-1">
-        <h2 className="text-[13px] font-semibold">Notifications</h2>
+      <div className="flex items-center justify-between rounded-[8px] border px-2.5 py-1.5" style={SOLID}>
+        <h2 className="text-[13px] font-semibold text-text-1">Notifications</h2>
         {visible.length > 0 && (
           <button
             type="button"
@@ -107,7 +127,9 @@ export function NotificationCenter() {
       </div>
 
       {visible.length === 0 ? (
-        <p className="px-1 py-6 text-center text-[13px] text-text-2">No Notifications</p>
+        <p className="rounded-[12px] border px-3 py-6 text-center text-[13px] text-text-2" style={SOLID}>
+          No Notifications
+        </p>
       ) : (
         <ul className="flex flex-col gap-2">
           {visible.map((item) => (

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { getContent } from '../../content'
 import { resetSystem, useSystem } from '../../system/store'
+import { KEYS } from '../../system/storage'
 import { DesktopShell } from './DesktopShell'
 
 const notifications = getContent().notifications
@@ -70,5 +71,32 @@ describe('NotificationCenter', () => {
     fireEvent.mouseDown(clock)
     fireEvent.click(clock)
     expect(useSystem.getState().overlay).toBeNull()
+  })
+
+  it('moves focus into the panel on open', () => {
+    act(() => useSystem.getState().setOverlay(null))
+    act(() => useSystem.getState().setOverlay('notificationCenter'))
+    expect(screen.getByRole('dialog', { name: 'Notification Center' })).toHaveFocus()
+  })
+
+  it('returns focus to the clock button when Escape closes the panel', () => {
+    act(() => useSystem.getState().setOverlay(null))
+    const clock = screen.getByRole('button', { name: 'Notification Center' })
+    clock.focus()
+    act(() => useSystem.getState().setOverlay('notificationCenter'))
+    expect(screen.getByRole('dialog', { name: 'Notification Center' })).toHaveFocus()
+
+    fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' })
+    expect(useSystem.getState().overlay).toBeNull()
+    expect(clock).toHaveFocus()
+  })
+
+  it.each(['{"a":1}', '"welcome"'])('ignores corrupt session storage %s and lists every card', (raw) => {
+    cleanup()
+    window.sessionStorage.setItem(KEYS.notifications, raw)
+    render(<DesktopShell />)
+    act(() => useSystem.getState().setOverlay(null))
+    act(() => useSystem.getState().setOverlay('notificationCenter'))
+    for (const n of notifications) expect(screen.getByText(n.title)).toBeInTheDocument()
   })
 })
