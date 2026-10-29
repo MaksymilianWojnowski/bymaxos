@@ -6,6 +6,7 @@ import mailIcon from '../assets/icons/mail.png'
 import previewIcon from '../assets/icons/preview.png'
 import systemInfoIcon from '../assets/icons/system-information.png'
 import systemSettingsIcon from '../assets/icons/system-settings.png'
+import terminalIcon from '../assets/icons/terminal.png'
 import texteditIcon from '../assets/icons/textedit.png'
 import trashIcon from '../assets/icons/trash.png'
 import xcodeIcon from '../assets/icons/xcode.png'
@@ -165,6 +166,19 @@ const APP_LIST: (AppDefinition | null)[] = [
       singleInstance: true,
     },
     dock: { order: 9, group: 'apps' },
+  },
+  {
+    id: 'terminal',
+    name: 'Terminal',
+    icon: { image: terminalIcon },
+    load: () => import('./terminal/Terminal'),
+    window: {
+      defaultSize: { w: 680, h: 440 },
+      minSize: { w: 420, h: 260 },
+      resizable: true,
+      singleInstance: false,
+    },
+    dock: { order: 10, group: 'apps' },
   },
   {
     id: 'settings',
