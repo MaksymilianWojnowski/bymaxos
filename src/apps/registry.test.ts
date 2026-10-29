@@ -21,7 +21,7 @@ beforeEach(() => {
 
 describe('registry', () => {
   it('lists dock items by group then order', () => {
-    expect(dockItems().map((a) => a.id)).toEqual(['launchpad', 'finder', 'resume', 'safari', 'mail', 'contacts', 'calendar', 'notes', 'photos', 'developer', 'terminal', 'settings', 'linkedin', 'github', 'trash'])
+    expect(dockItems().map((a) => a.id)).toEqual(['launchpad', 'finder', 'resume', 'safari', 'mail', 'contacts', 'calendar', 'notes', 'photos', 'music', 'developer', 'terminal', 'settings', 'linkedin', 'github', 'trash'])
   })
 
   it('numbers the apps dock group as Safari 1, Mail 2, Contacts 3, Calendar 4, Notes 5, Photos 6, Developer 9, Terminal 10, System Settings 11', () => {
@@ -33,6 +33,7 @@ describe('registry', () => {
       ['Calendar', 4],
       ['Notes', 5],
       ['Photos', 6],
+      ['Music', 7],
       ['Developer', 9],
       ['Terminal', 10],
       ['System Settings', 11],

@@ -3,6 +3,7 @@ import contactsIcon from '../assets/icons/contacts.png'
 import finderIcon from '../assets/icons/finder.png'
 import launchpadIcon from '../assets/icons/launchpad.png'
 import mailIcon from '../assets/icons/mail.png'
+import musicIcon from '../assets/icons/music.png'
 import notesIcon from '../assets/icons/notes.png'
 import photosIcon from '../assets/icons/photos.png'
 import previewIcon from '../assets/icons/preview.png'
@@ -197,6 +198,19 @@ const APP_LIST: (AppDefinition | null)[] = [
       singleInstance: true,
     },
     dock: { order: 6, group: 'apps' },
+  },
+  {
+    id: 'music',
+    name: 'Music',
+    icon: { image: musicIcon },
+    load: () => import('./music/Music'),
+    window: {
+      defaultSize: { w: 860, h: 560 },
+      minSize: { w: 560, h: 360 },
+      resizable: true,
+      singleInstance: true,
+    },
+    dock: { order: 7, group: 'apps' },
   },
   {
     id: 'developer',
