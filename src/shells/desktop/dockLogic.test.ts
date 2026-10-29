@@ -3,7 +3,7 @@ import { getApp } from '../../apps/registry'
 import { getContent } from '../../content'
 import { emptyWM } from '../../system/wm'
 import type { WindowState, WMState } from '../../system/types'
-import { dockClickAction, magnifyScale } from './dockLogic'
+import { dockClickAction, fitIconSize, magnifyScale } from './dockLogic'
 
 const win = (id: string, appId: string, z: number, mode: WindowState['mode'] = 'normal'): WindowState => ({
   id,
@@ -100,5 +100,22 @@ describe('magnifyScale', () => {
 
   it('shrinks the boost as distance grows', () => {
     expect(magnifyScale(30)).toBeGreaterThan(magnifyScale(60))
+  })
+})
+
+describe('fitIconSize', () => {
+  it('keeps the requested size when the dock already fits', () => {
+    expect(fitIconSize(1440, 72, 17, 3)).toBe(72)
+  })
+
+  it('shrinks the icons on a 768px viewport and keeps the dock inside the margins', () => {
+    const size = fitIconSize(768, 72, 17, 3)
+    expect(size).toBeLessThan(72)
+    // 17 icons, 19 gaps of 6px, 3 one-pixel separators, the padding and border, and 16px each side.
+    expect(size * 17 + 19 * 6 + 3 + 18).toBeLessThanOrEqual(768 - 32)
+  })
+
+  it('never goes below 32px, even on a very narrow viewport', () => {
+    expect(fitIconSize(320, 72, 17, 3)).toBe(32)
   })
 })

@@ -98,6 +98,17 @@ describe('Photos', () => {
     expect(dialog()).toHaveAccessibleName('Alpha')
   })
 
+  it('a cancelled pointer is not a swipe, and the lightbox image cannot be dragged natively', async () => {
+    render(<PhotosApp windowId="w1" />)
+    await userEvent.click(thumb('Alpha'))
+    fireEvent.pointerDown(dialog() as HTMLElement, { clientX: 200 })
+    fireEvent.pointerCancel(dialog() as HTMLElement, { clientX: 100 })
+    fireEvent.pointerUp(dialog() as HTMLElement, { clientX: 100 })
+    expect(dialog()).toHaveAccessibleName('Alpha')
+    expect(dialog()).toHaveClass('touch-none')
+    expect(within(dialog() as HTMLElement).getByRole('img', { name: 'Alpha' })).toHaveAttribute('draggable', 'false')
+  })
+
   it('props.item opens the lightbox on that photo', () => {
     render(<PhotosApp windowId="w1" props={{ item: 't2' }} />)
     expect(dialog()).toHaveAccessibleName('Beta')

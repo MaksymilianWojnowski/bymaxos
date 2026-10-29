@@ -83,6 +83,18 @@ describe('runCommand', () => {
     expect(runCommand('ls', ctx('work')).lines).toEqual(experience.map((e) => `${e.company} — ${e.role}.md`))
   })
 
+  it('ls with a folder name lists that folder, like cd finds it', () => {
+    expect(runCommand('ls work', ctx()).lines).toEqual(experience.map((e) => `${e.company} — ${e.role}.md`))
+  })
+
+  it('ls with a file name prints the file name', () => {
+    expect(runCommand('ls Hello.md', ctx('about'))).toEqual({ lines: ['Hello.md'] })
+  })
+
+  it('ls with a missing folder says so', () => {
+    expect(runCommand('ls nope', ctx())).toEqual({ lines: ['ls: no such folder: nope'] })
+  })
+
   it('cd .. returns to the root, and cd .. at the root stays there', () => {
     expect(runCommand('cd ..', ctx('work')).cwd).toBe('root')
     expect(runCommand('cd ..', ctx()).cwd).toBe('root')

@@ -1,9 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
-import { AxeBuilder } from '@axe-core/playwright'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 import { getContent } from '../src/content/index.ts'
-import { openDock, settle, unlock } from './helpers.ts'
+import { openDock, scanWindow, unlock } from './helpers.ts'
 
 const REPOS_FIXTURE = fileURLToPath(new URL('./fixtures/repos.json', import.meta.url))
 const GITHUB_API = 'https://api.github.com/**'
@@ -11,11 +10,6 @@ const GITHUB_API = 'https://api.github.com/**'
 const { profile } = getContent()
 
 const appWindow = (page: Page, name: string) => page.getByRole('dialog', { name, exact: true })
-
-const serious = async (page: Page) => {
-  const results = await new AxeBuilder({ page }).analyze()
-  return results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
-}
 
 test.describe('essential apps', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
@@ -149,25 +143,25 @@ test.describe('essential apps', () => {
 test.describe('essential apps axe', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
 
-  const scanResumeAndMail = async (page: Page) => {
-    await unlock(page)
-    await openDock(page, 'Resume')
-    await openDock(page, 'Mail')
-    await settle(appWindow(page, 'Resume'))
-    await settle(appWindow(page, 'Mail'))
-    expect((await serious(page)).map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([])
+  const selectBymaxos = async (win: Locator) => {
+    await win.getByRole('listbox', { name: 'Repositories' }).getByRole('option', { name: 'bymaxos' }).click()
+    await expect(win.getByRole('button', { name: 'View on GitHub ↗' })).toBeVisible()
   }
 
-  test('axe passes with Resume and Mail open in light mode', async ({ page }) => {
-    await scanResumeAndMail(page)
+  test('axe passes with each of Resume and Mail open in light mode', async ({ page }) => {
+    await unlock(page)
+    await scanWindow(page, 'Resume')
+    await scanWindow(page, 'Mail')
   })
 
   test.describe('dark', () => {
     test.use({ colorScheme: 'dark' })
 
-    test('axe passes with Resume and Mail open in dark mode', async ({ page }) => {
-      await scanResumeAndMail(page)
+    test('axe passes with each of Resume and Mail open in dark mode', async ({ page }) => {
+      await unlock(page)
       await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+      await scanWindow(page, 'Resume')
+      await scanWindow(page, 'Mail')
     })
 
     test('axe passes with Calendar and a selected Developer repo open in dark mode', async ({ page }) => {
@@ -176,15 +170,9 @@ test.describe('essential apps axe', () => {
         return route.fulfill({ path: REPOS_FIXTURE, contentType: 'application/json' })
       })
       await unlock(page)
-      await openDock(page, 'Calendar')
-      await openDock(page, 'Developer')
-      const developer = appWindow(page, 'Developer')
-      await developer.getByRole('listbox', { name: 'Repositories' }).getByRole('option', { name: 'bymaxos' }).click()
-      await expect(developer.getByRole('button', { name: 'View on GitHub ↗' })).toBeVisible()
-      await settle(appWindow(page, 'Calendar'))
-      await settle(developer)
       await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-      expect((await serious(page)).map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([])
+      await scanWindow(page, 'Calendar')
+      await scanWindow(page, 'Developer', selectBymaxos)
     })
   })
 })

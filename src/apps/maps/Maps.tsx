@@ -6,7 +6,7 @@ import type { AppProps } from '../types'
 import { MAP_H, MAP_W, project } from './project'
 import { WORLD_PATH } from './worldPath'
 
-const ROW = 'block w-full rounded-[6px] px-2 py-1.5 text-left focus-visible:ring-2 focus-visible:ring-accent-link'
+const ROW = 'block w-full rounded-[6px] px-2 py-1.5 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-window focus-visible:ring-accent-link'
 
 // Newest first by start date; undated places go last. The sort is stable, so undated keep their content order.
 const newestFirst = (a: Place, b: Place) => {

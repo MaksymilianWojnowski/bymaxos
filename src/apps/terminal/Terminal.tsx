@@ -19,7 +19,7 @@ const stamp = () =>
 
 export default function TerminalApp() {
   const [rows, setRows] = useState<Row[]>(() => [
-    { id: 0, text: `Last login: ${stamp()} on bymaxsh — type help` },
+    { id: 0, text: `Session started ${stamp()} — type help` },
   ])
   const [input, setInput] = useState('')
   const [cwd, setCwd] = useState('root')

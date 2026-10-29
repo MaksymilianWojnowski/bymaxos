@@ -47,3 +47,17 @@ export function magnifyScale(distance: number, max = 1.6, range = 120): number {
   if (distance >= range) return 1
   return 1 + ((max - 1) * (Math.cos((distance / range) * Math.PI) + 1)) / 2
 }
+
+// Dock chrome: 8px padding and a 1px border on each side; a 16px clear margin each side of the viewport.
+const DOCK_CHROME = 18
+const DOCK_MARGIN = 32
+const DOCK_GAP = 6
+const MIN_ICON = 32
+
+// Largest icon size, up to `size`, at which the whole dock fits the viewport width.
+export function fitIconSize(viewportW: number, size: number, items: number, separators: number): number {
+  // Each separator is a 1px rule sitting between two gaps.
+  const fixed = DOCK_CHROME + (items + separators - 1) * DOCK_GAP + separators
+  const fit = Math.floor((viewportW - DOCK_MARGIN - fixed) / items)
+  return Math.max(MIN_ICON, Math.min(size, fit))
+}

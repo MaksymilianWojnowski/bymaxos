@@ -184,6 +184,21 @@ describe('Dock', () => {
     expect(useSystem.getState().wm.windows).toHaveLength(0)
   })
 
+  it('shrinks the icons so the whole dock fits a 768px viewport', () => {
+    useSystem.setState({ viewport: { w: 768, h: 1024 } })
+    useSystem.getState().updateSettings({ dockSize: 72 })
+    render(<Dock />)
+    const toolbar = screen.getByRole('toolbar', { name: 'Dock' })
+    const buttons = within(toolbar).getAllByRole('button')
+    const icon = parseFloat(buttons[0].style.width)
+    expect(icon).toBeLessThan(72)
+    expect(buttons.every((b) => b.style.width === `${icon}px`)).toBe(true)
+    // Icons, the gaps between the flex children, the 1px separators, then the dock's padding and border.
+    const separators = toolbar.querySelectorAll('div.w-px').length
+    const width = buttons.length * icon + (buttons.length + separators - 1) * 6 + separators + 18
+    expect(width).toBeLessThanOrEqual(768 - 32)
+  })
+
   it('drops magnification when the setting is turned off mid-hover', () => {
     render(<Dock />)
     const finder = screen.getByRole('button', { name: 'Finder' })

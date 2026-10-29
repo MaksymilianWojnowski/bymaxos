@@ -155,6 +155,7 @@ export default function PhotosApp({ props }: AppProps) {
         )}
 
         {photo && index !== null && (
+          // A cancelled pointer (e.g. a native image drag) ends the swipe without moving.
           // The lightbox lives inside the window and is modal there: the grid and sidebar are inert while it is open.
           <div
             ref={dialogRef}
@@ -167,7 +168,8 @@ export default function PhotosApp({ props }: AppProps) {
               swipeStart.current = e.clientX
             }}
             onPointerUp={onPointerUp}
-            className="absolute inset-0 z-10 flex flex-col bg-black/90 outline-none"
+            onPointerCancel={() => (swipeStart.current = null)}
+            className="absolute inset-0 z-10 flex touch-none flex-col bg-black/90 outline-none"
           >
             <div className="flex justify-end p-2">
               <button type="button" aria-label="Close" onClick={close} className={NAV}>
@@ -187,6 +189,7 @@ export default function PhotosApp({ props }: AppProps) {
               <img
                 src={photoUrl(photo.src)}
                 alt={photo.alt}
+                draggable={false}
                 className="min-w-0 flex-1 self-stretch object-contain"
               />
               <button

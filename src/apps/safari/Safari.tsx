@@ -126,9 +126,10 @@ export default function SafariApp({ props }: AppProps) {
             const label = titleOf(tab.url, bookmarks)
             return (
               // The mouse-only close button is aria-hidden, so the tablist's accessible children are tabs only.
+              // The selected tab gets a bar along its foot, a cue that does not rely on the fill alone.
               <div
                 key={tab.id}
-                className={`flex shrink-0 items-center rounded-[6px] ${selected ? 'bg-white shadow-sm dark:bg-white/15' : ''}`}
+                className={`relative flex shrink-0 items-center rounded-[6px] ${selected ? 'bg-white shadow-sm after:absolute after:inset-x-2 after:bottom-0 after:h-[2px] after:rounded-full after:bg-accent-link dark:bg-white/15' : ''}`}
               >
                 <button
                   type="button"
@@ -139,7 +140,7 @@ export default function SafariApp({ props }: AppProps) {
                   aria-keyshortcuts="Delete"
                   tabIndex={selected ? 0 : -1}
                   onClick={() => select(tab)}
-                  className={`${PILL} ${selected ? 'text-text-1' : 'text-text-2'}`}
+                  className={`${PILL} ${selected ? 'font-medium text-text-1' : 'text-text-2'}`}
                 >
                   {label}
                 </button>

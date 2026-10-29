@@ -281,3 +281,14 @@ function contrastRatio(a: number[], b: number[]): number {
   const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x)
   return (hi + 0.05) / (lo + 0.05)
 }
+
+test.describe('narrow desktop', () => {
+  test.use({ viewport: { width: 768, height: 1024 } })
+
+  test('the dock shrinks so the Trash button stays on screen', async ({ page }) => {
+    await unlock(page)
+    const trash = await boxOf(page.getByRole('toolbar', { name: 'Dock' }).getByRole('button', { name: 'Trash' }))
+    expect(trash.x).toBeGreaterThanOrEqual(0)
+    expect(trash.x + trash.width).toBeLessThanOrEqual(768)
+  })
+})

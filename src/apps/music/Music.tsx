@@ -6,7 +6,7 @@ type Selection = { kind: 'playlist' | 'artist' | 'album'; id: string }
 
 const BUTTON =
   'rounded-[6px] border border-black/15 bg-white px-3 py-1 text-[13px] text-black focus-visible:ring-2 focus-visible:ring-accent-link dark:border-white/15 dark:bg-[#2a2a2a] dark:text-white'
-const ROW = 'block w-full truncate rounded-[6px] px-2 py-1 text-left focus-visible:ring-2 focus-visible:ring-accent-link'
+const ROW = 'block w-full truncate rounded-[6px] px-2 py-1 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-window focus-visible:ring-accent-link'
 
 const openLink = (url: string) => window.open(url, '_blank', 'noopener,noreferrer')
 

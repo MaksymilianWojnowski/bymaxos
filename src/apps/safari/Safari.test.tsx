@@ -129,6 +129,17 @@ describe('Safari', () => {
     expect(closeButton(plain.title)).toBeDisabled()
   })
 
+  it('the selected tab is medium weight and has a bar along its foot; the others have neither', async () => {
+    render(<SafariApp windowId="w1" />)
+    await userEvent.click(screen.getByRole('button', { name: 'New tab' }))
+    const [other, selected] = screen.getAllByRole('tab')
+    expect(selected).toHaveAttribute('aria-selected', 'true')
+    expect(selected).toHaveClass('font-medium')
+    expect(selected.parentElement).toHaveClass('after:bg-accent-link')
+    expect(other).not.toHaveClass('font-medium')
+    expect(other.parentElement).not.toHaveClass('after:bg-accent-link')
+  })
+
   it('tabs sit in a tablist, and the active page is in a tabpanel labelled by its tab', () => {
     render(<SafariApp windowId="w1" />)
 

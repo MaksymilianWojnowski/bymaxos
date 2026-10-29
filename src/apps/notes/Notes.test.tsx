@@ -48,6 +48,16 @@ describe('Notes', () => {
     expect(titleField()).toHaveValue(lookingFor.title)
   })
 
+  it('selects the note of a new props.item on a rerender and clears the search', async () => {
+    const user = userEvent.setup()
+    const windowId = useSystem.getState().openApp('notes') as string
+    const view = render(<NotesApp windowId={windowId} props={undefined} />)
+    await user.type(screen.getByRole('searchbox', { name: 'Search notes' }), 'nothing matches')
+    view.rerender(<NotesApp windowId={windowId} props={{ item: lookingFor.id }} />)
+    expect(titleField()).toHaveValue(lookingFor.title)
+    expect(screen.getByRole('searchbox', { name: 'Search notes' })).toHaveValue('')
+  })
+
   it('renders the seed notes when stored edits have a corrupt updated date', () => {
     window.localStorage.setItem(
       KEYS.notes,

@@ -7,10 +7,13 @@ import type { AppId } from '../../system/types'
 import { topWindowOfApp } from '../../system/wm'
 import { AppIcon } from '../../ui/AppIcon'
 import { useContextMenu } from '../../ui/useContextMenu'
-import { dockClickAction, magnifyScale } from './dockLogic'
+import { dockClickAction, fitIconSize, magnifyScale } from './dockLogic'
 import { dockIconRects } from './dockIconRects'
 
 const ITEMS = dockItems()
+// A separator sits wherever the group changes.
+const isGroupStart = (app: (typeof ITEMS)[number], i: number) => i > 0 && ITEMS[i - 1]?.dock.group !== app.dock.group
+const SEPARATORS = ITEMS.filter(isGroupStart).length
 
 // Restores every minimized window of the app, then focuses the topmost one.
 function showAll(appId: AppId): void {
@@ -49,7 +52,13 @@ function activate(app: AppDefinition): void {
 
 export function Dock() {
   const windows = useSystem((s) => s.wm.windows)
-  const size = useSystem((s) => s.settings.dockSize)
+  // Icons shrink on narrow viewports so the whole dock stays on screen.
+  const size = fitIconSize(
+    useSystem((s) => s.viewport.w),
+    useSystem((s) => s.settings.dockSize),
+    ITEMS.length,
+    SEPARATORS,
+  )
   const magnify = useSystem((s) => s.settings.dockMagnification && !s.settings.reduceMotion)
   const menu = useContextMenu()
   const buttons = useRef(new Map<AppId, HTMLButtonElement>())
@@ -134,12 +143,11 @@ export function Dock() {
         }}
       >
         {ITEMS.map((app, i) => {
-          const prev = ITEMS[i - 1]
           const external = Boolean(app.external)
           const running = windows.some((w) => w.appId === app.id)
           return (
             <Fragment key={app.id}>
-              {prev && prev.dock.group !== app.dock.group && (
+              {isGroupStart(app, i) && (
                 <div aria-hidden="true" className="mb-1 h-[60%] w-px self-center bg-[var(--glass-border)]" />
               )}
               <div className="group relative flex">

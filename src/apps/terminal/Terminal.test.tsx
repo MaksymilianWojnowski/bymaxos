@@ -26,7 +26,8 @@ const log = () => screen.getByRole('log')
 describe('Terminal', () => {
   it('shows a welcome line, then prints a command under its echoed prompt', async () => {
     render(<TerminalApp />)
-    expect(log().textContent).toMatch(/Last login: .* on bymaxsh — type help/)
+    expect(log().textContent).toMatch(/^Session started .* — type help/)
+    expect(log().textContent).not.toContain('Last login')
 
     await userEvent.type(input(), 'whoami{Enter}')
 

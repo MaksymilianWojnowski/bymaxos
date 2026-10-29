@@ -55,6 +55,14 @@ const findChild = (cwd: string, name: string): VNode | undefined => {
   return folderChildren(cwd).find((n) => n.name.toLowerCase() === key)
 }
 
+// An empty folder may explain itself through its placeholder instead.
+const listFolder = (id: string): string[] => {
+  const node = nodeById(id)
+  const children = folderChildren(id)
+  if (children.length === 0 && node?.kind === 'folder' && node.placeholder) return [node.placeholder]
+  return children.map((n) => n.name)
+}
+
 const parentOf = (cwd: string): string => {
   const path = pathTo(vfs, cwd)
   return path.length > 1 ? path[path.length - 2] : 'root'
@@ -122,12 +130,11 @@ export function runCommand(input: string, ctx: TerminalContext): TerminalResult 
       return { lines: [`Opening ${node.name}…`], open: openTarget(node) }
     }
     case 'ls': {
-      const here = nodeById(ctx.cwd)
-      const children = folderChildren(ctx.cwd)
-      if (children.length === 0 && here?.kind === 'folder' && here.placeholder) {
-        return { lines: [here.placeholder] }
-      }
-      return { lines: children.map((n) => n.name) }
+      if (arg === '') return { lines: listFolder(ctx.cwd) }
+      const node = findChild(ctx.cwd, arg)
+      if (!node) return { lines: [`ls: no such folder: ${arg}`] }
+      if (node.kind !== 'folder') return { lines: [node.name] }
+      return { lines: listFolder(node.id) }
     }
     case 'cd': {
       if (arg === '' || arg === '~') return { lines: [], cwd: 'root' }

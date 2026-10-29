@@ -1,7 +1,6 @@
-import { AxeBuilder } from '@axe-core/playwright'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 import { getContent } from '../src/content/index.ts'
-import { openDock, settle, unlock } from './helpers.ts'
+import { openDock, scanWindow, unlock } from './helpers.ts'
 
 const GITHUB_API = 'https://api.github.com/**'
 const SPOTIFY = 'https://open.spotify.com/**'
@@ -9,11 +8,6 @@ const SPOTIFY = 'https://open.spotify.com/**'
 const { experience } = getContent()
 
 const appWindow = (page: Page, name: string) => page.getByRole('dialog', { name, exact: true })
-
-const serious = async (page: Page) => {
-  const results = await new AxeBuilder({ page }).analyze()
-  return results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
-}
 
 test.describe('more apps', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
@@ -126,49 +120,28 @@ test.describe('more apps axe', () => {
     await page.route(SPOTIFY, (route) => route.abort())
   })
 
-  // One window at a time: a covered window gets "incomplete" contrast results instead of violations, so it would pass silently.
-  const scanWindow = async (page: Page, name: string) => {
-    await openDock(page, name)
-    const win = appWindow(page, name)
-    await expect(win).toBeVisible()
-    await settle(win)
-    const results = await new AxeBuilder({ page }).analyze()
-    expect(
-      (await serious(page)).map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`),
-      `${name} violations`,
-    ).toEqual([])
-    // Only contrast results inside this window count; the desktop chrome behind it is other windows' business.
-    const unchecked = results.incomplete
-      .filter((v) => v.id === 'color-contrast')
-      .flatMap((v) => v.nodes.map((n) => n.target.join(' ')))
-    const insideWindow = await win.evaluate(
-      (el, selectors) => selectors.filter((s) => {
-        const node = document.querySelector(s)
-        return node !== null && el.contains(node)
-      }),
-      unchecked,
-    )
-    expect(insideWindow, `${name} unchecked contrast`).toEqual([])
-    await win.getByRole('button', { name: 'Close', exact: true }).click()
-    await expect(win).toBeHidden()
+  // Safari's can't-be-shown card: a non-embeddable favorite opens it.
+  const openSafariCard = async (win: Locator) => {
+    await win.getByRole('region', { name: 'Favorites' }).getByRole('button').first().click()
+    await expect(win.getByRole('heading', { name: "This site can't be shown inside bymaxOS" })).toBeVisible()
   }
 
   const scanMoreApps = async (page: Page) => {
     await unlock(page)
-    for (const name of ['Terminal', 'Notes', 'Safari', 'Maps']) await scanWindow(page, name)
+    for (const name of ['Terminal', 'Notes', 'Photos', 'Music', 'Maps']) await scanWindow(page, name)
+    await scanWindow(page, 'Safari', openSafariCard)
   }
 
-  test('axe passes with each of Terminal, Notes, Safari and Maps open in light mode', async ({ page }) => {
+  test('axe passes with each of Terminal, Notes, Photos, Music, Maps and Safari open in light mode', async ({ page }) => {
     await scanMoreApps(page)
   })
 
   test.describe('dark', () => {
     test.use({ colorScheme: 'dark' })
 
-    test('axe passes with each of Terminal, Notes, Safari and Maps open in dark mode', async ({ page }) => {
-      await unlock(page)
+    test('axe passes with each of Terminal, Notes, Photos, Music, Maps and Safari open in dark mode', async ({ page }) => {
+      await scanMoreApps(page)
       await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-      for (const name of ['Terminal', 'Notes', 'Safari', 'Maps']) await scanWindow(page, name)
     })
   })
 })

@@ -25,7 +25,9 @@ const ICON_BUTTON =
   'grid h-7 w-7 place-items-center rounded-[4px] text-text-2 hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-accent-link dark:hover:bg-white/10'
 const TEXT_BUTTON =
   'rounded-[6px] px-2 py-0.5 text-accent-link underline focus-visible:ring-2 focus-visible:ring-accent-link'
-const FIELD = 'bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-accent-link'
+const FIELD = 'bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-link'
+// Selected rows fill with accent-strong, so the ring gets a gap of window colour to stand off from the fill.
+const ROW_FOCUS = 'focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-window focus-visible:ring-accent-link'
 
 type Field = 'title' | 'body'
 type TextField = HTMLInputElement | HTMLTextAreaElement
@@ -50,6 +52,18 @@ export default function NotesApp({ windowId, props }: AppProps) {
 
   const notes = useMemo(() => mergeNotes(getContent().notes, stored), [stored])
   const current = notes.find((n) => n.id === selectedId) ?? notes[0]
+
+  // Notes is a single window: a note from Spotlight arrives as new props and must be selected.
+  // Adjusted during render (as Photos does), so the editor shows that note in the same pass.
+  const itemId = typeof props?.item === 'string' ? props.item : undefined
+  const [seenItem, setSeenItem] = useState<string | undefined>(undefined)
+  if (itemId !== seenItem) {
+    setSeenItem(itemId)
+    if (itemId !== undefined && notes.some((n) => n.id === itemId)) {
+      setSelectedId(itemId)
+      setQuery('')
+    }
+  }
 
   const q = query.trim().toLowerCase()
   const visible = q
@@ -201,7 +215,7 @@ export default function NotesApp({ windowId, props }: AppProps) {
                     type="button"
                     aria-current={selected ? 'true' : undefined}
                     onClick={() => setSelectedId(n.id)}
-                    className={`flex w-full flex-col gap-0.5 rounded-[6px] px-2 py-1.5 text-left focus-visible:ring-2 focus-visible:ring-accent-link ${
+                    className={`flex w-full flex-col gap-0.5 rounded-[6px] px-2 py-1.5 text-left ${ROW_FOCUS} ${
                       selected ? 'bg-accent-strong text-white' : 'hover:bg-black/5 dark:hover:bg-white/10'
                     }`}
                   >
