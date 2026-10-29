@@ -30,6 +30,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  vi.restoreAllMocks()
 })
 
 describe('Photos', () => {
@@ -81,7 +82,7 @@ describe('Photos', () => {
 
     await userEvent.keyboard('{Escape}')
     expect(dialog()).toBeNull()
-    expect(thumb('Alpha')).toHaveFocus()
+    expect(thumb('Delta')).toHaveFocus()
   })
 
   it('a horizontal swipe moves to the next photo, and the reverse swipe to the previous', async () => {
@@ -141,5 +142,24 @@ describe('Photos', () => {
 
     await userEvent.tab({ shift: true })
     expect(lightboxButton('Next photo')).toHaveFocus()
+  })
+
+  it('closing returns focus to the current photo thumbnail only once the grid is no longer inert', async () => {
+    const original = HTMLElement.prototype.focus
+    const thumbFocus: { alt: string; inert: boolean }[] = []
+    vi.spyOn(HTMLElement.prototype, 'focus').mockImplementation(function (this: HTMLElement, options?: FocusOptions) {
+      // Thumbnails are the only buttons that wrap a photo; the lightbox dialog is not one.
+      const alt = this.tagName === 'BUTTON' ? this.querySelector('img')?.getAttribute('alt') : undefined
+      if (alt) thumbFocus.push({ alt, inert: this.closest('[inert]') !== null })
+      original.call(this, options)
+    })
+
+    render(<PhotosApp windowId="w1" />)
+    await userEvent.click(thumb('Alpha'))
+    await userEvent.keyboard('{ArrowRight}')
+    await userEvent.keyboard('{Escape}')
+
+    expect(thumbFocus.at(-1)).toEqual({ alt: 'Beta', inert: false })
+    expect(thumb('Beta')).toHaveFocus()
   })
 })

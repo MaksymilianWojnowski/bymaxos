@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
+import { flushSync } from 'react-dom'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { getContent } from '../../content'
 import { allPhotos, photoUrl } from '../../system/photos'
@@ -15,7 +16,7 @@ export default function PhotosApp({ props }: AppProps) {
   const [albumId, setAlbumId] = useState<string | null>(null)
   // Index into the photos on screen; null when the lightbox is closed.
   const [index, setIndex] = useState<number | null>(null)
-  const returnRef = useRef<HTMLElement | null>(null)
+  const gridRef = useRef<HTMLDivElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   const swipeStart = useRef<number | null>(null)
 
@@ -46,14 +47,14 @@ export default function PhotosApp({ props }: AppProps) {
     setIndex(null)
   }
 
-  const openAt = (i: number, thumb: HTMLElement) => {
-    returnRef.current = thumb
-    setIndex(i)
-  }
+  const openAt = (i: number) => setIndex(i)
 
+  // The grid is inert until the lightbox is gone, and browsers refuse focus on inert elements.
+  // flushSync commits the close first, so the thumbnail for the photo last shown can take focus.
   const close = () => {
-    setIndex(null)
-    returnRef.current?.focus()
+    const i = index
+    flushSync(() => setIndex(null))
+    if (i !== null) gridRef.current?.querySelectorAll<HTMLButtonElement>('button')[i]?.focus()
   }
 
   // Previous and Next stay focusable at the ends (aria-disabled, not disabled), so focus never drops out.
@@ -130,6 +131,7 @@ export default function PhotosApp({ props }: AppProps) {
           <>
             <h2 className="px-4 pt-3 text-[15px] font-semibold">{title}</h2>
             <div
+              ref={gridRef}
               inert={isOpen}
               className="grid flex-1 grid-cols-[repeat(auto-fill,minmax(140px,1fr))] content-start gap-2 overflow-auto p-3"
             >
@@ -137,7 +139,7 @@ export default function PhotosApp({ props }: AppProps) {
                 <button
                   key={p.id}
                   type="button"
-                  onClick={(e: MouseEvent<HTMLButtonElement>) => openAt(i, e.currentTarget)}
+                  onClick={() => openAt(i)}
                   className="aspect-square overflow-hidden rounded-[6px] focus-visible:ring-2 focus-visible:ring-accent-link"
                 >
                   <img
