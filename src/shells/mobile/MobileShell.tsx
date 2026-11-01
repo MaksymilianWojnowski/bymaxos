@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { getApp } from '../../apps/registry'
-import { installSystemCommands } from '../../system/commands'
+import { registerGlobal } from '../../system/commands'
 import { takeDeepLink } from '../../system/shell'
 import { useSystem } from '../../system/store'
+import type { AppId } from '../../system/types'
 import { AppScreen } from './AppScreen'
 import { HomeScreen } from './HomeScreen'
 import { LockScreen } from './LockScreen'
@@ -20,8 +21,19 @@ export function MobileShell() {
   const seenFocus = useRef<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
 
-  // Apps dispatch system commands such as app.open (Resume's Email); only the desktop shell installed them before.
-  useEffect(() => installSystemCommands(), [])
+  // Resume's Email sends app.open and Terminal's `open` sends dock.activate; both take the mobile rules, not the desktop ones.
+  useEffect(() => {
+    const disposeOpen = registerGlobal('app.open', (cmd) => {
+      if (typeof cmd.appId === 'string') openMobileApp(cmd.appId as AppId, cmd.props as Record<string, unknown> | undefined)
+    })
+    const disposeActivate = registerGlobal('dock.activate', (cmd) => {
+      if (typeof cmd.appId === 'string') openMobileApp(cmd.appId as AppId)
+    })
+    return () => {
+      disposeOpen()
+      disposeActivate()
+    }
+  }, [openMobileApp])
 
   // A focused window at mount (a switch from the desktop shell) or one that takes focus later brings its app forward.
   useEffect(() => {

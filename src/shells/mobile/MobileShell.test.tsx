@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { DesktopShell } from '../desktop/DesktopShell'
+import { dispatch } from '../../system/commands'
 import { resetDeepLinkForTests } from '../../system/shell'
 import { resetSystem, useSystem } from '../../system/store'
 import { MobileShell } from './MobileShell'
@@ -24,6 +25,23 @@ const openedApps = () => useSystem.getState().wm.windows.map((w) => w.appId)
 const goTo = (search: string) => window.history.replaceState(null, '', `/${search}`)
 
 describe('MobileShell', () => {
+  it('app.open and dock.activate go through the mobile rules: Mail opens, a hidden app does not', () => {
+    useSystem.setState({ locked: false })
+    render(<MobileShell />)
+    expect(dispatch({ type: 'app.open', appId: 'mail' })).toBe(true)
+    expect(openedApps()).toContain('mail')
+
+    expect(dispatch({ type: 'app.open', appId: 'quicklook' })).toBe(true)
+    expect(openedApps()).not.toContain('quicklook')
+  })
+
+  it('dock.activate opens the app full screen', () => {
+    useSystem.setState({ locked: false })
+    render(<MobileShell />)
+    expect(dispatch({ type: 'dock.activate', appId: 'notes' })).toBe(true)
+    expect(openedApps()).toContain('notes')
+  })
+
   it('shows the lock screen while locked', () => {
     render(<MobileShell />)
     expect(screen.getByText('Swipe up to unlock')).toBeInTheDocument()

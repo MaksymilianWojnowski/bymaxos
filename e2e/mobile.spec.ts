@@ -94,16 +94,20 @@ test.describe('phone portrait', () => {
     await expect(dock(page)).toBeVisible()
   })
 
-  test('search finds "Working style" and opens Notes at that note', async ({ page }) => {
+  test('search opens Notes at the chosen note, not the default one', async ({ page }) => {
+    // "Working style" is the default note, so the search picks the second one to prove the selection.
     await unlockMobile(page)
     await page.getByRole('button', { name: 'Search', exact: true }).click()
     const search = page.getByRole('dialog', { name: 'Search', exact: true })
     await expect(search).toBeVisible()
-    await search.getByRole('combobox', { name: 'Search', exact: true }).fill('Working style')
-    await search.getByRole('option', { name: /Working style/ }).click()
+    await search.getByRole('combobox', { name: 'Search', exact: true }).fill("What I'm looking for")
+    await search.getByRole('option', { name: /What I'm looking for/ }).click()
     await expect(search).toBeHidden()
     await expect(page.getByRole('button', { name: 'Home', exact: true })).toBeVisible()
-    await expect(page.getByText('Working style').first()).toBeVisible()
+    await expect(page.getByRole('textbox', { name: 'Note title' })).toHaveValue("What I'm looking for")
+    await expect(page.getByRole('list', { name: 'Notes' }).locator('[aria-current="true"]')).toContainText(
+      "What I'm looking for",
+    )
   })
 
   test('page 2 shows LinkedIn and GitHub', async ({ page }) => {
@@ -128,6 +132,7 @@ test.describe('phone portrait', () => {
     test(`axe passes on lock screen, home screen, Contacts and the Mail sheet (${colorScheme})`, async ({ page }) => {
       await page.emulateMedia({ colorScheme })
       await page.goto('/')
+      await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme)
       await expect(lockHint(page)).toBeVisible()
       expect(await seriousViolations(page), 'lock screen').toEqual([])
 
@@ -140,6 +145,8 @@ test.describe('phone portrait', () => {
 
       await dock(page).getByRole('button', { name: 'Contacts', exact: true }).click()
       await expect(page.getByRole('button', { name: 'Home', exact: true })).toBeVisible()
+      // The app loads lazily behind a null fallback; scan only once its rows exist.
+      await expect(page.getByRole('button', { name: /^Copy / }).first()).toBeVisible()
       await settleAnimations(page)
       expect(await seriousViolations(page), 'Contacts').toEqual([])
       expect(await opaqueContrastUnchecked(page), 'Contacts unchecked contrast').toEqual([])
