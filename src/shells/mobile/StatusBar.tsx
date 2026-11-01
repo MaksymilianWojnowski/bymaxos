@@ -14,7 +14,7 @@ export function StatusBar({ onWallpaper = false }: { onWallpaper?: boolean }) {
 
   return (
     <div
-      className={`box-content flex h-12 items-center justify-between px-6 pt-[env(safe-area-inset-top)] text-[15px] font-semibold ${onWallpaper ? 'text-white drop-shadow-md' : 'text-text-1'}`}
+      className={`box-content flex h-12 items-center justify-between pt-[env(safe-area-inset-top)] pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))] text-[15px] font-semibold ${onWallpaper ? 'text-white drop-shadow-md' : 'text-text-1'}`}
     >
       <time dateTime={now.toISOString()}>{clock.format(now)}</time>
       <div className="flex items-center gap-1.5">

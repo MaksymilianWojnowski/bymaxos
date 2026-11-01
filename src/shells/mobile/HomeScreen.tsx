@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent, type TouchEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type TouchEvent } from 'react'
 import { Search } from 'lucide-react'
 import { mobileDockApps, mobileHomeApps, mobileLinkApps } from '../../apps/registry'
 import type { AppDefinition } from '../../apps/types'
@@ -17,6 +17,12 @@ const DOCK_APPS = mobileDockApps()
 const PAGES = 2
 // A downward pull on page 1 of more than this many px opens search.
 const PULL_SEARCH = 60
+// Upper bound for a page change's smooth scroll; scrollend is missing in some browsers.
+const FLIGHT_MS = 500
+// Page content keeps its 16px gutter, or the notch inset in landscape when that is larger.
+const PAGE_PAD =
+  'py-4 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]'
+const ROW_PAD = 'pl-[max(0px,env(safe-area-inset-left))] pr-[max(0px,env(safe-area-inset-right))]'
 
 const weekday = new Intl.DateTimeFormat('en-US', { weekday: 'long' })
 const weekdayShort = new Intl.DateTimeFormat('en-US', { weekday: 'short' })
@@ -49,14 +55,39 @@ export function HomeScreen({ onSearch }: { onSearch: () => void }) {
   const pullStart = useRef<{ x: number; y: number } | null>(null)
   const [page, setPage] = useState(0)
 
+  // A programmatic scroll reports intermediate offsets, so the page is read only once that scroll has landed.
+  const flight = useRef<number | null>(null)
+
+  const landed = useCallback(() => {
+    if (flight.current !== null) window.clearTimeout(flight.current)
+    flight.current = null
+    const el = scroller.current
+    if (el) setPage(pageFromScroll(el.scrollLeft, el.clientWidth, PAGES))
+  }, [])
+
+  useEffect(() => {
+    const el = scroller.current
+    el?.addEventListener('scrollend', landed)
+    return () => {
+      el?.removeEventListener('scrollend', landed)
+      if (flight.current !== null) window.clearTimeout(flight.current)
+    }
+  }, [landed])
+
   const goTo = (i: number) => {
+    const el = scroller.current
     setPage(i)
-    if (scroller.current) scroller.current.scrollLeft = scroller.current.clientWidth * i
+    if (!el) return
+    el.scrollLeft = el.clientWidth * i
+    // Under reduce-motion the jump is instant, so nothing is in flight.
+    if (reduceMotion) return
+    if (flight.current !== null) window.clearTimeout(flight.current)
+    flight.current = window.setTimeout(landed, FLIGHT_MS)
   }
 
   const onScroll = () => {
     const el = scroller.current
-    if (el) setPage(pageFromScroll(el.scrollLeft, el.clientWidth, PAGES))
+    if (el && flight.current === null) setPage(pageFromScroll(el.scrollLeft, el.clientWidth, PAGES))
   }
 
   // Roving focus over the page dots: Left and Right move the page and its dot together.
@@ -109,7 +140,7 @@ export function HomeScreen({ onSearch }: { onSearch: () => void }) {
             }}
             className="h-full w-full shrink-0 snap-start overflow-y-auto"
           >
-            <ul className={`grid gap-x-3 gap-y-5 p-4 ${landscape ? 'grid-cols-6' : 'grid-cols-4'}`}>
+            <ul className={`grid gap-x-3 gap-y-5 ${PAGE_PAD} ${landscape ? 'grid-cols-6' : 'grid-cols-4'}`}>
               <li className="col-span-full">
                 <button
                   type="button"
@@ -140,7 +171,7 @@ export function HomeScreen({ onSearch }: { onSearch: () => void }) {
           </section>
 
           <section className="h-full w-full shrink-0 snap-start overflow-y-auto">
-            <ul className="grid grid-cols-4 gap-x-3 gap-y-5 p-4">
+            <ul className={`grid grid-cols-4 gap-x-3 gap-y-5 ${PAGE_PAD}`}>
               {LINK_APPS.map((app) => (
                 <AppCell key={app.id} app={app} onOpen={openMobileApp} />
               ))}
@@ -148,7 +179,12 @@ export function HomeScreen({ onSearch }: { onSearch: () => void }) {
           </section>
         </div>
 
-        <div role="tablist" aria-label="Home screen pages" onKeyDown={onDotKey} className="flex justify-center">
+        <div
+          role="tablist"
+          aria-label="Home screen pages"
+          onKeyDown={onDotKey}
+          className={`flex justify-center ${ROW_PAD}`}
+        >
           {Array.from({ length: PAGES }, (_, i) => (
             <button
               key={i}
@@ -165,7 +201,7 @@ export function HomeScreen({ onSearch }: { onSearch: () => void }) {
           ))}
         </div>
 
-        <div className="flex justify-center py-2">
+        <div className={`flex justify-center py-2 ${ROW_PAD}`}>
           <button
             type="button"
             onClick={onSearch}
@@ -179,7 +215,7 @@ export function HomeScreen({ onSearch }: { onSearch: () => void }) {
         <div
           role="toolbar"
           aria-label="Dock"
-          className="mx-3 mb-2 flex justify-around rounded-[24px] border px-3 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+0.625rem)]"
+          className="mb-2 ml-[max(0.75rem,env(safe-area-inset-left))] mr-[max(0.75rem,env(safe-area-inset-right))] flex justify-around rounded-[24px] border px-3 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+0.625rem)]"
           style={{
             background: 'var(--glass-bg)',
             backdropFilter: 'blur(var(--glass-blur))',

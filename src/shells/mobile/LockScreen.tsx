@@ -207,14 +207,14 @@ export function LockScreen() {
         <StatusBar onWallpaper />
 
         <div className="flex min-h-0 flex-1 flex-col [@media(max-height:500px)]:flex-row">
-          <div className="flex flex-col items-center px-6 pt-6 text-center drop-shadow-md [@media(max-height:500px)]:w-1/2 [@media(max-height:500px)]:justify-center [@media(max-height:500px)]:pt-0">
+          <div className="flex flex-col items-center pt-6 pr-[max(1.5rem,env(safe-area-inset-right))] pl-[max(1.5rem,env(safe-area-inset-left))] text-center drop-shadow-md [@media(max-height:500px)]:w-1/2 [@media(max-height:500px)]:justify-center [@media(max-height:500px)]:pt-0">
             <p className="text-[17px] font-semibold">{dateFormat.format(now)}</p>
             <p className="text-[84px] leading-none font-light tabular-nums [@media(max-height:500px)]:text-[64px]">
               {`${pad(now.getHours())}:${pad(now.getMinutes())}`}
             </p>
           </div>
 
-          <ul className="mx-4 mt-6 flex flex-col gap-2 [@media(max-height:500px)]:mx-0 [@media(max-height:500px)]:mt-0 [@media(max-height:500px)]:flex-1 [@media(max-height:500px)]:overflow-y-auto [@media(max-height:500px)]:pr-4">
+          <ul className="mt-6 ml-[max(1rem,env(safe-area-inset-left))] mr-[max(1rem,env(safe-area-inset-right))] flex flex-col gap-2 [@media(max-height:500px)]:mt-0 [@media(max-height:500px)]:ml-[env(safe-area-inset-left)] [@media(max-height:500px)]:mr-[env(safe-area-inset-right)] [@media(max-height:500px)]:flex-1 [@media(max-height:500px)]:overflow-y-auto [@media(max-height:500px)]:pr-4">
             {visible.map((item) => (
               <li key={item.id}>
                 <Card item={item} onDismiss={() => dismiss(item.id)} />
@@ -223,7 +223,7 @@ export function LockScreen() {
           </ul>
         </div>
 
-        <div className="flex flex-col items-center gap-3 px-8 pt-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] drop-shadow-md">
+        <div className="flex flex-col items-center gap-3 pt-4 pr-[max(2rem,env(safe-area-inset-right))] pl-[max(2rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1.5rem)] drop-shadow-md">
           <div className="flex w-full items-center justify-between">
             <button
               ref={flashRef}

@@ -47,6 +47,18 @@ describe('LockScreen', () => {
     expect(screen.getByText('Swipe up to unlock')).toBeInTheDocument()
   })
 
+  it('keeps the status bar and lock content clear of the side safe areas', () => {
+    render(<LockScreen />)
+    expect(document.querySelector('time')?.parentElement).toHaveClass(
+      'pl-[max(1.5rem,env(safe-area-inset-left))]',
+      'pr-[max(1.5rem,env(safe-area-inset-right))]',
+    )
+    expect(screen.getByText('Swipe up to unlock').parentElement).toHaveClass(
+      'pl-[max(2rem,env(safe-area-inset-left))]',
+      'pr-[max(2rem,env(safe-area-inset-right))]',
+    )
+  })
+
   it('lists content notifications; the ✕ button and a left swipe over 80px dismiss one and persist it', () => {
     render(<LockScreen />)
     for (const n of notifications) expect(screen.getByText(n.title)).toBeInTheDocument()

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { mobileDockApps, mobileHomeApps } from '../../apps/registry'
 import { getContent } from '../../content'
 import { resetSystem, useSystem } from '../../system/store'
@@ -108,6 +108,62 @@ describe('HomeScreen', () => {
     touch('touchStart', page, 100, 100)
     touch('touchEnd', page, 20, 180)
     expect(onSearch).not.toHaveBeenCalled()
+  })
+
+  it('dots keep the tapped page while its scroll is in flight, and follow the scroll once it lands', () => {
+    renderHome()
+    const [first, second] = screen.getAllByRole('tab')
+    const scroller = screen.getByRole('tablist').previousElementSibling as HTMLElement
+    Object.defineProperty(scroller, 'clientWidth', { value: 390, configurable: true })
+    fireEvent.click(second)
+    // An intermediate offset during the smooth scroll leaves page 2 selected.
+    scroller.scrollLeft = 100
+    fireEvent.scroll(scroller)
+    expect(second).toHaveAttribute('aria-selected', 'true')
+    // Landing on page 2 ends the flight; scrolling back then moves the dots.
+    scroller.scrollLeft = 390
+    fireEvent(scroller, new Event('scrollend'))
+    expect(second).toHaveAttribute('aria-selected', 'true')
+    scroller.scrollLeft = 0
+    fireEvent.scroll(scroller)
+    expect(first).toHaveAttribute('aria-selected', 'true')
+    expect(second).toHaveAttribute('aria-selected', 'false')
+  })
+
+  it('ends the flight after 500ms when scrollend never fires', () => {
+    renderHome()
+    const [first, second] = screen.getAllByRole('tab')
+    const scroller = screen.getByRole('tablist').previousElementSibling as HTMLElement
+    Object.defineProperty(scroller, 'clientWidth', { value: 390, configurable: true })
+    fireEvent.click(second)
+    scroller.scrollLeft = 390
+    act(() => {
+      vi.advanceTimersByTime(500)
+    })
+    expect(second).toHaveAttribute('aria-selected', 'true')
+    scroller.scrollLeft = 0
+    fireEvent.scroll(scroller)
+    expect(first).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('keeps the home controls clear of the side safe areas', () => {
+    renderHome()
+    expect(screen.getByRole('button', { name: /— open Resume$/ }).closest('ul')).toHaveClass(
+      'pl-[max(1rem,env(safe-area-inset-left))]',
+      'pr-[max(1rem,env(safe-area-inset-right))]',
+    )
+    expect(screen.getByRole('tablist')).toHaveClass(
+      'pl-[max(0px,env(safe-area-inset-left))]',
+      'pr-[max(0px,env(safe-area-inset-right))]',
+    )
+    expect(screen.getByRole('button', { name: 'Search' }).parentElement).toHaveClass(
+      'pl-[max(0px,env(safe-area-inset-left))]',
+      'pr-[max(0px,env(safe-area-inset-right))]',
+    )
+    expect(screen.getByRole('toolbar', { name: 'Dock' })).toHaveClass(
+      'ml-[max(0.75rem,env(safe-area-inset-left))]',
+      'mr-[max(0.75rem,env(safe-area-inset-right))]',
+    )
   })
 
   it('the Search button opens search', () => {
