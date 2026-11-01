@@ -47,7 +47,6 @@ function AppCell({ app, onOpen }: { app: AppDefinition; onOpen: (id: string) => 
 // Page 1 holds the widgets and the home apps; page 2 the social links.
 export function HomeScreen({ onSearch }: { onSearch: () => void }) {
   const openMobileApp = useSystem((s) => s.openMobileApp)
-  const landscape = useSystem((s) => s.viewport.w > s.viewport.h)
   const reduceMotion = useSystem((s) => s.settings.reduceMotion)
   const now = useClock()
   const scroller = useRef<HTMLDivElement>(null)
@@ -138,7 +137,7 @@ export function HomeScreen({ onSearch }: { onSearch: () => void }) {
             }}
             className="h-full w-full shrink-0 snap-start overflow-y-auto"
           >
-            <ul className={`grid gap-x-3 gap-y-5 ${PAGE_PAD} ${landscape ? 'grid-cols-6' : 'grid-cols-4'}`}>
+            <ul className={`grid grid-cols-4 gap-x-3 gap-y-5 ${PAGE_PAD} [@media(max-height:500px)]:grid-cols-6`}>
               <li className="col-span-full">
                 <button
                   type="button"
@@ -177,37 +176,37 @@ export function HomeScreen({ onSearch }: { onSearch: () => void }) {
           </section>
         </div>
 
+        {/* In landscape the page dots and the Search pill share one row, so the short screen keeps its grid height. */}
         <div
-          role="tablist"
-          aria-label="Home screen pages"
-          onKeyDown={onDotKey}
-          className={`flex justify-center ${ROW_PAD}`}
+          className={`flex flex-col items-center [@media(max-height:500px)]:flex-row [@media(max-height:500px)]:justify-center [@media(max-height:500px)]:gap-3 ${ROW_PAD}`}
         >
-          {Array.from({ length: PAGES }, (_, i) => (
-            <button
-              key={i}
-              type="button"
-              role="tab"
-              aria-label={`Page ${i + 1}`}
-              aria-selected={page === i}
-              tabIndex={page === i ? 0 : -1}
-              onClick={() => goTo(i)}
-              className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-            >
-              <span className={`h-2 w-2 rounded-full bg-white ${page === i ? 'opacity-100' : 'opacity-50'}`} />
-            </button>
-          ))}
-        </div>
+          <div role="tablist" aria-label="Home screen pages" onKeyDown={onDotKey} className="flex justify-center">
+            {Array.from({ length: PAGES }, (_, i) => (
+              <button
+                key={i}
+                type="button"
+                role="tab"
+                aria-label={`Page ${i + 1}`}
+                aria-selected={page === i}
+                tabIndex={page === i ? 0 : -1}
+                onClick={() => goTo(i)}
+                className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+              >
+                <span className={`h-2 w-2 rounded-full bg-white ${page === i ? 'opacity-100' : 'opacity-50'}`} />
+              </button>
+            ))}
+          </div>
 
-        <div className={`flex justify-center py-2 ${ROW_PAD}`}>
-          <button
-            type="button"
-            onClick={onSearch}
-            className={`flex min-h-11 items-center gap-1.5 rounded-full bg-black/40 px-4 text-[15px] font-medium ${TILE}`}
-          >
-            <Search aria-hidden="true" className="h-4 w-4" />
-            Search
-          </button>
+          <div className="flex justify-center py-2 [@media(max-height:500px)]:py-0">
+            <button
+              type="button"
+              onClick={onSearch}
+              className={`flex min-h-11 items-center gap-1.5 rounded-full bg-black/40 px-4 text-[15px] font-medium ${TILE}`}
+            >
+              <Search aria-hidden="true" className="h-4 w-4" />
+              Search
+            </button>
+          </div>
         </div>
 
         <div
@@ -226,7 +225,7 @@ export function HomeScreen({ onSearch }: { onSearch: () => void }) {
               type="button"
               aria-label={app.name}
               onClick={() => openMobileApp(app.id)}
-              className={`flex min-h-11 min-w-11 items-center justify-center rounded-[14px] ${TILE}`}
+              className="flex min-h-11 min-w-11 items-center justify-center rounded-[14px] focus-visible:ring-2 focus-visible:ring-accent-link focus-visible:outline-none active:scale-95"
             >
               <AppIcon app={app} size={56} />
             </button>

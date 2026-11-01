@@ -38,8 +38,39 @@ test.beforeEach(async ({ page }) => {
   await page.route('https://api.github.com/**', (route) => route.abort())
 })
 
+// Phones up to about 680px tall: the notification list must scroll above the controls, not under them.
+for (const viewport of [
+  { width: 375, height: 667 },
+  { width: 320, height: 568 },
+]) {
+  test.describe(`lock screen at ${viewport.width}x${viewport.height}`, () => {
+    test.use({ viewport })
+
+    test('notification cards do not cover the flashlight, which is still clickable', async ({ page }) => {
+      await page.goto('/')
+      await expect(lockHint(page)).toBeVisible()
+      const flashlight = page.getByRole('button', { name: 'Flashlight', exact: true })
+      const list = page.locator('[data-card]').first().locator('xpath=ancestor::ul[1]')
+      const listBox = await list.boundingBox()
+      const flashBox = await flashlight.boundingBox()
+      expect(listBox && flashBox && listBox.y + listBox.height <= flashBox.y).toBe(true)
+      await flashlight.click()
+      // The white layer replaces the lock content, so the layer is what proves the tap landed.
+      await expect(page.getByRole('button', { name: 'Tap to turn off flashlight' })).toBeVisible()
+    })
+  })
+}
+
 test.describe('phone portrait', () => {
   test.use({ viewport: { width: 390, height: 844 } })
+
+  test('Enter on the lock screen unlocks without also opening the home control focus moves to', async ({ page }) => {
+    await page.goto('/')
+    await expect(lockHint(page)).toBeVisible()
+    await page.keyboard.press('Enter')
+    await expect(dock(page)).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Home', exact: true })).toBeHidden()
+  })
 
   test('swipe up unlocks', async ({ page }) => {
     await page.goto('/')
@@ -184,5 +215,24 @@ test.describe('phone landscape', () => {
     const columns = await grid.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length)
     expect(columns).toBe(6)
     expect(await seriousViolations(page)).toEqual([])
+  })
+
+  test('rotating the phone switches the home grid between 4 and 6 columns', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await unlockMobile(page)
+    const grid = page.getByRole('button', { name: /— open Resume$/ }).locator('xpath=ancestor::ul[1]')
+    const columns = () => grid.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length)
+    expect(await columns()).toBe(4)
+    await page.setViewportSize({ width: 844, height: 390 })
+    expect(await columns()).toBe(6)
+    await page.setViewportSize({ width: 390, height: 844 })
+    expect(await columns()).toBe(4)
+  })
+
+  test('landscape home puts the Search pill on the page-dots row', async ({ page }) => {
+    await unlockMobile(page)
+    const dots = await page.getByRole('tablist', { name: 'Home screen pages' }).boundingBox()
+    const search = await page.getByRole('button', { name: 'Search', exact: true }).boundingBox()
+    expect(dots && search && Math.abs(dots.y + dots.height / 2 - (search.y + search.height / 2)) < 1).toBe(true)
   })
 })

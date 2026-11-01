@@ -133,6 +133,34 @@ describe('AppScreen', () => {
     expect(homeApp.closest('[inert]')).not.toBeNull()
   })
 
+  it('labels the app region with the app name', async () => {
+    useSystem.getState().openMobileApp('finder')
+    render(<AppScreen />)
+    expect(await screen.findByRole('region', { name: 'Finder' })).toBeInTheDocument()
+  })
+
+  it('Escape closes the Mail sheet to the home screen', async () => {
+    useSystem.getState().openMobileApp('mail')
+    render(<AppScreen />)
+    fireEvent.keyDown(await screen.findByRole('dialog', { name: 'Mail' }), { key: 'Escape' })
+    expect(useSystem.getState().mobileHome).toBe(true)
+  })
+
+  it('clears the notch sideways in the app region and in the sheet dialog', async () => {
+    useSystem.getState().openMobileApp('finder')
+    const { unmount } = render(<AppScreen />)
+    const region = (await screen.findByText('finder content')).closest('[tabindex="-1"]')
+    expect(region).toHaveClass('pl-[env(safe-area-inset-left)]', 'pr-[env(safe-area-inset-right)]')
+    unmount()
+
+    useSystem.getState().openMobileApp('mail')
+    render(<AppScreen />)
+    expect(await screen.findByRole('dialog', { name: 'Mail' })).toHaveClass(
+      'pl-[env(safe-area-inset-left)]',
+      'pr-[env(safe-area-inset-right)]',
+    )
+  })
+
   it('app.open dispatched from inside an app (Resume to Mail) brings the new window to the foreground', async () => {
     useSystem.getState().openMobileApp('finder')
     render(<AppScreen />)

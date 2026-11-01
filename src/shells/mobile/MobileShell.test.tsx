@@ -121,6 +121,24 @@ describe('MobileShell', () => {
       expect(openedApps()).toEqual(['mail'])
     })
 
+    it('a shell switch from the home screen stays on home; from an open app it shows that app', () => {
+      useSystem.setState({ locked: false })
+      const mobile = render(<MobileShell />)
+      useSystem.getState().openMobileApp('notes')
+      useSystem.getState().goHome()
+      mobile.unmount()
+      render(<DesktopShell />).unmount()
+      render(<MobileShell />)
+      expect(screen.getByRole('button', { name: /— open Resume$/ })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Home' })).toBeNull()
+      cleanup()
+
+      useSystem.getState().openMobileApp('notes')
+      render(<DesktopShell />).unmount()
+      render(<MobileShell />)
+      expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument()
+    })
+
     it('is handled once per page load: a remount does not reopen the app', () => {
       goTo('?app=mail')
       useSystem.setState({ locked: false })

@@ -155,9 +155,32 @@ describe('LockScreen', () => {
     expect(isLocked()).toBe(true)
   })
 
+  it('a vertical drag that starts on a card unlocks', () => {
+    vi.useFakeTimers()
+    render(<LockScreen />)
+    const welcome = card('Welcome to bymaxOS')
+    fireEvent.pointerDown(welcome, { clientX: 200, clientY: HEIGHT - 50 })
+    fireEvent.pointerMove(welcome, { clientX: 200, clientY: 50 })
+    fireEvent.pointerUp(welcome, { clientX: 200, clientY: 50 })
+    act(() => vi.advanceTimersByTime(300))
+    expect(isLocked()).toBe(false)
+  })
+
+  it('a sideways drag on a card neither lifts the screen nor unlocks it', () => {
+    render(<LockScreen />)
+    const welcome = card('Welcome to bymaxOS')
+    fireEvent.pointerDown(welcome, { clientX: 300, clientY: 400 })
+    fireEvent.pointerMove(welcome, { clientX: 250, clientY: 400 })
+    expect(content().style.transform).toBe('none')
+    fireEvent.pointerUp(welcome, { clientX: 250, clientY: 400 })
+    expect(isLocked()).toBe(true)
+    expect(screen.getByText('Welcome to bymaxOS')).toBeInTheDocument()
+  })
+
   it('the Unlock button and Enter unlock', () => {
     const { unmount } = render(<LockScreen />)
-    fireEvent.keyDown(screenEl(), { key: 'Enter' })
+    // Enter is consumed here, so the keypress does not also activate the home control focus moves to.
+    expect(fireEvent.keyDown(screenEl(), { key: 'Enter' })).toBe(false)
     expect(isLocked()).toBe(false)
     unmount()
 
@@ -174,11 +197,11 @@ describe('LockScreen', () => {
 
     fireEvent.click(flashlight)
     expect(flashlight).toHaveAttribute('aria-pressed', 'true')
-    const layer = screen.getByRole('button', { name: 'Turn off flashlight' })
+    const layer = screen.getByRole('button', { name: 'Tap to turn off flashlight' })
     expect(layer).toHaveFocus()
 
     fireEvent.click(layer)
-    expect(screen.queryByRole('button', { name: 'Turn off flashlight' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Tap to turn off flashlight' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Flashlight' })).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByRole('button', { name: 'Flashlight' })).toHaveFocus()
   })

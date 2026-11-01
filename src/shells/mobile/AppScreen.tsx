@@ -11,6 +11,8 @@ import { StatusBar } from './StatusBar'
 const HOME_SWIPE = 60
 // Pointer travel beyond this is a drag, so the click that follows it does not go home.
 const DRAG_SLOP = 10
+// App content clears the notch sideways in landscape; the status bar already insets itself.
+const INSET = 'pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]'
 
 // Mounts the app inside its error boundary; a crash resets the cached component and re-renders.
 function mountApp(app: AppDefinition, win: WindowState, rerender: () => void) {
@@ -68,8 +70,15 @@ export function AppScreen() {
   if (!win || !app) return null
   const sheet = app.mobile?.presentation === 'sheet'
 
+  // The sheet's dialog takes the inset itself, so its header and content share one edge.
   const region = (
-    <div ref={regionRef} tabIndex={-1} className="flex min-h-0 flex-1 flex-col outline-none">
+    <div
+      ref={regionRef}
+      role="region"
+      aria-label={app.name}
+      tabIndex={-1}
+      className={`flex min-h-0 flex-1 flex-col outline-none ${sheet ? '' : INSET}`}
+    >
       {mountApp(app, win, rerender)}
     </div>
   )
@@ -85,7 +94,10 @@ export function AppScreen() {
           role="dialog"
           aria-modal="true"
           aria-label={app.name}
-          className="relative flex min-h-0 flex-1 flex-col rounded-t-xl bg-window pb-[env(safe-area-inset-bottom)]"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') goHome()
+          }}
+          className={`relative flex min-h-0 flex-1 flex-col rounded-t-xl bg-window pb-[env(safe-area-inset-bottom)] ${INSET}`}
         >
           <div aria-hidden="true" className="mx-auto mt-2 h-1 w-9 rounded-full bg-text-2" />
           <header className="flex items-center justify-between px-4">

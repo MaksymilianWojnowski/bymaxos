@@ -8,7 +8,7 @@ beforeEach(() => {
   window.localStorage.clear()
   window.sessionStorage.clear()
   resetSystem()
-  useSystem.setState({ locked: false, viewport: { w: 390, h: 844 } })
+  useSystem.setState({ locked: false })
   vi.useFakeTimers()
   vi.setSystemTime(new Date(2026, 10, 1, 12))
 })
@@ -23,6 +23,9 @@ const renderHome = (onSearch = vi.fn()) => {
   render(<HomeScreen onSearch={onSearch} />)
   return onSearch
 }
+
+// The horizontal pager that holds both pages; the page sections are its children.
+const scrollerOf = () => screen.getByRole('button', { name: /— open Resume$/ }).closest('section')!.parentElement!
 
 // The pull is a touch gesture, so it is sent as touch events on the first page.
 const touch = (type: 'touchStart' | 'touchEnd', el: HTMLElement, clientX: number, clientY: number) =>
@@ -79,14 +82,10 @@ describe('HomeScreen', () => {
     }
   })
 
-  it('grid uses 4 columns in portrait and 6 when the viewport is landscape (width 844, height 390)', () => {
-    const { unmount } = render(<HomeScreen onSearch={vi.fn()} />)
-    const grid = () => screen.getByRole('button', { name: mobileHomeApps()[0].name }).closest('ul')
-    expect(grid()).toHaveClass('grid-cols-4')
-    unmount()
-    useSystem.setState({ viewport: { w: 844, h: 390 } })
+  it('grid is 4 columns, switching to 6 on short (landscape) screens via CSS, not the store viewport', () => {
     render(<HomeScreen onSearch={vi.fn()} />)
-    expect(grid()).toHaveClass('grid-cols-6')
+    const grid = screen.getByRole('button', { name: mobileHomeApps()[0].name }).closest('ul')
+    expect(grid).toHaveClass('grid-cols-4', '[@media(max-height:500px)]:grid-cols-6')
   })
 
   it('pulling down on page 1 by more than 60px opens search', () => {
@@ -110,7 +109,7 @@ describe('HomeScreen', () => {
   it('dots keep the tapped page while its scroll is in flight, and follow the scroll once it lands', () => {
     renderHome()
     const [first, second] = screen.getAllByRole('tab')
-    const scroller = screen.getByRole('tablist').previousElementSibling as HTMLElement
+    const scroller = scrollerOf()
     Object.defineProperty(scroller, 'clientWidth', { value: 390, configurable: true })
     fireEvent.click(second)
     // An intermediate offset during the smooth scroll leaves page 2 selected.
@@ -130,7 +129,7 @@ describe('HomeScreen', () => {
   it('ends the flight after 500ms when scrollend never fires', () => {
     renderHome()
     const [first, second] = screen.getAllByRole('tab')
-    const scroller = screen.getByRole('tablist').previousElementSibling as HTMLElement
+    const scroller = scrollerOf()
     Object.defineProperty(scroller, 'clientWidth', { value: 390, configurable: true })
     fireEvent.click(second)
     scroller.scrollLeft = 390
@@ -149,18 +148,23 @@ describe('HomeScreen', () => {
       'pl-[max(1rem,env(safe-area-inset-left))]',
       'pr-[max(1rem,env(safe-area-inset-right))]',
     )
-    expect(screen.getByRole('tablist')).toHaveClass(
+    const row = screen.getByRole('tablist').parentElement
+    expect(row).toHaveClass(
       'pl-[max(0px,env(safe-area-inset-left))]',
       'pr-[max(0px,env(safe-area-inset-right))]',
     )
-    expect(screen.getByRole('button', { name: 'Search' }).parentElement).toHaveClass(
-      'pl-[max(0px,env(safe-area-inset-left))]',
-      'pr-[max(0px,env(safe-area-inset-right))]',
-    )
+    expect(row).toContainElement(screen.getByRole('button', { name: 'Search' }))
     expect(screen.getByRole('toolbar', { name: 'Dock' })).toHaveClass(
       'ml-[max(0.75rem,env(safe-area-inset-left))]',
       'mr-[max(0.75rem,env(safe-area-inset-right))]',
     )
+  })
+
+  it('dock buttons show a light-theme-safe accent focus ring; grid tiles keep the white one over the wallpaper', () => {
+    renderHome()
+    expect(screen.getByRole('button', { name: 'Mail' })).toHaveClass('focus-visible:ring-accent-link')
+    expect(screen.getByRole('button', { name: 'Mail' })).not.toHaveClass('focus-visible:ring-white')
+    expect(screen.getByRole('button', { name: /— open Resume$/ })).toHaveClass('focus-visible:ring-white')
   })
 
   it('the Search button opens search', () => {

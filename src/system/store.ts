@@ -51,6 +51,8 @@ interface SystemData {
   switcher: { appIds: AppId[]; index: number } | null
   // The mobile shell shows the home screen when true, otherwise the focused window's app.
   mobileHome: boolean
+  // The focused window when the user last went home, so a shell switch from home does not reopen its app.
+  mobileHomeFocus: string | null
 }
 
 export interface SystemState extends SystemData {
@@ -112,6 +114,7 @@ function initialData(): SystemData {
     banners: [],
     switcher: null,
     mobileHome: true,
+    mobileHomeFocus: null,
   }
 }
 
@@ -200,7 +203,7 @@ export const useSystem: UseBoundStore<StoreApi<SystemState>> = create<SystemStat
     },
 
     goHome() {
-      set({ mobileHome: true })
+      set({ mobileHome: true, mobileHomeFocus: get().wm.focusedId })
     },
 
     focus(id) {

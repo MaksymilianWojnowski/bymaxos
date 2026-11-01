@@ -19,6 +19,9 @@ function ResultIcon({ item }: { item: SearchItem }) {
   return node ? <img src={iconFor(node)} alt="" aria-hidden="true" draggable={false} className="h-9 w-9" /> : null
 }
 
+// Below the status bar, which insets itself, the content clears the notch sideways in landscape.
+const INSET = 'pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]'
+
 // Full-screen search over the same index as Spotlight. Its home screen is inert while it is open.
 export function MobileSearch({ onClose }: { onClose: () => void }) {
   const openMobileApp = useSystem((s) => s.openMobileApp)
@@ -37,6 +40,11 @@ export function MobileSearch({ onClose }: { onClose: () => void }) {
   )
   const results = useMemo(() => rank(index, query), [index, query])
   const activeItem = results[active]
+
+  // Keeps the option chosen from the keyboard on screen; jsdom has no scrollIntoView.
+  useEffect(() => {
+    document.getElementById(`${listId}-option-${active}`)?.scrollIntoView?.({ block: 'nearest' })
+  }, [active, listId])
 
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null
@@ -85,79 +93,81 @@ export function MobileSearch({ onClose }: { onClose: () => void }) {
     >
       <StatusBar />
 
-      <div className="flex items-center gap-2 px-4 pb-3">
-        <div
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-[10px] border px-3 focus-within:ring-2 focus-within:ring-accent-link"
-          style={{ background: 'var(--window-bg)', borderColor: 'var(--glass-border)' }}
-        >
-          <Search aria-hidden="true" className="h-4 w-4 shrink-0 text-text-2" />
-          <input
-            ref={inputRef}
-            type="text"
-            role="combobox"
-            aria-label="Search"
-            aria-autocomplete="list"
-            aria-expanded={results.length > 0}
-            aria-controls={results.length > 0 ? listId : undefined}
-            aria-activedescendant={activeItem ? `${listId}-option-${active}` : undefined}
-            value={query}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder="Search"
-            autoComplete="off"
-            spellCheck={false}
-            className="min-h-11 min-w-0 flex-1 bg-transparent text-[17px] outline-none placeholder:text-text-2"
-          />
+      <div className={`flex min-h-0 flex-1 flex-col ${INSET}`}>
+        <div className="flex items-center gap-2 px-4 pb-3">
+          <div
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-[10px] border px-3 focus-within:ring-2 focus-within:ring-accent-link"
+            style={{ background: 'var(--window-bg)', borderColor: 'var(--glass-border)' }}
+          >
+            <Search aria-hidden="true" className="h-4 w-4 shrink-0 text-text-2" />
+            <input
+              ref={inputRef}
+              type="text"
+              role="combobox"
+              aria-label="Search"
+              aria-autocomplete="list"
+              aria-expanded={results.length > 0}
+              aria-controls={results.length > 0 ? listId : undefined}
+              aria-activedescendant={activeItem ? `${listId}-option-${active}` : undefined}
+              value={query}
+              onChange={(e) => onChange(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder="Search"
+              autoComplete="off"
+              spellCheck={false}
+              className="min-h-11 min-w-0 flex-1 bg-transparent text-[17px] outline-none placeholder:text-text-2"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex min-h-11 items-center px-2 text-[17px] text-accent-link focus-visible:ring-2 focus-visible:ring-accent-link"
+          >
+            Cancel
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex min-h-11 items-center px-2 text-[17px] text-accent-link focus-visible:ring-2 focus-visible:ring-accent-link"
-        >
-          Cancel
-        </button>
+
+        {query.trim() !== '' && results.length === 0 && (
+          <p role="status" className="px-4 py-3 text-[15px] text-text-2">
+            No Results
+          </p>
+        )}
+
+        {results.length > 0 && (
+          <ul
+            role="listbox"
+            id={listId}
+            aria-label="Results"
+            className="flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]"
+          >
+            {results.map((item, i) => {
+              const isActive = i === active
+              return (
+                <li
+                  key={item.id}
+                  id={`${listId}-option-${i}`}
+                  role="option"
+                  aria-selected={isActive}
+                  onClick={() => run(item)}
+                  className={`flex min-h-14 cursor-pointer items-center gap-3 px-4 ${isActive ? 'bg-accent-strong text-white' : ''}`}
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center">
+                    <ResultIcon item={item} />
+                  </span>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate text-[16px]">{item.title}</span>
+                    {item.subtitle && (
+                      <span className={`truncate text-[13px] ${isActive ? 'text-white' : 'text-text-2'}`}>
+                        {item.subtitle}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </div>
-
-      {query.trim() !== '' && results.length === 0 && (
-        <p role="status" className="px-4 py-3 text-[15px] text-text-2">
-          No Results
-        </p>
-      )}
-
-      {results.length > 0 && (
-        <ul
-          role="listbox"
-          id={listId}
-          aria-label="Results"
-          className="flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]"
-        >
-          {results.map((item, i) => {
-            const isActive = i === active
-            return (
-              <li
-                key={item.id}
-                id={`${listId}-option-${i}`}
-                role="option"
-                aria-selected={isActive}
-                onClick={() => run(item)}
-                className={`flex min-h-14 cursor-pointer items-center gap-3 px-4 ${isActive ? 'bg-accent-strong text-white' : ''}`}
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center">
-                  <ResultIcon item={item} />
-                </span>
-                <span className="flex min-w-0 flex-col">
-                  <span className="truncate text-[16px]">{item.title}</span>
-                  {item.subtitle && (
-                    <span className={`truncate text-[13px] ${isActive ? 'text-white' : 'text-text-2'}`}>
-                      {item.subtitle}
-                    </span>
-                  )}
-                </span>
-              </li>
-            )
-          })}
-        </ul>
-      )}
     </div>
   )
 }

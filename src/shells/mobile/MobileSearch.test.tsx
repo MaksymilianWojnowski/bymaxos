@@ -16,6 +16,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   resetSystem()
+  delete (Element.prototype as Partial<Element>).scrollIntoView
 })
 
 const field = () => screen.getByRole('combobox', { name: 'Search' })
@@ -36,6 +37,26 @@ describe('MobileSearch', () => {
     const options = screen.getAllByRole('option')
     expect(options).toHaveLength(expected.length)
     options.forEach((option, i) => expect(option).toHaveTextContent(expected[i]))
+  })
+
+  it('keeps the option moved to with the arrow keys scrolled into view', () => {
+    const scrolled: string[] = []
+    Element.prototype.scrollIntoView = vi.fn(function (this: Element) {
+      scrolled.push(this.id)
+    })
+    render(<MobileSearch onClose={vi.fn()} />)
+    // "a" matches several apps; a single match would leave ArrowDown nowhere to go.
+    fireEvent.change(field(), { target: { value: 'a' } })
+    const options = screen.getAllByRole('option')
+    expect(options.length).toBeGreaterThan(1)
+    fireEvent.keyDown(field(), { key: 'ArrowDown' })
+    expect(scrolled.at(-1)).toBe(options[1].id)
+    expect(field()).toHaveAttribute('aria-activedescendant', options[1].id)
+  })
+
+  it('lays the search field out clear of the side safe areas', () => {
+    render(<MobileSearch onClose={vi.fn()} />)
+    expect(field().closest('[class*="safe-area-inset-left"]')).toHaveClass('pr-[env(safe-area-inset-right)]')
   })
 
   it('choosing an app result calls openMobileApp(appId)', () => {

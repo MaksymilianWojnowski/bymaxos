@@ -14,6 +14,8 @@ import { releaseVelocity, rubberBand, shouldUnlock, type Sample } from './gestur
 const NOTIFICATIONS = getContent().notifications
 const SWIPE_DISMISS = 80
 const SETTLE_MS = 250
+// A drag this far sideways that also beats its vertical travel is a card swipe, not an unlock.
+const AXIS_SLOP = 10
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const dateFormat = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
@@ -79,7 +81,7 @@ export function LockScreen() {
   const [dragging, setDragging] = useState(false)
   const [leaving, setLeaving] = useState(false)
   const [flashOn, setFlashOn] = useState(false)
-  const gesture = useRef<{ startY: number; samples: Sample[] } | null>(null)
+  const gesture = useRef<{ startX: number; startY: number; samples: Sample[] } | null>(null)
   const root = useRef<HTMLDivElement>(null)
   // Index of the dismissed card; its ✕ is gone after the render, so focus moves once the list has updated.
   const focusCard = useRef<number | null>(null)
@@ -135,19 +137,31 @@ export function LockScreen() {
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Enter' && e.target === e.currentTarget) unlock()
+    // Unlocking moves focus to a home control before the Enter keypress lands, which would open that app too.
+    if (e.key === 'Enter' && e.target === e.currentTarget) {
+      e.preventDefault()
+      unlock()
+    }
   }
 
-  // Buttons and cards keep their own pointer behaviour; the drag starts anywhere else.
+  // Buttons keep their own pointer behaviour; the drag starts anywhere else, cards included.
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    if (leaving || (e.target as Element).closest('button, [data-card]')) return
-    gesture.current = { startY: e.clientY, samples: [{ y: e.clientY, t: e.timeStamp }] }
+    if (leaving || (e.target as Element).closest('button')) return
+    gesture.current = { startX: e.clientX, startY: e.clientY, samples: [{ y: e.clientY, t: e.timeStamp }] }
     setDragging(true)
   }
 
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
     const g = gesture.current
     if (!g) return
+    // A sideways drag belongs to the card under the finger, so the screen does not lift for it.
+    const sideways = Math.abs(e.clientX - g.startX)
+    if (sideways > AXIS_SLOP && sideways > Math.abs(g.startY - e.clientY)) {
+      gesture.current = null
+      setDragging(false)
+      setDy(0)
+      return
+    }
     // Keep only the trailing window, so a long drag does not grow the list.
     g.samples = [...g.samples.filter((s) => e.timeStamp - s.t <= 100), { y: e.clientY, t: e.timeStamp }]
     setDy(g.startY - e.clientY)
@@ -214,7 +228,7 @@ export function LockScreen() {
             </p>
           </div>
 
-          <ul className="mt-6 ml-[max(1rem,env(safe-area-inset-left))] mr-[max(1rem,env(safe-area-inset-right))] flex flex-col gap-2 [@media(max-height:500px)]:mt-0 [@media(max-height:500px)]:ml-[env(safe-area-inset-left)] [@media(max-height:500px)]:mr-[env(safe-area-inset-right)] [@media(max-height:500px)]:flex-1 [@media(max-height:500px)]:overflow-y-auto [@media(max-height:500px)]:pr-4">
+          <ul className="mt-6 ml-[max(1rem,env(safe-area-inset-left))] mr-[max(1rem,env(safe-area-inset-right))] flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto [@media(max-height:500px)]:mt-0 [@media(max-height:500px)]:ml-[env(safe-area-inset-left)] [@media(max-height:500px)]:mr-[env(safe-area-inset-right)] [@media(max-height:500px)]:pr-4">
             {visible.map((item) => (
               <li key={item.id}>
                 <Card item={item} onDismiss={() => dismiss(item.id)} />
@@ -255,11 +269,13 @@ export function LockScreen() {
         <button
           ref={layerRef}
           type="button"
-          aria-label="Turn off flashlight"
           onClick={() => setFlashOn(false)}
           className="absolute inset-0 z-10 flex items-end justify-center bg-white pb-[calc(env(safe-area-inset-bottom)+3rem)] text-black focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-black focus-visible:outline-none"
         >
-          <span className="text-[15px] font-medium">Tap to turn off</span>
+          {/* The name starts with the visible label, so speech input can target it (WCAG 2.5.3). */}
+          <span className="text-[15px] font-medium">
+            Tap to turn off <span className="sr-only">flashlight</span>
+          </span>
         </button>
       )}
     </div>

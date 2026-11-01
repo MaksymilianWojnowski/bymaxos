@@ -35,9 +35,11 @@ export function MobileShell() {
     }
   }, [openMobileApp])
 
-  // A focused window at mount (a switch from the desktop shell) or one that takes focus later brings its app forward.
+  // A focused window at mount (a switch from the desktop shell) or one that takes focus later brings its app forward,
+  // unless the user went home from that same window: a shell switch from home stays home.
   useEffect(() => {
-    if (focusedId && focusedId !== seenFocus.current) useSystem.setState({ mobileHome: false })
+    const homeFocus = useSystem.getState().mobileHomeFocus
+    if (focusedId && focusedId !== seenFocus.current && focusedId !== homeFocus) useSystem.setState({ mobileHome: false })
     seenFocus.current = focusedId
   }, [focusedId])
 
