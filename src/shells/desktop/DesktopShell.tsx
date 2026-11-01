@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { dispatch, installSystemCommands } from '../../system/commands'
 import { isTextField, matchShortcut } from '../../system/shortcuts'
-import { parseDeepLink } from '../../system/shell'
+import { takeDeepLink } from '../../system/shell'
 import { useSystem } from '../../system/store'
 import { Banners } from './Banners'
 import { Desktop } from './Desktop'
@@ -11,9 +11,6 @@ import { MenuBar } from './MenuBar'
 import { Overlays } from './Overlays'
 import { Wallpaper } from './Wallpaper'
 import { WindowLayer } from './WindowLayer'
-
-// Module scope: a shell remount must not reopen the deep-linked app.
-let deepLinkHandled = false
 
 export function DesktopShell() {
   const locked = useSystem((s) => s.locked)
@@ -78,9 +75,8 @@ export function DesktopShell() {
   }, [setViewport])
 
   useEffect(() => {
-    if (locked || deepLinkHandled) return
-    deepLinkHandled = true
-    const link = parseDeepLink(window.location.search)
+    if (locked) return
+    const link = takeDeepLink()
     if (link) openApp(link.appId, link.item ? { item: link.item } : undefined)
   }, [locked, openApp])
 

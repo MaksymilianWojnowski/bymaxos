@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { DesktopShell } from '../desktop/DesktopShell'
+import { resetDeepLinkForTests } from '../../system/shell'
 import { resetSystem, useSystem } from '../../system/store'
-import { resetDeepLinkForTests } from './deepLink'
 import { MobileShell } from './MobileShell'
 
 beforeEach(() => {
@@ -90,6 +91,16 @@ describe('MobileShell', () => {
       expect(useSystem.getState().wm.windows.find((w) => w.appId === 'notes')?.props).toEqual({
         item: 'working-style',
       })
+    })
+
+    it('a shell switch (mobile then desktop) does not reopen the app', () => {
+      goTo('?app=mail')
+      useSystem.setState({ locked: false })
+      const mobile = render(<MobileShell />)
+      expect(openedApps()).toEqual(['mail'])
+      mobile.unmount()
+      render(<DesktopShell />)
+      expect(openedApps()).toEqual(['mail'])
     })
 
     it('is handled once per page load: a remount does not reopen the app', () => {

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { getApp } from '../../apps/registry'
+import { takeDeepLink } from '../../system/shell'
 import { useSystem } from '../../system/store'
 import { AppScreen } from './AppScreen'
 import { HomeScreen } from './HomeScreen'
 import { LockScreen } from './LockScreen'
 import { MobileSearch } from './MobileSearch'
-import { takeDeepLink } from './deepLink'
 
 export function MobileShell() {
   const locked = useSystem((s) => s.locked)

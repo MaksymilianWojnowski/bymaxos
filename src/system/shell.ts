@@ -48,3 +48,18 @@ export function parseDeepLink(search: string): { appId: AppId; item?: string } |
   const item = params.get('item')
   return item !== null && SAFE_ID.test(item) ? { appId, item } : { appId }
 }
+
+// Module scope, shared by both shells: a remount or a shell switch must not reopen the deep-linked app.
+let deepLinkHandled = false
+
+// The page's deep link, once per page load; later calls (from either shell) get null.
+export function takeDeepLink(): ReturnType<typeof parseDeepLink> {
+  if (deepLinkHandled) return null
+  deepLinkHandled = true
+  return parseDeepLink(window.location.search)
+}
+
+// Test-only: each test loads a fresh page.
+export function resetDeepLinkForTests(): void {
+  deepLinkHandled = false
+}

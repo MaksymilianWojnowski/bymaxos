@@ -77,11 +77,12 @@ describe('registry', () => {
   it('presents mail as a sheet, links as external and utility entries as hidden on mobile', () => {
     expect(getApp('mail')?.mobile?.presentation).toBe('sheet')
     for (const id of ['linkedin', 'github']) expect(getApp(id)?.mobile?.presentation, id).toBe('external')
-    for (const id of ['quicklook', 'about', 'launchpad', 'trash', 'textedit']) {
+    for (const id of ['quicklook', 'about', 'launchpad', 'trash']) {
       expect(getApp(id)?.mobile?.presentation, id).toBe('hidden')
     }
-    // Every other app leaves mobile unset, which means full screen.
+    // Every other app leaves mobile unset, which means full screen; TextEdit opens from search and files.
     expect(getApp('calendar')?.mobile).toBeUndefined()
+    expect(getApp('textedit')?.mobile).toBeUndefined()
   })
 
   it('lists the mobile dock in order, and keeps dock, hidden and link apps off the mobile home screen', () => {

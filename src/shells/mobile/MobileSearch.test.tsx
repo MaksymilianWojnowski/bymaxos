@@ -64,6 +64,21 @@ describe('MobileSearch', () => {
     expect(onClose).toHaveBeenCalledTimes(2)
   })
 
+  it('choosing a document result opens TextEdit with its fileId, which is reachable on mobile', () => {
+    render(<MobileSearch onClose={vi.fn()} />)
+    fireEvent.change(field(), { target: { value: 'hello' } })
+    fireEvent.click(screen.getByRole('option', { name: /^Hello\.md/ }))
+    const textedit = useSystem.getState().wm.windows.find((w) => w.appId === 'textedit')
+    expect(textedit?.props).toEqual({ fileId: 'doc-hello' })
+  })
+
+  it('lists no result for a hidden-on-mobile app such as Trash', () => {
+    render(<MobileSearch onClose={vi.fn()} />)
+    fireEvent.change(field(), { target: { value: 'trash' } })
+    expect(screen.queryAllByRole('option')).toHaveLength(0)
+    expect(screen.getByRole('status')).toHaveTextContent('No Results')
+  })
+
   it('closing returns focus to the element that opened it', () => {
     render(<button type="button">Search pill</button>)
     const opener = screen.getByRole('button', { name: 'Search pill' })

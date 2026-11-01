@@ -102,7 +102,6 @@ const APP_LIST: (AppDefinition | null)[] = [
     id: 'textedit',
     name: 'TextEdit',
     deepLink: false,
-    mobile: { presentation: 'hidden' },
     icon: { image: texteditIcon },
     load: () => import('./textedit/TextEdit'),
     window: {
@@ -342,11 +341,13 @@ export function mobileDockApps(): AppDefinition[] {
   return MOBILE_DOCK.map((id) => getApp(id)).filter((a): a is AppDefinition => a !== undefined)
 }
 
+// Apps that open only from a file or search (deepLink: false) are reachable but get no home icon.
 export function mobileHomeApps(): AppDefinition[] {
   return APPS.filter(
     (a) =>
       (presentationOf(a) === 'fullscreen' || presentationOf(a) === 'sheet') &&
-      !MOBILE_DOCK.includes(a.id),
+      !MOBILE_DOCK.includes(a.id) &&
+      a.deepLink !== false,
   )
 }
 

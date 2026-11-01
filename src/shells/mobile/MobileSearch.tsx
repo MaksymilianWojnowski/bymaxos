@@ -27,7 +27,14 @@ export function MobileSearch({ onClose }: { onClose: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const listId = useId()
   // Built on mount, not at import: the index reads the app registry, which other shells' tests stub.
-  const index = useMemo(() => buildIndex(getContent(), APPS), [])
+  // A result whose app is hidden on mobile would open nothing, so it is left out.
+  const index = useMemo(
+    () =>
+      buildIndex(getContent(), APPS).filter(
+        (item) => getApp(item.command.appId as AppId)?.mobile?.presentation !== 'hidden',
+      ),
+    [],
+  )
   const results = useMemo(() => rank(index, query), [index, query])
   const activeItem = results[active]
 

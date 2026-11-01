@@ -245,7 +245,7 @@ describe('openMobileApp', () => {
     finder: def('finder'),
     contacts: def('contacts'),
     github: def('github', { external: 'https://github.com/example', mobile: { presentation: 'external' } }),
-    textedit: def('textedit', { mobile: { presentation: 'hidden' } }),
+    quicklook: def('quicklook', { mobile: { presentation: 'hidden' } }),
   }
 
   beforeEach(() => {
@@ -304,7 +304,7 @@ describe('openMobileApp', () => {
   })
 
   it('does nothing for a hidden app', () => {
-    useSystem.getState().openMobileApp('textedit')
+    useSystem.getState().openMobileApp('quicklook')
     expect(useSystem.getState().mobileHome).toBe(true)
     expect(useSystem.getState().wm.windows).toHaveLength(0)
   })
