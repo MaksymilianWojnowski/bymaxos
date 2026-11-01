@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { resetSystem, useSystem } from '../system/store'
 import type { WindowState } from '../system/types'
-import { APPS, defaultMenus, dockItems, getApp, launchpadApps } from './registry'
+import { APPS, defaultMenus, dockItems, getApp, launchpadApps, mobileDockApps, mobileHomeApps, mobileLinkApps } from './registry'
 
 const win = (id: string, title: string): WindowState => ({
   id,
@@ -72,5 +72,31 @@ describe('registry', () => {
   it('resolves window specs through the store so only windowed apps open', () => {
     expect(useSystem.getState().openApp('finder')).toEqual(expect.any(String))
     expect(useSystem.getState().openApp('linkedin')).toBeNull()
+  })
+
+  it('presents mail as a sheet, links as external and utility entries as hidden on mobile', () => {
+    expect(getApp('mail')?.mobile?.presentation).toBe('sheet')
+    for (const id of ['linkedin', 'github']) expect(getApp(id)?.mobile?.presentation, id).toBe('external')
+    for (const id of ['quicklook', 'about', 'launchpad', 'trash', 'textedit']) {
+      expect(getApp(id)?.mobile?.presentation, id).toBe('hidden')
+    }
+    // Every other app leaves mobile unset, which means full screen.
+    expect(getApp('calendar')?.mobile).toBeUndefined()
+  })
+
+  it('lists the mobile dock in order, and keeps dock, hidden and link apps off the mobile home screen', () => {
+    expect(mobileDockApps().map((a) => a.id)).toEqual(['contacts', 'mail', 'safari', 'resume'])
+    expect(mobileHomeApps().map((a) => a.id)).toEqual([
+      'finder',
+      'calendar',
+      'notes',
+      'photos',
+      'music',
+      'maps',
+      'developer',
+      'terminal',
+      'settings',
+    ])
+    expect(mobileLinkApps().map((a) => a.id)).toEqual(['linkedin', 'github'])
   })
 })

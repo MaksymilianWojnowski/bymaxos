@@ -1,31 +1,12 @@
-import {
-  lazy,
-  Suspense,
-  useReducer,
-  type ComponentType,
-  type LazyExoticComponent,
-} from 'react'
+import { Suspense, useReducer } from 'react'
 import { getApp } from '../../apps/registry'
-import type { AppDefinition, AppProps } from '../../apps/types'
 import { getWorkArea } from '../../system/layout'
 import { missionLayout } from '../../system/missionLayout'
 import { useSystem } from '../../system/store'
-import type { AppId } from '../../system/types'
+import { componentFor, resetComponent } from '../appComponents'
 import { AppErrorBoundary } from './AppErrorBoundary'
 import { MissionControl } from './MissionControl'
 import { Window } from './Window'
-
-// One lazy component per app, so re-rendering a window never remounts another window's app.
-const components = new Map<AppId, LazyExoticComponent<ComponentType<AppProps>>>()
-
-function componentFor(app: AppDefinition, load: NonNullable<AppDefinition['load']>) {
-  let component = components.get(app.id)
-  if (!component) {
-    component = lazy(load)
-    components.set(app.id, component)
-  }
-  return component
-}
 
 export function WindowLayer() {
   const windows = useSystem((s) => s.wm.windows)
@@ -58,9 +39,8 @@ export function WindowLayer() {
       )}
       {visible.map((win) => {
         const app = getApp(win.appId)
-        const load = app?.load
-        if (!app || !load || !app.window) return null
-        const App = componentFor(app, load)
+        const App = app && componentFor(app)
+        if (!app || !App || !app.window) return null
         const mission = missionRects
           ? {
               target: missionRects[win.id],
@@ -75,7 +55,7 @@ export function WindowLayer() {
             <AppErrorBoundary
               appName={app.name}
               onReset={() => {
-                components.delete(app.id)
+                resetComponent(app.id)
                 rerender()
               }}
             >

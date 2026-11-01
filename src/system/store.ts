@@ -1,4 +1,6 @@
 import { create, type StoreApi, type UseBoundStore } from 'zustand'
+import type { AppDefinition } from '../apps/types'
+import { dockClickAction } from '../shells/desktop/dockLogic'
 import { getWorkArea } from './layout'
 import { ACCENTS, applyAppearance, defaultSettings, type Settings } from './settings'
 import { KEYS, safeStorage } from './storage'
@@ -47,6 +49,8 @@ interface SystemData {
   banners: Banner[]
   // The app list is a snapshot taken when the switcher opens, so stepping does not reorder it.
   switcher: { appIds: AppId[]; index: number } | null
+  // The mobile shell shows the home screen when true, otherwise the focused window's app.
+  mobileHome: boolean
 }
 
 export interface SystemState extends SystemData {
@@ -54,6 +58,8 @@ export interface SystemState extends SystemData {
   dismissBanner(id: string): void
   setViewport(w: number, h: number): void
   openApp(appId: AppId, props?: Record<string, unknown>): string | null
+  openMobileApp(appId: AppId, props?: Record<string, unknown>): void
+  goHome(): void
   focus(id: string): void
   close(id: string): void
   quitApp(appId: AppId): void
@@ -105,6 +111,7 @@ function initialData(): SystemData {
     selectedDesktopIcon: null,
     banners: [],
     switcher: null,
+    mobileHome: true,
   }
 }
 
@@ -126,6 +133,13 @@ export function isResizable(id: string): boolean {
 
 export function setAppResolver(fn: (id: AppId) => WindowSpec | undefined): void {
   appResolver = fn
+}
+
+// The registry injects the lookup, as it does the window resolver: importing it here would be a cycle.
+let appLookup: (id: AppId) => AppDefinition | undefined = () => undefined
+
+export function setAppLookup(fn: (id: AppId) => AppDefinition | undefined): void {
+  appLookup = fn
 }
 
 function persistLastRects(state: WMState): void {
@@ -154,6 +168,39 @@ export const useSystem: UseBoundStore<StoreApi<SystemState>> = create<SystemStat
       const next = wm.openWindow(get().wm, spec, area(), props)
       set({ wm: next })
       return next.focusedId
+    },
+
+    openMobileApp(appId, props) {
+      const app = appLookup(appId)
+      if (!app || app.mobile?.presentation === 'hidden') return
+      const state = get().wm
+      // Same activation rules as a Dock click, so the mobile shell and the Dock never disagree.
+      const action = dockClickAction(state, app)
+      if (action.type === 'external') {
+        window.open(action.url, '_blank', 'noopener,noreferrer')
+        return
+      }
+      if (action.type === 'overlay') return
+      let next: WMState
+      if (action.type === 'focus' || action.type === 'restore') {
+        next = action.type === 'focus' ? wm.focusWindow(state, action.id) : wm.restoreWindow(state, action.id)
+        if (props) {
+          next = {
+            ...next,
+            windows: next.windows.map((w) => (w.id === action.id ? { ...w, props: { ...w.props, ...props } } : w)),
+          }
+        }
+      } else {
+        const alias = action.type === 'alias' ? action : undefined
+        const spec = appResolver(alias?.appId ?? app.id)
+        if (!spec) return
+        next = wm.openWindow(state, spec, area(), alias ? alias.props : props)
+      }
+      set({ wm: next, mobileHome: false })
+    },
+
+    goHome() {
+      set({ mobileHome: true })
     },
 
     focus(id) {

@@ -44,6 +44,15 @@ export function useBattery(): { level: number; charging: boolean } | null {
   return battery
 }
 
+export function useClock(): Date {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 15_000)
+    return () => clearInterval(id)
+  }, [])
+  return now
+}
+
 const subscribeOnline = (onChange: () => void) => {
   window.addEventListener('online', onChange)
   window.addEventListener('offline', onChange)

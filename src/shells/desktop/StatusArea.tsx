@@ -1,19 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Battery, BatteryCharging, Search, SlidersHorizontal, Wifi, WifiOff } from 'lucide-react'
 import { canDispatch, dispatch } from '../../system/commands'
 import { useSystem } from '../../system/store'
 import { ControlCenter } from './ControlCenter'
 import { formatMenuClock } from './clock'
-import { useBattery, useOnline } from './statusHooks'
-
-function useClock(): Date {
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 15_000)
-    return () => clearInterval(id)
-  }, [])
-  return now
-}
+import { useBattery, useClock, useOnline } from './statusHooks'
 
 const ICON = 'h-4 w-4 text-text-1'
 

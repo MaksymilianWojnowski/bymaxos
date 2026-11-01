@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { KEYS, safeStorage } from './storage'
-import { resetSystem, setAppResolver, useSystem } from './store'
+import type { AppDefinition } from '../apps/types'
+import { resetSystem, setAppLookup, setAppResolver, useSystem } from './store'
 import { activeAppId } from './wm'
 import type { WindowSpec } from './types'
 
@@ -229,5 +230,82 @@ describe('app switcher', () => {
     useSystem.getState().switcherStep(1)
     useSystem.getState().setOverlay('spotlight')
     expect(useSystem.getState().switcher).toBeNull()
+  })
+})
+
+describe('openMobileApp', () => {
+  const contacts: WindowSpec = { ...spec, appId: 'contacts', title: 'Contacts', singleInstance: true }
+  const def = (id: string, extra: Partial<AppDefinition> = {}): AppDefinition => ({
+    id,
+    name: id,
+    icon: { image: '' },
+    ...extra,
+  })
+  const defs: Record<string, AppDefinition> = {
+    finder: def('finder'),
+    contacts: def('contacts'),
+    github: def('github', { external: 'https://github.com/example', mobile: { presentation: 'external' } }),
+    textedit: def('textedit', { mobile: { presentation: 'hidden' } }),
+  }
+
+  beforeEach(() => {
+    setAppResolver((id) => (id === 'finder' ? spec : id === 'contacts' ? contacts : undefined))
+    setAppLookup((id) => defs[id])
+  })
+
+  it('opens the app, focuses it and leaves home', () => {
+    useSystem.getState().openMobileApp('finder')
+    const s = useSystem.getState()
+    expect(s.mobileHome).toBe(false)
+    expect(s.wm.windows).toHaveLength(1)
+    expect(s.wm.focusedId).toBe(s.wm.windows[0].id)
+  })
+
+  it('focuses the existing window of an app instead of opening another, restoring it when minimized', () => {
+    useSystem.getState().openMobileApp('finder')
+    const id = useSystem.getState().wm.focusedId as string
+    useSystem.getState().goHome()
+    useSystem.getState().openMobileApp('finder')
+    expect(useSystem.getState().wm.windows).toHaveLength(1)
+    expect(useSystem.getState().wm.focusedId).toBe(id)
+
+    useSystem.getState().minimize(id)
+    useSystem.getState().goHome()
+    useSystem.getState().openMobileApp('finder')
+    const [w] = useSystem.getState().wm.windows
+    expect(useSystem.getState().wm.windows).toHaveLength(1)
+    expect(w.mode).toBe('normal')
+    expect(useSystem.getState().wm.focusedId).toBe(id)
+  })
+
+  it('passes props into an existing singleInstance window', () => {
+    useSystem.getState().openMobileApp('contacts')
+    useSystem.getState().goHome()
+    useSystem.getState().openMobileApp('contacts', { contactId: 'ana' })
+    const { windows } = useSystem.getState().wm
+    expect(windows).toHaveLength(1)
+    expect(windows[0].props).toEqual({ contactId: 'ana' })
+  })
+
+  it('goHome sets mobileHome and keeps the windows', () => {
+    useSystem.getState().openMobileApp('finder')
+    useSystem.getState().goHome()
+    expect(useSystem.getState().mobileHome).toBe(true)
+    expect(useSystem.getState().wm.windows).toHaveLength(1)
+  })
+
+  it('opens an external app in a new tab and stays home', () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null)
+    useSystem.getState().openMobileApp('github')
+    expect(open).toHaveBeenCalledWith(expect.stringMatching(/^https:/), '_blank', 'noopener,noreferrer')
+    expect(useSystem.getState().mobileHome).toBe(true)
+    expect(useSystem.getState().wm.windows).toHaveLength(0)
+    open.mockRestore()
+  })
+
+  it('does nothing for a hidden app', () => {
+    useSystem.getState().openMobileApp('textedit')
+    expect(useSystem.getState().mobileHome).toBe(true)
+    expect(useSystem.getState().wm.windows).toHaveLength(0)
   })
 })

@@ -216,27 +216,6 @@ test.describe('desktop', () => {
   })
 })
 
-test.describe('mobile', () => {
-  test.use({ viewport: { width: 390, height: 844 }, colorScheme: 'light' })
-
-  test('mobile placeholder', async ({ page }) => {
-    await page.goto('/')
-    await expect(page.getByText('bymaxOS for iPhone is on its way')).toBeVisible()
-  })
-
-  test('mobile placeholder heading is readable in light mode', async ({ page }) => {
-    await page.goto('/')
-    const heading = page.getByRole('heading', { level: 1 })
-    await expect(heading).toBeVisible()
-    const colours = await heading.evaluate((h) => ({
-      text: getComputedStyle(h).color,
-      background: getComputedStyle(h.closest('main') as HTMLElement).backgroundColor,
-    }))
-    expect(colours.background).not.toBe('rgb(0, 0, 0)')
-    expect(contrastRatio(rgbOf(colours.text), rgbOf(colours.background))).toBeGreaterThanOrEqual(4.5)
-  })
-})
-
 test.describe('dark theme', () => {
   test.use({ colorScheme: 'dark' })
 
@@ -244,14 +223,6 @@ test.describe('dark theme', () => {
     const results = await new AxeBuilder({ page }).analyze()
     return results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
   }
-
-  test('mobile placeholder links pass axe in dark mode', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 })
-    await page.goto('/')
-    await expect(page.getByText('bymaxOS for iPhone is on its way')).toBeVisible()
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-    expect((await serious(page)).map((v) => `${v.id}: ${v.nodes.length} node(s)`)).toEqual([])
-  })
 
   test('about this mac links pass axe in dark mode', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
@@ -263,24 +234,6 @@ test.describe('dark theme', () => {
     expect((await serious(page)).map((v) => `${v.id}: ${v.nodes.length} node(s)`)).toEqual([])
   })
 })
-
-// Parses "rgb(r, g, b)" or "rgba(r, g, b, a)" and returns the channels.
-function rgbOf(css: string): number[] {
-  return (css.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number)
-}
-
-// WCAG 2.x contrast ratio between two sRGB colours.
-function contrastRatio(a: number[], b: number[]): number {
-  const lum = (c: number[]) => {
-    const [r, g, bl] = c.map((v) => {
-      const s = v / 255
-      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
-    })
-    return 0.2126 * r + 0.7152 * g + 0.0722 * bl
-  }
-  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x)
-  return (hi + 0.05) / (lo + 0.05)
-}
 
 test.describe('narrow desktop', () => {
   test.use({ viewport: { width: 768, height: 1024 } })

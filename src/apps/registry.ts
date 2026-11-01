@@ -17,7 +17,7 @@ import trashIcon from '../assets/icons/trash.png'
 import xcodeIcon from '../assets/icons/xcode.png'
 import { getContent } from '../content'
 import { shortcutLabel } from '../system/shortcuts'
-import { setAppResolver } from '../system/store'
+import { setAppLookup, setAppResolver } from '../system/store'
 import type { Command } from '../system/commands'
 import type { AppId, WindowSpec } from '../system/types'
 import { GitHubGlyph, LinkedInGlyph } from '../ui/glyphs'
@@ -53,6 +53,7 @@ const APP_LIST: (AppDefinition | null)[] = [
     icon: { image: launchpadIcon },
     overlay: 'launchpad',
     launchpad: false,
+    mobile: { presentation: 'hidden' },
     dock: { order: 0, group: 'system' },
   },
   {
@@ -87,6 +88,7 @@ const APP_LIST: (AppDefinition | null)[] = [
     id: 'quicklook',
     name: 'Quick Look',
     deepLink: false,
+    mobile: { presentation: 'hidden' },
     icon: { image: previewIcon },
     load: () => import('./quicklook/QuickLook'),
     window: {
@@ -100,6 +102,7 @@ const APP_LIST: (AppDefinition | null)[] = [
     id: 'textedit',
     name: 'TextEdit',
     deepLink: false,
+    mobile: { presentation: 'hidden' },
     icon: { image: texteditIcon },
     load: () => import('./textedit/TextEdit'),
     window: {
@@ -146,6 +149,7 @@ const APP_LIST: (AppDefinition | null)[] = [
       singleInstance: true,
     },
     dock: { order: 2, group: 'apps' },
+    mobile: { presentation: 'sheet' },
   },
   {
     id: 'contacts',
@@ -271,6 +275,7 @@ const APP_LIST: (AppDefinition | null)[] = [
     icon: { image: systemInfoIcon },
     load: () => import('./about/AboutThisMac'),
     launchpad: false,
+    mobile: { presentation: 'hidden' },
     window: {
       defaultSize: { w: 340, h: 420 },
       minSize: { w: 340, h: 420 },
@@ -302,6 +307,7 @@ const APP_LIST: (AppDefinition | null)[] = [
     icon: { image: trashIcon },
     alias: { appId: 'finder', props: { folderId: 'trash' } },
     launchpad: false,
+    mobile: { presentation: 'hidden' },
     dock: { order: 1, group: 'trash' },
   },
 ]
@@ -328,6 +334,26 @@ export function dockItems(): Docked[] {
   )
 }
 
+// Apps without a mobile presentation are full screen.
+const presentationOf = (a: AppDefinition) => a.mobile?.presentation ?? 'fullscreen'
+const MOBILE_DOCK = ['contacts', 'mail', 'safari', 'resume']
+
+export function mobileDockApps(): AppDefinition[] {
+  return MOBILE_DOCK.map((id) => getApp(id)).filter((a): a is AppDefinition => a !== undefined)
+}
+
+export function mobileHomeApps(): AppDefinition[] {
+  return APPS.filter(
+    (a) =>
+      (presentationOf(a) === 'fullscreen' || presentationOf(a) === 'sheet') &&
+      !MOBILE_DOCK.includes(a.id),
+  )
+}
+
+export function mobileLinkApps(): AppDefinition[] {
+  return APPS.filter((a) => presentationOf(a) === 'external')
+}
+
 // Only apps with a window and a loader open as windows; external links and aliases resolve to nothing.
 function resolveWindowSpec(id: AppId): WindowSpec | undefined {
   const app = getApp(id)
@@ -343,6 +369,7 @@ function resolveWindowSpec(id: AppId): WindowSpec | undefined {
   }
 }
 setAppResolver(resolveWindowSpec)
+setAppLookup(getApp)
 
 const item = (label: string, command: Command, ctx: MenuContext): MenuItemDef => ({
   label,
