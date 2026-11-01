@@ -9,7 +9,7 @@ import { AppIcon } from '../../ui/AppIcon'
 import { useClock } from '../desktop/statusHooks'
 import { Wallpaper } from '../desktop/Wallpaper'
 import { StatusBar } from './StatusBar'
-import { rubberBand, shouldUnlock } from './gestures'
+import { releaseVelocity, rubberBand, shouldUnlock, type Sample } from './gestures'
 
 const NOTIFICATIONS = getContent().notifications
 const SWIPE_DISMISS = 80
@@ -79,8 +79,10 @@ export function LockScreen() {
   const [dragging, setDragging] = useState(false)
   const [leaving, setLeaving] = useState(false)
   const [flashOn, setFlashOn] = useState(false)
-  const gesture = useRef<{ startY: number; lastY: number; lastT: number; vy: number } | null>(null)
+  const gesture = useRef<{ startY: number; samples: Sample[] } | null>(null)
   const root = useRef<HTMLDivElement>(null)
+  // Index of the dismissed card; its ✕ is gone after the render, so focus moves once the list has updated.
+  const focusCard = useRef<number | null>(null)
   const flashRef = useRef<HTMLButtonElement>(null)
   const layerRef = useRef<HTMLButtonElement>(null)
   const wasOn = useRef(false)
@@ -111,7 +113,17 @@ export function LockScreen() {
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
+  // The card that slides into the dismissed slot takes focus; with none left, the screen does.
+  useEffect(() => {
+    if (focusCard.current === null) return
+    const buttons = root.current?.querySelectorAll<HTMLButtonElement>('[data-card] button')
+    const target = buttons?.[focusCard.current] ?? root.current
+    focusCard.current = null
+    target?.focus()
+  }, [dismissed])
+
   const dismiss = (id: string) => {
+    focusCard.current = visible.findIndex((n) => n.id === id)
     const next = [...dismissed, id]
     setDismissed(next)
     saveDismissed(next)
@@ -129,27 +141,25 @@ export function LockScreen() {
   // Buttons and cards keep their own pointer behaviour; the drag starts anywhere else.
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (leaving || (e.target as Element).closest('button, [data-card]')) return
-    gesture.current = { startY: e.clientY, lastY: e.clientY, lastT: e.timeStamp, vy: 0 }
+    gesture.current = { startY: e.clientY, samples: [{ y: e.clientY, t: e.timeStamp }] }
     setDragging(true)
   }
 
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
     const g = gesture.current
     if (!g) return
-    const dt = e.timeStamp - g.lastT
-    if (dt > 0) g.vy = (g.lastY - e.clientY) / dt
-    g.lastY = e.clientY
-    g.lastT = e.timeStamp
+    // Keep only the trailing window, so a long drag does not grow the list.
+    g.samples = [...g.samples.filter((s) => e.timeStamp - s.t <= 100), { y: e.clientY, t: e.timeStamp }]
     setDy(g.startY - e.clientY)
   }
 
-  const onPointerUp = () => {
+  const onPointerUp = (e: PointerEvent<HTMLDivElement>) => {
     const g = gesture.current
     gesture.current = null
     setDragging(false)
     if (!g) return
-    const total = g.startY - g.lastY
-    if (!shouldUnlock(total, window.innerHeight, g.vy)) {
+    const total = g.startY - (g.samples[g.samples.length - 1]?.y ?? g.startY)
+    if (!shouldUnlock(total, window.innerHeight, releaseVelocity(g.samples, e.timeStamp))) {
       setDy(0)
       return
     }

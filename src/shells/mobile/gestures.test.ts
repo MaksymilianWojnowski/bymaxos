@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { rubberBand, shouldUnlock } from './gestures'
+import { releaseVelocity, rubberBand, shouldUnlock } from './gestures'
 
 describe('rubberBand', () => {
   it('does not move at rest', () => {
@@ -9,6 +9,38 @@ describe('rubberBand', () => {
   it('resists more the further it is pulled', () => {
     expect(rubberBand(100, 800)).toBeCloseTo(51.46, 2)
     expect(rubberBand(800, 800)).toBeCloseTo(283.87, 2)
+  })
+})
+
+describe('releaseVelocity', () => {
+  it('measures upward speed over the trailing 100ms', () => {
+    const samples = [
+      { y: 500, t: 0 },
+      { y: 400, t: 40 },
+    ]
+    expect(releaseVelocity(samples, 40)).toBe(2.5)
+  })
+
+  it('is zero when the finger stopped more than 80ms before lifting', () => {
+    const samples = [
+      { y: 500, t: 0 },
+      { y: 400, t: 20 },
+    ]
+    expect(releaseVelocity(samples, 320)).toBe(0)
+  })
+
+  it('ignores samples older than the window', () => {
+    const samples = [
+      { y: 900, t: 0 },
+      { y: 500, t: 300 },
+      { y: 400, t: 340 },
+    ]
+    expect(releaseVelocity(samples, 340)).toBe(2.5)
+  })
+
+  it('is zero with no samples or a single one', () => {
+    expect(releaseVelocity([], 0)).toBe(0)
+    expect(releaseVelocity([{ y: 400, t: 0 }], 0)).toBe(0)
   })
 })
 

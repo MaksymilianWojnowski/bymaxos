@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, createEvent, fireEvent, render, screen } from '@testing-library/react'
 import { getContent } from '../../content'
 import { readDismissed } from '../../system/notifications'
 import { resetSystem, useSystem } from '../../system/store'
@@ -29,6 +29,13 @@ const screenEl = () => document.activeElement as HTMLElement
 const content = () => document.querySelector('[data-lock-content]') as HTMLElement
 const card = (title: string) => screen.getByText(title).closest('[data-card]') as HTMLElement
 const isLocked = () => useSystem.getState().locked
+
+// fireEvent drops a timeStamp init key, and velocity needs the event time, so it is set on the event itself.
+const pointer = (type: 'pointerDown' | 'pointerMove' | 'pointerUp', node: HTMLElement, clientY: number, timeStamp: number) => {
+  const event = createEvent[type](node, { clientX: 200, clientY })
+  Object.defineProperty(event, 'timeStamp', { value: timeStamp })
+  fireEvent(node, event)
+}
 
 describe('LockScreen', () => {
   it('shows the large clock, the date, the status bar and the swipe hint', () => {
@@ -61,6 +68,51 @@ describe('LockScreen', () => {
     fireEvent.pointerUp(welcome, { clientX: 150, clientY: 400 })
     expect(screen.queryByText('Welcome to bymaxOS')).not.toBeInTheDocument()
     expect(readDismissed()).toEqual(['github', 'welcome'])
+  })
+
+  it('after ✕ focus moves to the next card\'s ✕', () => {
+    render(<LockScreen />)
+    const welcomeX = screen.getByRole('button', { name: 'Dismiss Welcome to bymaxOS' })
+    welcomeX.focus()
+    fireEvent.click(welcomeX)
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Dismiss Open to new roles' }))
+  })
+
+  it('after the last card is dismissed focus goes to the screen, so Enter still unlocks', () => {
+    render(<LockScreen />)
+    for (const n of notifications.slice(0, -1)) {
+      fireEvent.click(screen.getByRole('button', { name: `Dismiss ${n.title}` }))
+    }
+    const lastX = screen.getByRole('button', { name: 'Dismiss Code on GitHub' })
+    lastX.focus()
+    fireEvent.click(lastX)
+    expect(document.activeElement).not.toBe(document.body)
+    expect(document.activeElement).toBe(screenEl())
+    fireEvent.keyDown(screenEl(), { key: 'Enter' })
+    expect(isLocked()).toBe(false)
+  })
+
+  it('a fast short flick past 5% unlocks', () => {
+    vi.useFakeTimers()
+    render(<LockScreen />)
+    const screenNode = screenEl()
+    pointer('pointerDown', screenNode, 500, 1000)
+    pointer('pointerMove', screenNode, 400, 1040)
+    pointer('pointerUp', screenNode, 400, 1040)
+    act(() => vi.advanceTimersByTime(300))
+    expect(isLocked()).toBe(false)
+  })
+
+  it('a fast drag that then holds still for 300ms and lifts stays locked and springs back', () => {
+    vi.useFakeTimers()
+    render(<LockScreen />)
+    const screenNode = screenEl()
+    pointer('pointerDown', screenNode, 500, 1000)
+    pointer('pointerMove', screenNode, 400, 1020)
+    pointer('pointerUp', screenNode, 400, 1320)
+    act(() => vi.advanceTimersByTime(300))
+    expect(isLocked()).toBe(true)
+    expect(content().style.transform).toBe('none')
   })
 
   it('a drag up past the threshold unlocks after the settle animation', () => {

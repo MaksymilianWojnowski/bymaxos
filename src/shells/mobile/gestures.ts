@@ -8,3 +8,20 @@ export function shouldUnlock(dy: number, height: number, velocity: number): bool
   if (dy <= 0) return false
   return dy >= height * 0.3 || (velocity >= 0.5 && dy >= height * 0.05)
 }
+
+export interface Sample {
+  y: number
+  t: number
+}
+
+const WINDOW_MS = 100
+const STALE_MS = 80
+
+// Upward velocity (px/ms) over the trailing WINDOW_MS of samples. A finger that stopped before lifting has no flick.
+export function releaseVelocity(samples: Sample[], releaseT: number): number {
+  const last = samples[samples.length - 1]
+  if (!last || releaseT - last.t > STALE_MS) return 0
+  const first = samples.find((s) => last.t - s.t <= WINDOW_MS) ?? last
+  const dt = last.t - first.t
+  return dt > 0 ? (first.y - last.y) / dt : 0
+}
