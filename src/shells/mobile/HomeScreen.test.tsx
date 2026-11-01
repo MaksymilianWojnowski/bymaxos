@@ -1,11 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { mobileDockApps, mobileHomeApps } from '../../apps/registry'
-import { getContent } from '../../content'
 import { resetSystem, useSystem } from '../../system/store'
 import { HomeScreen } from './HomeScreen'
-
-const { profile } = getContent()
 
 beforeEach(() => {
   window.localStorage.clear()
@@ -34,9 +31,9 @@ const touch = (type: 'touchStart' | 'touchEnd', el: HTMLElement, clientX: number
 describe('HomeScreen', () => {
   it('page 1 has a profile widget that opens Resume and a calendar widget that opens Calendar', () => {
     renderHome()
-    fireEvent.click(screen.getByRole('button', { name: `${profile.name}, ${profile.headline} — open Resume` }))
+    fireEvent.click(screen.getByRole('button', { name: /— open Resume$/ }))
     expect(useSystem.getState().wm.windows.map((w) => w.appId)).toEqual(['resume'])
-    fireEvent.click(screen.getByRole('button', { name: /Sunday, November 1 — open Calendar/ }))
+    fireEvent.click(screen.getByRole('button', { name: /— open Calendar$/ }))
     expect(useSystem.getState().wm.windows.map((w) => w.appId)).toEqual(['resume', 'calendar'])
   })
 
@@ -94,7 +91,7 @@ describe('HomeScreen', () => {
 
   it('pulling down on page 1 by more than 60px opens search', () => {
     const onSearch = renderHome()
-    const page = screen.getByRole('button', { name: `${profile.name}, ${profile.headline} — open Resume` }).closest('section')!
+    const page = screen.getByRole('button', { name: /— open Resume$/ }).closest('section')!
     touch('touchStart', page, 100, 100)
     touch('touchEnd', page, 100, 170)
     expect(onSearch).toHaveBeenCalledTimes(1)
@@ -102,7 +99,7 @@ describe('HomeScreen', () => {
 
   it('a pull of 60px or less, or a mostly sideways drag, does not open search', () => {
     const onSearch = renderHome()
-    const page = screen.getByRole('button', { name: `${profile.name}, ${profile.headline} — open Resume` }).closest('section')!
+    const page = screen.getByRole('button', { name: /— open Resume$/ }).closest('section')!
     touch('touchStart', page, 100, 100)
     touch('touchEnd', page, 100, 160)
     touch('touchStart', page, 100, 100)

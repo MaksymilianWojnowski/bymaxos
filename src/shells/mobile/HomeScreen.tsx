@@ -24,7 +24,6 @@ const PAGE_PAD =
   'py-4 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]'
 const ROW_PAD = 'pl-[max(0px,env(safe-area-inset-left))] pr-[max(0px,env(safe-area-inset-right))]'
 
-const weekday = new Intl.DateTimeFormat('en-US', { weekday: 'long' })
 const weekdayShort = new Intl.DateTimeFormat('en-US', { weekday: 'short' })
 const month = new Intl.DateTimeFormat('en-US', { month: 'long' })
 const TILE = 'focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none active:scale-95'
@@ -116,7 +115,6 @@ export function HomeScreen({ onSearch }: { onSearch: () => void }) {
     if (dy > PULL_SEARCH && dy > Math.abs(touch.clientX - start.x)) onSearch()
   }
 
-  const calendarLabel = `${weekday.format(now)}, ${month.format(now)} ${now.getDate()} — open Calendar`
 
   return (
     <div className="relative h-full w-full overflow-hidden text-white">
@@ -144,24 +142,24 @@ export function HomeScreen({ onSearch }: { onSearch: () => void }) {
               <li className="col-span-full">
                 <button
                   type="button"
-                  aria-label={`${profile.name}, ${profile.headline} — open Resume`}
                   onClick={() => openMobileApp('resume')}
                   className={`block w-full rounded-[18px] bg-black/30 p-4 text-left drop-shadow-md ${TILE}`}
                 >
                   <span className="block text-[17px] font-semibold">{profile.name}</span>
                   <span className="block text-[13px] text-white/90">{profile.headline}</span>
+                  <span className="sr-only"> — open Resume</span>
                 </button>
               </li>
               <li className="col-span-2 row-span-2">
                 <button
                   type="button"
-                  aria-label={calendarLabel}
                   onClick={() => openMobileApp('calendar')}
                   className={`flex h-full w-full flex-col justify-between rounded-[18px] bg-black/30 p-3 text-left drop-shadow-md ${TILE}`}
                 >
                   <span className="text-[13px] font-semibold uppercase">{weekdayShort.format(now)}</span>
                   <span className="text-[44px] leading-none font-light">{now.getDate()}</span>
                   <span className="text-[13px]">{month.format(now)}</span>
+                  <span className="sr-only"> — open Calendar</span>
                 </button>
               </li>
               {HOME_APPS.map((app) => (

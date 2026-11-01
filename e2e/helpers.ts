@@ -11,6 +11,24 @@ export async function unlock(page: Page): Promise<void> {
   await expect(page.getByRole('menubar')).toBeVisible()
 }
 
+// Opens the phone shell at `path` and swipes up on the lock screen; the Unlock button is the fallback if the swipe misses.
+export async function unlockMobile(page: Page, path = '/'): Promise<void> {
+  await page.goto(path)
+  await expect(page.getByText('Swipe up to unlock')).toBeVisible()
+  // Starts 64px above the bottom edge, clear of the Unlock button; ends at y=300 on a portrait phone.
+  const height = page.viewportSize()?.height ?? 844
+  await page.mouse.move(60, height - 64)
+  await page.mouse.down()
+  await page.mouse.move(60, Math.min(300, Math.round(height * 0.36)), { steps: 20 })
+  await page.mouse.up()
+  // A deep link lands in its app rather than home, so the check is that the lock screen is gone.
+  const hint = page.getByText('Swipe up to unlock')
+  if (!(await hint.waitFor({ state: 'hidden', timeout: 1000 }).then(() => true, () => false))) {
+    await page.getByRole('button', { name: 'Unlock', exact: true }).click()
+  }
+  await expect(hint).toBeHidden()
+}
+
 // Window open and minimize animations move the box; wait for them before measuring.
 export async function settle(locator: Locator): Promise<void> {
   await locator.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)))

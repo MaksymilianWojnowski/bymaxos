@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { getApp } from '../../apps/registry'
+import { installSystemCommands } from '../../system/commands'
 import { takeDeepLink } from '../../system/shell'
 import { useSystem } from '../../system/store'
 import { AppScreen } from './AppScreen'
@@ -18,6 +19,9 @@ export function MobileShell() {
   const wasLocked = useRef(locked)
   const seenFocus = useRef<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
+
+  // Apps dispatch system commands such as app.open (Resume's Email); only the desktop shell installed them before.
+  useEffect(() => installSystemCommands(), [])
 
   // A focused window at mount (a switch from the desktop shell) or one that takes focus later brings its app forward.
   useEffect(() => {
