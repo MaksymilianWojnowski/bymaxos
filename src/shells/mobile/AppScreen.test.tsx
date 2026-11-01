@@ -26,6 +26,7 @@ vi.mock('../../apps/registry', () => {
     getApp: (id: string) => apps.find((a) => a.id === id),
     mobileHomeApps: () => [apps[0]],
     mobileDockApps: () => [apps[1]],
+    mobileLinkApps: () => [],
   }
 })
 

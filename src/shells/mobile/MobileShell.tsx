@@ -1,20 +1,21 @@
-import { useEffect, useRef } from 'react'
-import { getApp, mobileHomeApps } from '../../apps/registry'
+import { useEffect, useRef, useState } from 'react'
+import { getApp } from '../../apps/registry'
 import { useSystem } from '../../system/store'
 import { AppScreen } from './AppScreen'
+import { HomeScreen } from './HomeScreen'
 import { LockScreen } from './LockScreen'
 
-// The home screen is temporary here; the next task replaces it.
 export function MobileShell() {
   const locked = useSystem((s) => s.locked)
   const home = useSystem((s) => s.mobileHome)
-  const openMobileApp = useSystem((s) => s.openMobileApp)
   const focusedId = useSystem((s) => s.wm.focusedId)
   const focused = useSystem((s) => s.wm.windows.find((w) => w.id === focusedId))
   const homeRef = useRef<HTMLDivElement>(null)
   const leftHome = useRef(false)
   const wasLocked = useRef(locked)
   const seenFocus = useRef<string | null>(null)
+  // Search UI arrives with the search task; until then opening it changes no visible state.
+  const [, setSearchOpen] = useState(false)
 
   // A focused window at mount (a switch from the desktop shell) or one that takes focus later brings its app forward.
   useEffect(() => {
@@ -42,7 +43,6 @@ export function MobileShell() {
 
   if (locked) return <LockScreen />
 
-
   return (
     <div className="relative h-full w-full overflow-hidden">
       {(showHome || sheet) && (
@@ -50,21 +50,9 @@ export function MobileShell() {
           ref={homeRef}
           aria-hidden={showHome ? undefined : 'true'}
           inert={!showHome}
-          className="absolute inset-0 overflow-auto bg-window p-4"
+          className="absolute inset-0"
         >
-          <ul className="flex flex-col gap-2">
-            {mobileHomeApps().map((app) => (
-              <li key={app.id}>
-                <button
-                  type="button"
-                  onClick={() => openMobileApp(app.id)}
-                  className="min-h-11 w-full text-left text-text-1"
-                >
-                  {app.name}
-                </button>
-              </li>
-            ))}
-          </ul>
+          <HomeScreen onSearch={() => setSearchOpen(true)} />
         </div>
       )}
       {!showHome && <AppScreen />}

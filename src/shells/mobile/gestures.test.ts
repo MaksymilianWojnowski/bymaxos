@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { releaseVelocity, rubberBand, shouldUnlock } from './gestures'
+import { pageFromScroll, releaseVelocity, rubberBand, shouldUnlock } from './gestures'
+
+describe('pageFromScroll', () => {
+  it('picks the nearest page and clamps to the first and last', () => {
+    expect(pageFromScroll(0, 390, 2)).toBe(0)
+    expect(pageFromScroll(200, 390, 2)).toBe(1)
+    expect(pageFromScroll(5000, 390, 2)).toBe(1)
+    expect(pageFromScroll(-10, 390, 2)).toBe(0)
+  })
+})
 
 describe('rubberBand', () => {
   it('does not move at rest', () => {

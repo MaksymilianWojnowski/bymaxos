@@ -1,3 +1,8 @@
+// The page nearest the horizontal scroll offset, clamped so overscroll stays on the first or last page.
+export function pageFromScroll(scrollLeft: number, pageWidth: number, pageCount: number): number {
+  return Math.min(Math.max(Math.round(scrollLeft / pageWidth), 0), pageCount - 1)
+}
+
 // Past the edge the content lags the finger, like a rubber band.
 export function rubberBand(offset: number, dimension: number, c = 0.55): number {
   return (1 - 1 / ((offset * c) / dimension + 1)) * dimension

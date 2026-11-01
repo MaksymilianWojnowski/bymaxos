@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { mobileHomeApps } from '../../apps/registry'
 import { resetSystem, useSystem } from '../../system/store'
 import { MobileShell } from './MobileShell'
 
@@ -22,10 +21,10 @@ describe('MobileShell', () => {
     expect(screen.getByText('Swipe up to unlock')).toBeInTheDocument()
   })
 
-  it('unlocking to home moves focus to the first app button', () => {
+  it('unlocking to home moves focus to the first home control, the profile widget', () => {
     render(<MobileShell />)
     fireEvent.click(screen.getByRole('button', { name: 'Unlock' }))
     expect(screen.queryByText('Swipe up to unlock')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: mobileHomeApps()[0].name })).toHaveFocus()
+    expect(screen.getByRole('button', { name: /— open Resume$/ })).toHaveFocus()
   })
 })
