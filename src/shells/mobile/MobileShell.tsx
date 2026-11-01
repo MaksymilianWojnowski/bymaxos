@@ -49,6 +49,7 @@ export function MobileShell() {
         <div
           ref={homeRef}
           aria-hidden={showHome ? undefined : 'true'}
+          inert={!showHome}
           className="absolute inset-0 overflow-auto bg-window p-4"
         >
           <ul className="flex flex-col gap-2">

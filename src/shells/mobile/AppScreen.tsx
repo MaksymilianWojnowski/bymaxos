@@ -124,8 +124,13 @@ export function AppScreen() {
             if (Math.abs(up) > DRAG_SLOP) suppressClick.current = true
             if (up >= HOME_SWIPE) goHome()
           }}
-          onClick={() => {
-            if (suppressClick.current) {
+          onPointerCancel={() => {
+            homeStart.current = null
+            suppressClick.current = false
+          }}
+          onClick={(e) => {
+            // Keyboard clicks have detail 0; only a pointer click can be the tail of a drag.
+            if (e.detail > 0 && suppressClick.current) {
               suppressClick.current = false
               return
             }

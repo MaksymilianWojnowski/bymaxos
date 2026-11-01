@@ -86,6 +86,17 @@ describe('AppScreen', () => {
     expect(useSystem.getState().mobileHome).toBe(true)
   })
 
+  it('a drag that ends without a click does not swallow the next keyboard activation of Home', async () => {
+    useSystem.getState().openMobileApp('finder')
+    render(<AppScreen />)
+    const home = await screen.findByRole('button', { name: 'Home' })
+    fireEvent.pointerDown(home, { clientY: 500 })
+    fireEvent.pointerUp(home, { clientY: 470 })
+    expect(useSystem.getState().mobileHome).toBe(false)
+    fireEvent.click(home, { detail: 0 })
+    expect(useSystem.getState().mobileHome).toBe(true)
+  })
+
   it('a swipe shorter than 60px does not go home', async () => {
     useSystem.getState().openMobileApp('finder')
     render(<AppScreen />)
@@ -111,6 +122,14 @@ describe('AppScreen', () => {
     await screen.findByRole('dialog', { name: 'Mail' })
     const homeApp = screen.getByRole('button', { name: 'Finder', hidden: true })
     expect(homeApp.closest('[aria-hidden="true"]')).not.toBeNull()
+  })
+
+  it('home buttons behind a sheet are inert, so focus cannot reach them', async () => {
+    useSystem.getState().openMobileApp('mail')
+    render(<MobileShell />)
+    await screen.findByRole('dialog', { name: 'Mail' })
+    const homeApp = screen.getByRole('button', { name: 'Finder', hidden: true })
+    expect(homeApp.closest('[inert]')).not.toBeNull()
   })
 
   it('app.open dispatched from inside an app (Resume to Mail) brings the new window to the foreground', async () => {
