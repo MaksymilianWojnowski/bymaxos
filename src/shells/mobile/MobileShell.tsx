@@ -4,18 +4,20 @@ import { useSystem } from '../../system/store'
 import { AppScreen } from './AppScreen'
 import { HomeScreen } from './HomeScreen'
 import { LockScreen } from './LockScreen'
+import { MobileSearch } from './MobileSearch'
+import { takeDeepLink } from './deepLink'
 
 export function MobileShell() {
   const locked = useSystem((s) => s.locked)
   const home = useSystem((s) => s.mobileHome)
   const focusedId = useSystem((s) => s.wm.focusedId)
   const focused = useSystem((s) => s.wm.windows.find((w) => w.id === focusedId))
+  const openMobileApp = useSystem((s) => s.openMobileApp)
   const homeRef = useRef<HTMLDivElement>(null)
   const leftHome = useRef(false)
   const wasLocked = useRef(locked)
   const seenFocus = useRef<string | null>(null)
-  // Search UI arrives with the search task; until then opening it changes no visible state.
-  const [, setSearchOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
 
   // A focused window at mount (a switch from the desktop shell) or one that takes focus later brings its app forward.
   useEffect(() => {
@@ -23,8 +25,17 @@ export function MobileShell() {
     seenFocus.current = focusedId
   }, [focusedId])
 
+  // A deep link waits for unlock, so it opens after the lock screen is gone.
+  useEffect(() => {
+    if (locked) return
+    const link = takeDeepLink()
+    if (link) openMobileApp(link.appId, link.item ? { item: link.item } : undefined)
+  }, [locked, openMobileApp])
+
   const showHome = home || !focused
   const sheet = !showHome && focused && getApp(focused.appId)?.mobile?.presentation === 'sheet'
+  // Search covers the home screen, so its controls leave the tab order while it is open.
+  const homeInert = !showHome || searchOpen
 
   // Going home moves focus to the first app button; the first render keeps focus where it is.
   useEffect(() => {
@@ -48,14 +59,15 @@ export function MobileShell() {
       {(showHome || sheet) && (
         <div
           ref={homeRef}
-          aria-hidden={showHome ? undefined : 'true'}
-          inert={!showHome}
+          aria-hidden={homeInert ? 'true' : undefined}
+          inert={homeInert}
           className="absolute inset-0"
         >
           <HomeScreen onSearch={() => setSearchOpen(true)} />
         </div>
       )}
       {!showHome && <AppScreen />}
+      {searchOpen && <MobileSearch onClose={() => setSearchOpen(false)} />}
     </div>
   )
 }
