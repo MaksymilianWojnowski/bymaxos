@@ -5,8 +5,8 @@ import { getContent } from '../../content'
 import type { NotificationItem } from '../../content/types'
 import { dispatch } from '../../system/commands'
 import { MENU_BAR_H } from '../../system/layout'
+import { readDismissed, saveDismissed } from '../../system/notifications'
 import { useSystem } from '../../system/store'
-import { KEYS, safeStorage } from '../../system/storage'
 import { AppIcon } from '../../ui/AppIcon'
 
 const NOTIFICATIONS = getContent().notifications
@@ -19,12 +19,6 @@ const GLASS = {
 
 // Text sits on the opaque window colour, not on the translucent glass, so its contrast is fixed (AA in both themes).
 const SOLID = { background: 'var(--window-bg)', borderColor: 'var(--glass-border)' }
-
-// Session storage is untrusted input: anything but a list of ids is treated as nothing dismissed.
-function readDismissed(): string[] {
-  const value = safeStorage.get<unknown>('session', KEYS.notifications, [])
-  return Array.isArray(value) && value.every((id) => typeof id === 'string') ? value : []
-}
 
 function Card({ item, onOpen, onDismiss }: { item: NotificationItem; onOpen: (appId: string) => void; onDismiss: () => void }) {
   const app = item.appId !== undefined ? getApp(item.appId) : undefined
@@ -66,9 +60,9 @@ export function NotificationCenter() {
   const [dismissed, setDismissed] = useState<string[]>(readDismissed)
   const visible = NOTIFICATIONS.filter((n) => !dismissed.includes(n.id))
 
-  const saveDismissed = (ids: string[]) => {
+  const updateDismissed = (ids: string[]) => {
     setDismissed(ids)
-    safeStorage.set('session', KEYS.notifications, ids)
+    saveDismissed(ids)
   }
 
   // Focus moves into the panel on open and returns to the opener on close, but only when focus was lost with the panel.
@@ -118,7 +112,7 @@ export function NotificationCenter() {
         {visible.length > 0 && (
           <button
             type="button"
-            onClick={() => saveDismissed(NOTIFICATIONS.map((n) => n.id))}
+            onClick={() => updateDismissed(NOTIFICATIONS.map((n) => n.id))}
             className="text-[13px] text-accent-link"
           >
             Clear All
@@ -134,7 +128,7 @@ export function NotificationCenter() {
         <ul className="flex flex-col gap-2">
           {visible.map((item) => (
             <li key={item.id}>
-              <Card item={item} onOpen={open} onDismiss={() => saveDismissed([...dismissed, item.id])} />
+              <Card item={item} onOpen={open} onDismiss={() => updateDismissed([...dismissed, item.id])} />
             </li>
           ))}
         </ul>

@@ -2,17 +2,18 @@ import { useEffect, useRef } from 'react'
 import { getApp, mobileHomeApps } from '../../apps/registry'
 import { useSystem } from '../../system/store'
 import { AppScreen } from './AppScreen'
+import { LockScreen } from './LockScreen'
 
-// The lock and home screens are temporary here; the next tasks replace them.
+// The home screen is temporary here; the next task replaces it.
 export function MobileShell() {
   const locked = useSystem((s) => s.locked)
-  const unlock = useSystem((s) => s.unlock)
   const home = useSystem((s) => s.mobileHome)
   const openMobileApp = useSystem((s) => s.openMobileApp)
   const focusedId = useSystem((s) => s.wm.focusedId)
   const focused = useSystem((s) => s.wm.windows.find((w) => w.id === focusedId))
   const homeRef = useRef<HTMLDivElement>(null)
   const leftHome = useRef(false)
+  const wasLocked = useRef(locked)
   const seenFocus = useRef<string | null>(null)
 
   // A focused window at mount (a switch from the desktop shell) or one that takes focus later brings its app forward.
@@ -33,15 +34,14 @@ export function MobileShell() {
     if (leftHome.current) homeRef.current?.querySelector('button')?.focus()
   }, [showHome])
 
-  if (locked) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-window">
-        <button type="button" onClick={() => unlock()} className="min-h-11 min-w-11 px-4 text-text-1 underline">
-          Unlock
-        </button>
-      </div>
-    )
-  }
+  // Unlocking to home focuses its first app button; the lock screen had no home focus to hand over.
+  useEffect(() => {
+    if (wasLocked.current && !locked && showHome) homeRef.current?.querySelector('button')?.focus()
+    wasLocked.current = locked
+  }, [locked, showHome])
+
+  if (locked) return <LockScreen />
+
 
   return (
     <div className="relative h-full w-full overflow-hidden">

@@ -5,14 +5,17 @@ const clock = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-dig
 const ICON = 'h-4 w-4'
 
 // Box-content keeps the 48px row whatever the notch inset is, so sheets can start below it.
-export function StatusBar() {
+// onWallpaper: white text with a shadow for the lock screen, whose wallpaper sits under the status bar.
+export function StatusBar({ onWallpaper = false }: { onWallpaper?: boolean }) {
   const online = useOnline()
   const battery = useBattery()
   const now = useClock()
   const percent = battery ? Math.round(battery.level * 100) : 0
 
   return (
-    <div className="box-content flex h-12 items-center justify-between px-6 pt-[env(safe-area-inset-top)] text-[15px] font-semibold text-text-1">
+    <div
+      className={`box-content flex h-12 items-center justify-between px-6 pt-[env(safe-area-inset-top)] text-[15px] font-semibold ${onWallpaper ? 'text-white drop-shadow-md' : 'text-text-1'}`}
+    >
       <time dateTime={now.toISOString()}>{clock.format(now)}</time>
       <div className="flex items-center gap-1.5">
         <span role="img" aria-label={online ? 'Wi-Fi: connected' : 'Wi-Fi: offline'}>
