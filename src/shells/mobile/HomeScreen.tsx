@@ -225,7 +225,7 @@ export function HomeScreen({ onSearch }: { onSearch: () => void }) {
               type="button"
               aria-label={app.name}
               onClick={() => openMobileApp(app.id)}
-              className="flex min-h-11 min-w-11 items-center justify-center rounded-[14px] focus-visible:ring-2 focus-visible:ring-accent-link focus-visible:outline-none active:scale-95"
+              className="flex min-h-11 min-w-11 items-center justify-center rounded-[14px] focus-visible:ring-2 focus-visible:ring-accent-link focus-visible:outline-none dark:focus-visible:ring-white active:scale-95"
             >
               <AppIcon app={app} size={56} />
             </button>

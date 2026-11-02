@@ -23,7 +23,8 @@ const CIRCLE =
   'flex h-[50px] w-[50px] items-center justify-center rounded-full bg-black/40 text-white active:scale-95 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none'
 
 // A card with an app is not activatable while locked; a left swipe past SWIPE_DISMISS dismisses it.
-function Card({ item, onDismiss }: { item: NotificationItem; onDismiss: () => void }) {
+// `pan` lets a touch drag scroll the list; otherwise the drag reaches the screen as the unlock gesture.
+function Card({ item, onDismiss, pan }: { item: NotificationItem; onDismiss: () => void; pan: boolean }) {
   const app = item.appId !== undefined ? getApp(item.appId) : undefined
   const [dx, setDx] = useState(0)
   const startX = useRef<number | null>(null)
@@ -38,7 +39,7 @@ function Card({ item, onDismiss }: { item: NotificationItem; onDismiss: () => vo
   return (
     <div
       data-card
-      className="relative touch-pan-y rounded-[16px] border p-3"
+      className={`relative rounded-[16px] border p-3 ${pan ? 'touch-pan-y' : 'touch-none'}`}
       style={{ background: 'var(--window-bg)', borderColor: 'var(--glass-border)', transform: `translateX(${dx}px)` }}
       onPointerDown={(e) => {
         startX.current = e.clientX
@@ -90,6 +91,19 @@ export function LockScreen() {
   const wasOn = useRef(false)
   const timer = useRef<number | undefined>(undefined)
   const visible = NOTIFICATIONS.filter((n) => !dismissed.includes(n.id))
+  const list = useRef<HTMLUListElement>(null)
+  const [overflowing, setOverflowing] = useState(false)
+
+  // Touch scrolling is only offered when the list can scroll; otherwise a vertical drag is the unlock gesture.
+  useEffect(() => {
+    const measure = () => {
+      const el = list.current
+      setOverflowing(el !== null && el.scrollHeight > el.clientHeight)
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [dismissed])
 
   useEffect(() => {
     root.current?.focus()
@@ -220,7 +234,7 @@ export function LockScreen() {
       >
         <StatusBar onWallpaper />
 
-        <div className="flex min-h-0 flex-1 flex-col [@media(max-height:500px)]:flex-row">
+        <div className="flex min-h-0 shrink flex-col [@media(max-height:500px)]:flex-1 [@media(max-height:500px)]:flex-row">
           <div className="flex flex-col items-center pt-6 pr-[max(1.5rem,env(safe-area-inset-right))] pl-[max(1.5rem,env(safe-area-inset-left))] text-center drop-shadow-md [@media(max-height:500px)]:w-1/2 [@media(max-height:500px)]:justify-center [@media(max-height:500px)]:pt-0">
             <p className="text-[17px] font-semibold">{dateFormat.format(now)}</p>
             <p className="text-[84px] leading-none font-light tabular-nums [@media(max-height:500px)]:text-[64px]">
@@ -228,14 +242,20 @@ export function LockScreen() {
             </p>
           </div>
 
-          <ul className="mt-6 ml-[max(1rem,env(safe-area-inset-left))] mr-[max(1rem,env(safe-area-inset-right))] flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto [@media(max-height:500px)]:mt-0 [@media(max-height:500px)]:ml-[env(safe-area-inset-left)] [@media(max-height:500px)]:mr-[env(safe-area-inset-right)] [@media(max-height:500px)]:pr-4">
+          <ul
+            ref={list}
+            className={`mt-6 ml-[max(1rem,env(safe-area-inset-left))] mr-[max(1rem,env(safe-area-inset-right))] flex min-h-0 shrink flex-col gap-2 overflow-y-auto [@media(max-height:500px)]:mt-0 [@media(max-height:500px)]:ml-[env(safe-area-inset-left)] [@media(max-height:500px)]:mr-[env(safe-area-inset-right)] [@media(max-height:500px)]:flex-1 [@media(max-height:500px)]:pr-4 ${overflowing ? 'touch-pan-y' : 'touch-none'}`}
+          >
             {visible.map((item) => (
               <li key={item.id}>
-                <Card item={item} onDismiss={() => dismiss(item.id)} />
+                <Card item={item} onDismiss={() => dismiss(item.id)} pan={overflowing} />
               </li>
             ))}
           </ul>
         </div>
+
+        {/* Empty space belongs to the screen, so a drag from it unlocks; it takes the room the list leaves. */}
+        <div className="min-h-0 flex-1 [@media(max-height:500px)]:hidden" />
 
         <div className="flex flex-col items-center gap-3 pt-4 pr-[max(2rem,env(safe-area-inset-right))] pl-[max(2rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1.5rem)] drop-shadow-md">
           <div className="flex w-full items-center justify-between">

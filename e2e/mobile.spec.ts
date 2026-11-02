@@ -1,6 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { seriousViolations, unlockMobile } from './helpers.ts'
+import { centreOf, seriousViolations, touchDrag, unlockMobile } from './helpers.ts'
 
 const dock = (page: Page) => page.getByRole('toolbar', { name: 'Dock' })
 const lockHint = (page: Page) => page.getByText('Swipe up to unlock')
@@ -61,8 +61,103 @@ for (const viewport of [
   })
 }
 
+// Real touch over CDP: the lock list must not swallow the unlock drag when it does not scroll.
+test.describe('touch lock screen at 390x844', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
+
+  test('a vertical touch drag from a card unlocks', async ({ page }) => {
+    await page.goto('/')
+    await expect(lockHint(page)).toBeVisible()
+    const from = await centreOf(page.locator('[data-card]').first())
+    await touchDrag(page, from, { x: from.x, y: 10 })
+    await expect(lockHint(page)).toBeHidden()
+  })
+
+  test('a vertical touch drag from the space between the list and the controls unlocks', async ({ page }) => {
+    await page.goto('/')
+    await expect(lockHint(page)).toBeVisible()
+    const list = await page.locator('[data-card]').last().locator('xpath=ancestor::ul[1]').boundingBox()
+    const flash = await page.getByRole('button', { name: 'Flashlight', exact: true }).boundingBox()
+    if (!list || !flash) throw new Error('no boxes')
+    const y = (list.y + list.height + flash.y) / 2
+    await touchDrag(page, { x: 195, y }, { x: 195, y: 10 })
+    await expect(lockHint(page)).toBeHidden()
+  })
+
+  test('a horizontal touch drag on a card dismisses it and the screen stays locked', async ({ page }) => {
+    await page.goto('/')
+    await expect(lockHint(page)).toBeVisible()
+    const card = page.locator('[data-card]').first()
+    const title = (await card.locator('p').first().textContent()) ?? ''
+    const from = await centreOf(card)
+    await touchDrag(page, from, { x: from.x - 160, y: from.y })
+    await expect(page.locator('[data-card]').filter({ hasText: title })).toHaveCount(0)
+    await expect(lockHint(page)).toBeVisible()
+  })
+})
+
+// At 320x568 the list overflows, so its touch drags scroll it instead of unlocking.
+test.describe('touch lock screen at 320x568, list scrolls', () => {
+  test.use({ viewport: { width: 320, height: 568 }, hasTouch: true })
+
+  test('a vertical touch drag inside the list scrolls it and stays locked', async ({ page }) => {
+    await page.goto('/')
+    await expect(lockHint(page)).toBeVisible()
+    const list = page.locator('[data-card]').first().locator('xpath=ancestor::ul[1]')
+    expect(await list.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true)
+    const from = await centreOf(list)
+    await touchDrag(page, from, { x: from.x, y: from.y - 80 })
+    expect(await list.evaluate((el) => el.scrollTop)).toBeGreaterThan(0)
+    await expect(lockHint(page)).toBeVisible()
+  })
+
+  test('a horizontal touch drag on a card still dismisses it when the list scrolls', async ({ page }) => {
+    await page.goto('/')
+    await expect(lockHint(page)).toBeVisible()
+    const card = page.locator('[data-card]').first()
+    const title = (await card.locator('p').first().textContent()) ?? ''
+    const from = await centreOf(card)
+    await touchDrag(page, from, { x: from.x - 120, y: from.y })
+    await expect(page.locator('[data-card]').filter({ hasText: title })).toHaveCount(0)
+    await expect(lockHint(page)).toBeVisible()
+  })
+
+  test('a vertical touch drag from the clock unlocks', async ({ page }) => {
+    await page.goto('/')
+    await expect(lockHint(page)).toBeVisible()
+    const clock = await page.locator('p', { hasText: /^\d{2}:\d{2}$/ }).boundingBox()
+    if (!clock) throw new Error('no clock box')
+    const x = clock.x + clock.width / 2
+    await touchDrag(page, { x, y: clock.y + clock.height - 4 }, { x, y: 0 })
+    await expect(lockHint(page)).toBeHidden()
+  })
+})
+
 test.describe('phone portrait', () => {
   test.use({ viewport: { width: 390, height: 844 } })
+
+  test('Escape closes the sheet inside Mail first, keeps the draft, and a second Escape closes Mail', async ({
+    page,
+  }) => {
+    await unlockMobile(page)
+    await dock(page).getByRole('button', { name: 'Mail', exact: true }).click()
+    const mail = page.getByRole('dialog', { name: 'Mail', exact: true })
+    await expect(mail).toBeVisible()
+    await mail.getByRole('textbox', { name: 'Subject' }).fill('Hello')
+    await mail.getByRole('textbox', { name: 'Message' }).fill('Hello draft')
+    await mail.getByRole('button', { name: 'Send' }).click()
+    const finish = page.getByRole('dialog', { name: 'Finish in your email app' })
+    await expect(finish).toBeVisible()
+
+    await page.keyboard.press('Escape')
+    await expect(finish).toBeHidden()
+    await expect(mail).toBeVisible()
+    await expect(mail.getByRole('textbox', { name: 'Message' })).toHaveValue('Hello draft')
+
+    await page.keyboard.press('Escape')
+    await expect(mail).toBeHidden()
+    await expect(dock(page)).toBeVisible()
+  })
 
   test('Enter on the lock screen unlocks without also opening the home control focus moves to', async ({ page }) => {
     await page.goto('/')

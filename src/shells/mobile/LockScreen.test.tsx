@@ -21,6 +21,7 @@ afterEach(() => {
   vi.useRealTimers()
   vi.restoreAllMocks()
   document.documentElement.classList.remove('reduce-motion')
+  delete (HTMLElement.prototype as unknown as Record<string, unknown>).scrollHeight
   resetSystem()
 })
 
@@ -153,6 +154,19 @@ describe('LockScreen', () => {
     act(() => vi.advanceTimersByTime(300))
     expect(content().style.transform).toBe('none')
     expect(isLocked()).toBe(true)
+  })
+
+  it('touch scrolling is offered only when the list overflows; otherwise its cards and the list keep touch for the unlock drag', () => {
+    const list = () => screen.getByText('Welcome to bymaxOS').closest('ul') as HTMLElement
+    const { unmount } = render(<LockScreen />)
+    expect(list()).toHaveClass('touch-none')
+    expect(card('Welcome to bymaxOS')).toHaveClass('touch-none')
+    unmount()
+
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', { configurable: true, get: () => 999 })
+    render(<LockScreen />)
+    expect(list()).toHaveClass('touch-pan-y')
+    expect(card('Welcome to bymaxOS')).toHaveClass('touch-pan-y')
   })
 
   it('a vertical drag that starts on a card unlocks', () => {

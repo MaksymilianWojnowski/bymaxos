@@ -7,12 +7,25 @@ import type { WindowSpec } from '../../system/types'
 import { AppScreen } from './AppScreen'
 import { MobileShell } from './MobileShell'
 
-vi.mock('../../apps/registry', () => {
+vi.mock('../../apps/registry', async () => {
+  const { createPortal } = await import('react-dom')
+  // Like Mail's own sheet, a portal: its keys reach the app's React tree without reaching its DOM.
+  const mailWithSheet = () => (
+    <>
+      <p>mail content</p>
+      {createPortal(
+        <div role="dialog" aria-label="Finish in your email app">
+          <p>Draft</p>
+        </div>,
+        document.body,
+      )}
+    </>
+  )
   const app = (id: string, name: string, presentation?: 'sheet') => ({
     id,
     name,
     icon: { glyph: () => null, background: '#000' },
-    load: () => Promise.resolve({ default: () => <p>{`${id} content`}</p> }),
+    load: () => Promise.resolve({ default: id === 'mail' ? mailWithSheet : () => <p>{`${id} content`}</p> }),
     window: {
       defaultSize: { w: 600, h: 400 },
       minSize: { w: 300, h: 200 },
@@ -143,6 +156,16 @@ describe('AppScreen', () => {
     useSystem.getState().openMobileApp('mail')
     render(<AppScreen />)
     fireEvent.keyDown(await screen.findByRole('dialog', { name: 'Mail' }), { key: 'Escape' })
+    expect(useSystem.getState().mobileHome).toBe(true)
+  })
+
+  it('Escape from a sheet inside the Mail app closes only that sheet, not Mail', async () => {
+    useSystem.getState().openMobileApp('mail')
+    render(<AppScreen />)
+    await screen.findByText('mail content')
+    fireEvent.keyDown(screen.getByRole('dialog', { name: 'Finish in your email app' }), { key: 'Escape' })
+    expect(useSystem.getState().mobileHome).toBe(false)
+    fireEvent.keyDown(screen.getByRole('dialog', { name: 'Mail' }), { key: 'Escape' })
     expect(useSystem.getState().mobileHome).toBe(true)
   })
 

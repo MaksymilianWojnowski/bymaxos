@@ -50,6 +50,34 @@ export async function dragBy(page: Page, from: Locator, dx: number, dy: number):
   await page.mouse.up()
 }
 
+// A real touch drag over CDP. Touch-action decides whether the browser keeps the pointer or scrolls, which mouse events never exercise.
+export async function touchDrag(
+  page: Page,
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  steps = 12,
+): Promise<void> {
+  const cdp = await page.context().newCDPSession(page)
+  try {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] })
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps
+      const point = { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point] })
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  } finally {
+    await cdp.detach()
+  }
+}
+
+// The centre of an element's box, for aiming a touch drag.
+export async function centreOf(locator: Locator): Promise<{ x: number; y: number }> {
+  const box = await locator.boundingBox()
+  if (!box) throw new Error('element has no box')
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+}
+
 // Serious and critical axe results, as "rule: selectors" strings for readable failures.
 export async function seriousViolations(page: Page): Promise<string[]> {
   const results = await new AxeBuilder({ page }).analyze()

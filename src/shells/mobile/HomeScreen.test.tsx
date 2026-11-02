@@ -162,7 +162,10 @@ describe('HomeScreen', () => {
 
   it('dock buttons show a light-theme-safe accent focus ring; grid tiles keep the white one over the wallpaper', () => {
     renderHome()
-    expect(screen.getByRole('button', { name: 'Mail' })).toHaveClass('focus-visible:ring-accent-link')
+    expect(screen.getByRole('button', { name: 'Mail' })).toHaveClass(
+      'focus-visible:ring-accent-link',
+      'dark:focus-visible:ring-white',
+    )
     expect(screen.getByRole('button', { name: 'Mail' })).not.toHaveClass('focus-visible:ring-white')
     expect(screen.getByRole('button', { name: /— open Resume$/ })).toHaveClass('focus-visible:ring-white')
   })

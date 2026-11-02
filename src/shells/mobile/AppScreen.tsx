@@ -95,7 +95,8 @@ export function AppScreen() {
           aria-modal="true"
           aria-label={app.name}
           onKeyDown={(e) => {
-            if (e.key === 'Escape') goHome()
+            // Keys from the app's own portalled sheets bubble here through React, so only keys from inside this DOM count.
+            if (e.key === 'Escape' && e.currentTarget.contains(e.target as Node)) goHome()
           }}
           className={`relative flex min-h-0 flex-1 flex-col rounded-t-xl bg-window pb-[env(safe-area-inset-bottom)] ${INSET}`}
         >
