@@ -231,7 +231,7 @@ test.describe('phone portrait', () => {
     await expect(search).toBeHidden()
     await expect(page.getByRole('button', { name: 'Home', exact: true })).toBeVisible()
     await expect(page.getByRole('textbox', { name: 'Note title' })).toHaveValue("What I'm looking for")
-    await expect(page.getByRole('list', { name: 'Notes' }).locator('[aria-current="true"]')).toContainText(
+    await expect(page.locator('ul[aria-label="Notes"] [aria-current="true"]')).toContainText(
       "What I'm looking for",
     )
   })
@@ -356,5 +356,39 @@ test.describe('phone landscape', () => {
     const dots = await page.getByRole('tablist', { name: 'Home screen pages' }).boundingBox()
     const search = await page.getByRole('button', { name: 'Search', exact: true }).boundingBox()
     expect(dots && search && Math.abs(dots.y + dots.height / 2 - (search.y + search.height / 2)) < 1).toBe(true)
+  })
+})
+
+// Real touch on Notes at phone size: pointer capture must not eat the edge tap on Back, and New Note must slide the editor in without scrolling the stack.
+test.describe('Notes stack touch at 390x844', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
+
+  test('tapping Back at x=10 returns to the list', async ({ page }) => {
+    await unlockMobile(page)
+    await page.getByRole('button', { name: 'Notes', exact: true }).click()
+    await page.getByRole('list', { name: 'Notes' }).getByRole('button').first().click()
+    const title = page.getByRole('textbox', { name: 'Note title' })
+    await expect(title).toBeVisible()
+    // The editor slides in over 220ms; a tap mid-slide lands on the list behind it.
+    await expect(title.locator('xpath=ancestor::div[@data-detail-pane][1]')).toHaveCSS('translate', 'none')
+    const { y } = await centreOf(page.getByRole('button', { name: 'Back', exact: true }))
+    await page.touchscreen.tap(10, y)
+    await expect(title).toBeHidden()
+    await expect(page.getByRole('list', { name: 'Notes' })).toBeVisible()
+  })
+
+  test('New Note leaves the panes in place, and the detail slides', async ({ page }) => {
+    await unlockMobile(page)
+    await page.getByRole('button', { name: 'Notes', exact: true }).click()
+    await page.getByRole('button', { name: 'New Note', exact: true }).click()
+    const title = page.getByRole('textbox', { name: 'Note title' })
+    await expect(title).toBeVisible()
+    const detail = title.locator('xpath=ancestor::div[@data-detail-pane][1]')
+    expect(await detail.locator('xpath=..').evaluate((el) => el.scrollLeft)).toBe(0)
+    const box = await title.boundingBox()
+    expect(box && box.x >= 0 && box.x < 390).toBe(true)
+    const style = await detail.evaluate((el) => getComputedStyle(el))
+    expect(style.transitionProperty).toContain('translate')
+    expect(style.transitionDuration).toBe('0.22s')
   })
 })

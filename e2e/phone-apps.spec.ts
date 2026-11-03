@@ -2,7 +2,26 @@ import { expect, test, type Page } from '@playwright/test'
 import { phoneAudit, unlockMobile } from './helpers.ts'
 
 // Each phone app task appends its states here; every state is audited at both phone sizes.
-const PHONE_STATES: { name: string; open: (page: Page) => Promise<void> }[] = [{ name: 'Home screen', open: async () => {} }]
+const openNotes = async (page: Page) => {
+  await page.getByRole('button', { name: 'Notes', exact: true }).click()
+  await expect(page.getByRole('list', { name: 'Notes' })).toBeVisible()
+}
+
+const PHONE_STATES: { name: string; open: (page: Page) => Promise<void> }[] = [
+  { name: 'Home screen', open: async () => {} },
+  { name: 'Notes list', open: openNotes },
+  {
+    name: 'Notes editor',
+    open: async (page) => {
+      await openNotes(page)
+      await page.getByRole('list', { name: 'Notes' }).getByRole('button').first().click()
+      const title = page.getByRole('textbox', { name: 'Note title' })
+      await expect(title).toBeVisible()
+      // Audit only once the editor has slid in; mid-slide it sits past the right edge.
+      await expect(title.locator('xpath=ancestor::div[@data-detail-pane][1]')).toHaveCSS('translate', 'none')
+    },
+  },
+]
 
 test.describe('phone foundations at 390x844', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })

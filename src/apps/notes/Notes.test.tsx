@@ -5,6 +5,7 @@ import { getContent } from '../../content'
 import { dispatch } from '../../system/commands'
 import { KEYS } from '../../system/storage'
 import { resetSystem, useSystem } from '../../system/store'
+import { mockPhone } from '../../test/mockPhone'
 import '../registry'
 import NotesApp from './Notes'
 
@@ -33,6 +34,7 @@ afterEach(() => {
   cleanup()
   delete (navigator as { clipboard?: unknown }).clipboard
   vi.useRealTimers()
+  vi.restoreAllMocks()
 })
 
 describe('Notes', () => {
@@ -208,5 +210,76 @@ describe('Notes', () => {
 
     view.rerender(<NotesApp windowId={windowId} props={{ item: lookingFor.id }} />)
     expect(titleField()).toHaveValue(lookingFor.title)
+  })
+})
+
+describe('Notes on a phone', () => {
+  const editorHidden = () => expect(screen.queryByRole('textbox', { name: 'Note title' })).not.toBeInTheDocument()
+
+  it('phone: starts on the list, and tapping a note opens its editor', async () => {
+    mockPhone()
+    const user = userEvent.setup()
+    openNotes()
+    expect(screen.getByRole('list', { name: 'Notes' })).toBeInTheDocument()
+    editorHidden()
+    await user.click(within(screen.getByRole('list', { name: 'Notes' })).getByRole('button', { name: new RegExp(workingStyle.title) }))
+    expect(titleField()).toHaveValue(workingStyle.title)
+  })
+
+  it('phone: New Note opens the editor with the body focused', async () => {
+    mockPhone()
+    const user = userEvent.setup()
+    openNotes()
+    await user.click(screen.getByRole('button', { name: 'New Note' }))
+    expect(screen.queryByRole('list', { name: 'Notes' })).not.toBeInTheDocument()
+    expect(titleField()).toHaveValue('New Note')
+    expect(bodyField()).toHaveFocus()
+  })
+
+  it('phone: deleting the open note returns to the list with focus on a control', async () => {
+    mockPhone()
+    const user = userEvent.setup()
+    openNotes()
+    await user.click(screen.getByRole('button', { name: 'New Note' }))
+    await user.click(screen.getByRole('button', { name: 'Delete note' }))
+    editorHidden()
+    expect(screen.getByRole('searchbox', { name: 'Search notes' })).toHaveFocus()
+  })
+
+  it('phone: opening with an item starts in the editor', () => {
+    mockPhone()
+    openNotes({ item: lookingFor.id })
+    expect(screen.queryByRole('list', { name: 'Notes' })).not.toBeInTheDocument()
+    expect(titleField()).toHaveValue(lookingFor.title)
+  })
+
+  it('phone: a repeat open with the same item reopens the editor after Back', async () => {
+    mockPhone()
+    const user = userEvent.setup()
+    const windowId = useSystem.getState().openApp('notes', { item: lookingFor.id }) as string
+    const view = render(<NotesApp windowId={windowId} props={{ item: lookingFor.id }} />)
+    expect(titleField()).toHaveValue(lookingFor.title)
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    editorHidden()
+
+    view.rerender(<NotesApp windowId={windowId} props={{ item: lookingFor.id }} />)
+    expect(titleField()).toHaveValue(lookingFor.title)
+  })
+
+  it('phone: no Folders list is rendered', () => {
+    mockPhone()
+    openNotes()
+    expect(screen.queryByRole('list', { name: 'Folders' })).not.toBeInTheDocument()
+  })
+
+  it('phone: Restore originals stays on the list screen', async () => {
+    mockPhone()
+    const user = userEvent.setup()
+    openNotes()
+    await user.click(screen.getByRole('button', { name: 'Restore originals' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Restore' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    editorHidden()
+    expect(screen.getByRole('list', { name: 'Notes' })).toBeInTheDocument()
   })
 })
