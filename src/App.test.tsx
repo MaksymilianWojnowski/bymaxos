@@ -39,6 +39,18 @@ it('renders the bymaxOS root', () => {
   expect(screen.getByTestId('bymaxos-root')).toBeInTheDocument()
 })
 
+it('sets data-shell to desktop, and to mobile after the narrow query flips', () => {
+  render(<App />)
+  expect(document.documentElement.dataset.shell).toBe('desktop')
+
+  narrow = true
+  act(() => {
+    listeners.forEach((fn) => fn())
+  })
+
+  expect(document.documentElement.dataset.shell).toBe('mobile')
+})
+
 it('switching the shell from desktop to mobile keeps the open windows (the focused one is shown)', async () => {
   resetSystem()
   useSystem.setState({ locked: false })

@@ -3,6 +3,12 @@
 
 /* dark: follows the app theme set on <html>, not the OS colour scheme. */
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+@custom-variant phone (&:where([data-shell=mobile] *));
+
+/* Unlayered so it outranks utilities. iOS Safari zooms the page when it focuses a smaller field. */
+[data-shell='mobile'] :is(input, textarea, select) {
+  font-size: max(16px, 1em);
+}
 
 html.reduce-motion *,
 html.reduce-motion *::before,

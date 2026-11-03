@@ -86,6 +86,41 @@ export async function seriousViolations(page: Page): Promise<string[]> {
     .map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)
 }
 
+export type PhoneAudit = { smallTargets: string[]; overflowing: string[] }
+
+// Layout checks for a phone state: touch targets under 44px and anything past the viewport's right edge.
+export async function phoneAudit(page: Page): Promise<PhoneAudit> {
+  return page.evaluate(() => {
+    // The accessible name when it is easy to read (aria-label, else trimmed text), else the tag.
+    const describe = (el: Element) => {
+      const label = el.getAttribute('aria-label')?.trim() || (el.textContent ?? '').trim()
+      return label ? `${el.tagName.toLowerCase()} "${label}"` : el.tagName.toLowerCase()
+    }
+    const targets = 'button, a[href], input, select, textarea, [role=option], [role=tab], [role=radio], [role=switch]'
+    const smallTargets: string[] = []
+    for (const el of document.querySelectorAll(targets)) {
+      if (el.matches('article a') || el.getClientRects().length === 0) continue
+      const box = el.getBoundingClientRect()
+      if (box.width < 44 || box.height < 44) {
+        smallTargets.push(`${describe(el)} ${Math.round(box.width)}x${Math.round(box.height)}`)
+      }
+    }
+    const overflowing: string[] = []
+    const width = window.innerWidth
+    for (const el of document.querySelectorAll('body *')) {
+      if (el.getClientRects().length === 0 || el.closest('[inert]')) continue
+      if (el.getBoundingClientRect().right <= width + 1) continue
+      let scroller = el.parentElement
+      while (scroller && !['auto', 'scroll'].includes(getComputedStyle(scroller).overflowX)) scroller = scroller.parentElement
+      if (!scroller) overflowing.push(describe(el))
+    }
+    if (document.documentElement.scrollWidth > width) {
+      overflowing.push(`document scrollWidth ${document.documentElement.scrollWidth} > ${width}`)
+    }
+    return { smallTargets, overflowing }
+  })
+}
+
 // One window at a time: a covered window gets "incomplete" contrast results instead of violations, so it would pass silently.
 // `prepare` runs once the window is open, to reach a state worth scanning (e.g. a selected item).
 export async function scanWindow(page: Page, name: string, prepare?: (win: Locator) => Promise<void>): Promise<void> {
