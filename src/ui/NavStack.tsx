@@ -3,6 +3,9 @@ import { flushSync } from 'react-dom'
 import { ChevronLeft } from 'lucide-react'
 import { EDGE_WIDTH, releaseVelocity, shouldEdgeBack, type Sample } from '../shells/mobile/gestures'
 
+// Smaller sideways movement is still a tap, so it neither captures the pointer nor moves the pane.
+const DRAG_SLOP = 8
+
 interface Props {
   title: string
   listActions?: ReactNode
@@ -22,7 +25,8 @@ export function NavStack({ title, listActions, list, open, detailTitle, detailAc
   const heading = useRef<HTMLHeadingElement>(null)
   const opener = useRef<HTMLElement | null>(null)
   const wasOpen = useRef(open)
-  const gesture = useRef<{ startX: number; startY: number; samples: Sample[] } | null>(null)
+  const scroller = useRef<HTMLDivElement>(null)
+  const gesture = useRef<{ pointerId: number; startX: number; startY: number; samples: Sample[] } | null>(null)
 
   // Focus moves only when open changes, and not when a child already took focus inside the detail.
   useEffect(() => {
@@ -37,13 +41,14 @@ export function NavStack({ title, listActions, list, open, detailTitle, detailAc
     // Focus can only land once the list pane is no longer inert, so the state change commits first.
     flushSync(onBack)
     const row = opener.current
-    const target = row?.isConnected ? row : listPane.current?.querySelector<HTMLElement>('button, input')
+    const control = listPane.current?.querySelector<HTMLElement>('button:not(:disabled), input:not(:disabled)')
+    const target = row?.isConnected ? row : (control ?? scroller.current)
     target?.focus()
   }
 
   const clearDrag = () => {
     if (!detailPane.current) return
-    detailPane.current.style.transform = ''
+    detailPane.current.style.translate = ''
     detailPane.current.style.transition = ''
   }
 
@@ -53,34 +58,37 @@ export function NavStack({ title, listActions, list, open, detailTitle, detailAc
   }
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    if (!open || e.clientX > EDGE_WIDTH) return
-    e.currentTarget.setPointerCapture?.(e.pointerId)
-    gesture.current = { startX: e.clientX, startY: e.clientY, samples: [{ y: -e.clientX, t: e.timeStamp }] }
+    // A second pointer while a gesture runs must not overwrite it.
+    if (!open || e.clientX > EDGE_WIDTH || gesture.current) return
+    gesture.current = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, samples: [{ y: -e.clientX, t: e.timeStamp }] }
   }
 
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
     const g = gesture.current
-    if (!g) return
+    if (!g || e.pointerId !== g.pointerId) return
     const dx = e.clientX - g.startX
     const dy = e.clientY - g.startY
     g.samples = [...g.samples.filter((s) => e.timeStamp - s.t <= 100), { y: -e.clientX, t: e.timeStamp }]
-    if (dx > Math.abs(dy) && detailPane.current) {
+    if (dx > Math.abs(dy) && dx > DRAG_SLOP && detailPane.current) {
+      // Capture only once the drag is real, so a tap on the Back button still reaches it as a click.
+      e.currentTarget.setPointerCapture?.(e.pointerId)
       detailPane.current.style.transition = 'none'
-      detailPane.current.style.transform = `translateX(${dx}px)`
+      detailPane.current.style.translate = `${dx}px`
     }
   }
 
   const onPointerUp = (e: PointerEvent<HTMLDivElement>) => {
     const g = gesture.current
+    if (!g || e.pointerId !== g.pointerId) return
     gesture.current = null
     clearDrag()
-    if (!g) return
     const width = root.current?.offsetWidth ?? 0
     const dx = e.clientX - g.startX
     if (shouldEdgeBack(g.startX, dx, e.clientY - g.startY, width, releaseVelocity(g.samples, e.timeStamp))) goBack()
   }
 
-  const onPointerCancel = () => {
+  const onPointerCancel = (e: PointerEvent<HTMLDivElement>) => {
+    if (e.pointerId !== gesture.current?.pointerId) return
     gesture.current = null
     clearDrag()
   }
@@ -88,7 +96,7 @@ export function NavStack({ title, listActions, list, open, detailTitle, detailAc
   return (
     <div
       ref={root}
-      className="relative h-full overflow-hidden"
+      className="relative h-full overflow-clip"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -109,6 +117,7 @@ export function NavStack({ title, listActions, list, open, detailTitle, detailAc
           <div className="flex min-w-11 justify-end">{listActions}</div>
         </header>
         <div
+          ref={scroller}
           tabIndex={0}
           className="min-h-0 flex-1 touch-pan-y overflow-y-auto focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-link focus-visible:outline-none"
         >
@@ -122,7 +131,7 @@ export function NavStack({ title, listActions, list, open, detailTitle, detailAc
         inert={!open}
         aria-hidden={!open || undefined}
         onKeyDown={onDetailKey}
-        className={`absolute inset-0 flex touch-pan-y flex-col bg-window transition-[transform,visibility] duration-[220ms] ${open ? '' : 'invisible translate-x-full'}`}
+        className={`absolute inset-0 flex touch-pan-y flex-col bg-window transition-[translate,visibility] duration-[220ms] ${open ? '' : 'invisible translate-x-full'}`}
       >
         <header className="flex h-11 shrink-0 items-center px-1">
           <button

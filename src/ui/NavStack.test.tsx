@@ -28,13 +28,20 @@ function Harness({ rows, detail = <p>Body</p> }: { rows: string[]; detail?: Reac
 }
 
 // Pointer events carry their coordinates and timestamp; jsdom has no real timing.
-const pointer = (type: 'pointerDown' | 'pointerMove' | 'pointerUp' | 'pointerCancel', node: Element, x: number, y: number, t: number) => {
-  const event = createEvent[type](node, { clientX: x, clientY: y, pointerId: 1 })
+const pointer = (
+  type: 'pointerDown' | 'pointerMove' | 'pointerUp' | 'pointerCancel',
+  node: Element,
+  x: number,
+  y: number,
+  t: number,
+  pointerId = 1,
+) => {
+  const event = createEvent[type](node, { clientX: x, clientY: y, pointerId })
   Object.defineProperty(event, 'timeStamp', { value: t })
   fireEvent(node, event)
 }
 
-const root = () => document.querySelector('.relative.h-full.overflow-hidden') as HTMLElement
+const root = () => document.querySelector('.relative.h-full.overflow-clip') as HTMLElement
 const detailPane = () => screen.getByText('Body').closest('[data-detail-pane]') as HTMLElement
 
 function stubWidth() {
@@ -145,8 +152,61 @@ describe('NavStack', () => {
     stubWidth()
     pointer('pointerDown', screen.getByText('Body'), 10, 100, 0)
     pointer('pointerMove', screen.getByText('Body'), 100, 100, 16)
-    expect(detailPane().style.transform).toBe('translateX(90px)')
+    expect(detailPane().style.translate).toBe('90px')
     pointer('pointerCancel', screen.getByText('Body'), 100, 100, 16)
-    expect(detailPane().style.transform).toBe('')
+    expect(detailPane().style.translate).toBe('')
+    expect(detailPane().style.transition).toBe('')
+  })
+
+  it('the detail slides on translate for 220ms', () => {
+    render(
+      <NavStack title="Notes" list={<p>Row</p>} open detailTitle="Detail" onBack={() => {}} detail={<p>Body</p>} />,
+    )
+    expect(detailPane()).toHaveClass('transition-[translate,visibility]', 'duration-[220ms]')
+  })
+
+  it('a tap on Back at the left edge goes back once', () => {
+    const onBack = vi.fn()
+    render(
+      <NavStack title="Notes" list={<p>Row</p>} open detailTitle="Detail" onBack={onBack} detail={<p>Body</p>} />,
+    )
+    const capture = vi.fn()
+    Object.defineProperty(Element.prototype, 'setPointerCapture', { configurable: true, value: capture })
+    const back = screen.getByRole('button', { name: 'Back' })
+    pointer('pointerDown', back, 10, 20, 0)
+    pointer('pointerUp', back, 10, 20, 30)
+    fireEvent.click(back)
+    expect(onBack).toHaveBeenCalledTimes(1)
+    expect(capture).not.toHaveBeenCalled()
+    delete (Element.prototype as unknown as Record<string, unknown>).setPointerCapture
+  })
+
+  it('a second pointer neither ends nor overwrites the edge gesture', () => {
+    const onBack = vi.fn()
+    render(
+      <NavStack title="Notes" list={<p>Row</p>} open detailTitle="Detail" onBack={onBack} detail={<p>Body</p>} />,
+    )
+    stubWidth()
+    const body = screen.getByText('Body')
+    pointer('pointerDown', body, 10, 100, 0, 1)
+    pointer('pointerDown', body, 10, 100, 5, 2)
+    pointer('pointerMove', body, 300, 100, 10, 2)
+    pointer('pointerUp', body, 300, 100, 10, 2)
+    expect(onBack).not.toHaveBeenCalled()
+    expect(detailPane().style.translate).toBe('')
+    pointer('pointerMove', body, 200, 100, 50, 1)
+    pointer('pointerUp', body, 200, 100, 50, 1)
+    expect(onBack).toHaveBeenCalledTimes(1)
+  })
+
+  it('falls back to the list scroller when the list has no controls', () => {
+    const { rerender } = render(<Harness rows={['A']} />)
+    fireEvent.click(screen.getByRole('button', { name: 'A' }))
+    rerender(<Harness rows={[]} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    const active = document.activeElement as HTMLElement
+    expect(active).not.toBe(document.body)
+    expect(active.getAttribute('tabindex')).toBe('0')
+    expect(screen.getByRole('heading', { name: 'Notes', hidden: true }).closest('header')?.parentElement).toContainElement(active)
   })
 })
