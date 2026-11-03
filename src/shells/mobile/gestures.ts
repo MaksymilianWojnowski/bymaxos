@@ -30,3 +30,12 @@ export function releaseVelocity(samples: Sample[], releaseT: number): number {
   const dt = last.t - first.t
   return dt > 0 ? (first.y - last.y) / dt : 0
 }
+
+// A swipe back starts within this many px of the left edge.
+export const EDGE_WIDTH = 24
+
+// dx and dy are the drag from its start, velocity is rightward px/ms: a drag past 30% of the width, or a flick of at least 5%.
+export function shouldEdgeBack(startX: number, dx: number, dy: number, width: number, velocity: number): boolean {
+  if (startX > EDGE_WIDTH || dx <= 0 || dx <= Math.abs(dy)) return false
+  return dx >= width * 0.3 || (velocity >= 0.5 && dx >= width * 0.05)
+}

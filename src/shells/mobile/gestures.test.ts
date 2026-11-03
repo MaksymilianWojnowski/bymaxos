@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pageFromScroll, releaseVelocity, rubberBand, shouldUnlock } from './gestures'
+import { pageFromScroll, releaseVelocity, rubberBand, shouldEdgeBack, shouldUnlock } from './gestures'
 
 describe('pageFromScroll', () => {
   it('picks the nearest page and clamps to the first and last', () => {
@@ -65,5 +65,27 @@ describe('shouldUnlock', () => {
 
   it('never unlocks on a downward drag', () => {
     expect(shouldUnlock(-50, 800, 2)).toBe(false)
+  })
+})
+
+describe('shouldEdgeBack', () => {
+  it('edge swipe past 30% goes back', () => {
+    expect(shouldEdgeBack(10, 120, 5, 390, 0)).toBe(true)
+  })
+
+  it('a flick past 5% goes back', () => {
+    expect(shouldEdgeBack(10, 25, 0, 390, 0.5)).toBe(true)
+  })
+
+  it('a start beyond 24px does not', () => {
+    expect(shouldEdgeBack(30, 200, 0, 390, 2)).toBe(false)
+  })
+
+  it('a mostly vertical drag does not', () => {
+    expect(shouldEdgeBack(10, 100, 120, 390, 2)).toBe(false)
+  })
+
+  it('a leftward drag does not', () => {
+    expect(shouldEdgeBack(10, -200, 0, 390, 2)).toBe(false)
   })
 })
