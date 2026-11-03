@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useReducer, useRef, type PointerEvent } from 'react'
+import { Suspense, useEffect, useReducer, useRef, useState, type PointerEvent } from 'react'
 import { X } from 'lucide-react'
 import { getApp } from '../../apps/registry'
 import type { AppDefinition } from '../../apps/types'
@@ -38,11 +38,29 @@ function mountApp(app: AppDefinition, win: WindowState, rerender: () => void) {
   )
 }
 
-// The focused window's app, full screen; a sheet presentation (Mail) floats over the home screen instead.
+// Every window the phone has shown keeps its screen mounted, so its state survives going home; only the active one is visible.
 export function AppScreen() {
-  const win = useSystem((s) => s.wm.windows.find((w) => w.id === s.wm.focusedId))
+  const windows = useSystem((s) => s.wm.windows)
+  const focusedId = useSystem((s) => s.wm.focusedId)
+  const mobileHome = useSystem((s) => s.mobileHome)
+  const activeId = mobileHome ? undefined : focusedId
+  const [visited, setVisited] = useState<string[]>([])
+  // Adjusted during render (not in an effect) so the new screen mounts in the same pass.
+  if (activeId && !visited.includes(activeId)) setVisited([...visited, activeId])
+  return (
+    <>
+      {windows
+        .filter((w) => visited.includes(w.id))
+        .map((w) => (
+          <WindowScreen key={w.id} win={w} active={w.id === activeId} />
+        ))}
+    </>
+  )
+}
+
+// One window's screen: full screen, or a sheet presentation (Mail) that floats over the home screen.
+function WindowScreen({ win, active }: { win: WindowState; active: boolean }) {
   const goHome = useSystem((s) => s.goHome)
-  const winId = win?.id
   const rootRef = useRef<HTMLDivElement>(null)
   const regionRef = useRef<HTMLDivElement>(null)
   const homeStart = useRef<number | null>(null)
@@ -50,9 +68,9 @@ export function AppScreen() {
   // A reset drops the cached lazy component; this re-render makes the screen pick up the fresh one.
   const [, rerender] = useReducer((n: number) => n + 1, 0)
 
-  // Each opened app takes focus, so keyboard and screen reader users land in it.
+  // Each app that becomes active takes focus, so keyboard and screen reader users land in it.
   useEffect(() => {
-    if (!winId) return
+    if (!active) return
     regionRef.current?.focus({ preventScroll: true })
     const el = rootRef.current
     if (document.documentElement.classList.contains('reduce-motion') || !el || typeof el.animate !== 'function') return
@@ -64,10 +82,10 @@ export function AppScreen() {
       { duration: 220, easing: 'ease-out' },
     )
     return () => anim.cancel()
-  }, [winId])
+  }, [active])
 
-  const app = win && getApp(win.appId)
-  if (!win || !app) return null
+  const app = getApp(win.appId)
+  if (!app) return null
   const sheet = app.mobile?.presentation === 'sheet'
 
   // The sheet's dialog takes the inset itself, so its header and content share one edge.
@@ -85,7 +103,12 @@ export function AppScreen() {
 
   if (sheet) {
     return (
-      <div ref={rootRef} className="absolute inset-0 flex flex-col">
+      <div
+        ref={rootRef}
+        inert={!active}
+        aria-hidden={active ? undefined : 'true'}
+        className={`absolute inset-0 flex flex-col ${active ? '' : 'invisible'}`}
+      >
         <div aria-hidden="true" className="absolute inset-0 bg-black/40" />
         <div className="relative bg-window">
           <StatusBar />
@@ -119,7 +142,12 @@ export function AppScreen() {
   }
 
   return (
-    <div ref={rootRef} className="absolute inset-0 flex flex-col bg-window">
+    <div
+      ref={rootRef}
+      inert={!active}
+      aria-hidden={active ? undefined : 'true'}
+      className={`absolute inset-0 flex flex-col bg-window ${active ? '' : 'invisible'}`}
+    >
       <StatusBar />
       {region}
       <div className="flex flex-col items-center pb-[env(safe-area-inset-bottom)]">

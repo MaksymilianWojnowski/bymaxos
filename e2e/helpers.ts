@@ -91,15 +91,17 @@ export type PhoneAudit = { smallTargets: string[]; overflowing: string[] }
 // Layout checks for a phone state: touch targets under 44px and anything past the viewport's right edge.
 export async function phoneAudit(page: Page): Promise<PhoneAudit> {
   return page.evaluate(() => {
-    // The accessible name when it is easy to read (aria-label, else trimmed text), else the tag.
+    // The accessible name when it is easy to read (aria-label, else trimmed text), cut to 40 characters, else the tag.
     const describe = (el: Element) => {
-      const label = el.getAttribute('aria-label')?.trim() || (el.textContent ?? '').trim()
+      const label = (el.getAttribute('aria-label')?.trim() || (el.textContent ?? '').trim()).slice(0, 40)
       return label ? `${el.tagName.toLowerCase()} "${label}"` : el.tagName.toLowerCase()
     }
     const targets = 'button, a[href], input, select, textarea, [role=option], [role=tab], [role=radio], [role=switch]'
     const smallTargets: string[] = []
     for (const el of document.querySelectorAll(targets)) {
+      // Kept-mounted apps behind the active one are inert and invisible, so they are not on screen.
       if (el.matches('article a') || el.getClientRects().length === 0) continue
+      if (el.closest('[inert]') || getComputedStyle(el).visibility === 'hidden') continue
       const box = el.getBoundingClientRect()
       if (box.width < 44 || box.height < 44) {
         smallTargets.push(`${describe(el)} ${Math.round(box.width)}x${Math.round(box.height)}`)

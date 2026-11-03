@@ -289,6 +289,33 @@ test.describe('phone portrait', () => {
   }
 })
 
+test.describe('phone apps stay mounted', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test('Terminal keeps its output, and the Mail draft survives closing the sheet', async ({ page }) => {
+    await unlockMobile(page)
+    await page.getByRole('button', { name: 'Terminal', exact: true }).click()
+    const input = page.getByRole('textbox', { name: 'Terminal input' })
+    await input.fill('whoami')
+    await input.press('Enter')
+    await expect(page.getByLabel('Terminal output')).toContainText('whoami')
+
+    await page.getByRole('button', { name: 'Home', exact: true }).click()
+    await expect(dock(page)).toBeVisible()
+    await dock(page).getByRole('button', { name: 'Mail', exact: true }).click()
+    const mail = page.getByRole('dialog', { name: 'Mail', exact: true })
+    await mail.getByRole('textbox', { name: 'Message' }).fill('Hello draft')
+    await mail.getByRole('button', { name: 'Close', exact: true }).click()
+    await expect(mail).toBeHidden()
+    await dock(page).getByRole('button', { name: 'Mail', exact: true }).click()
+    await expect(mail.getByRole('textbox', { name: 'Message' })).toHaveValue('Hello draft')
+    await mail.getByRole('button', { name: 'Close', exact: true }).click()
+
+    await page.getByRole('button', { name: 'Terminal', exact: true }).click()
+    await expect(page.getByLabel('Terminal output')).toContainText('whoami')
+  })
+})
+
 test.describe('phone landscape', () => {
   test.use({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true })
 

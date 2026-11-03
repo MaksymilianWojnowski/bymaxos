@@ -21,11 +21,24 @@ vi.mock('../../apps/registry', async () => {
       )}
     </>
   )
+  const { useState } = await import('react')
+  // A tap count in local state, so a test can tell an app that stayed mounted from one that remounted.
+  const Page = ({ id }: { id: string }) => {
+    const [taps, setTaps] = useState(0)
+    return (
+      <>
+        <p>{`${id} content`}</p>
+        <button type="button" onClick={() => setTaps(taps + 1)}>
+          {`${id} taps ${taps}`}
+        </button>
+      </>
+    )
+  }
   const app = (id: string, name: string, presentation?: 'sheet') => ({
     id,
     name,
     icon: { glyph: () => null, background: '#000' },
-    load: () => Promise.resolve({ default: id === 'mail' ? mailWithSheet : () => <p>{`${id} content`}</p> }),
+    load: () => Promise.resolve({ default: id === 'mail' ? mailWithSheet : () => <Page id={id} /> }),
     window: {
       defaultSize: { w: 600, h: 400 },
       minSize: { w: 300, h: 200 },
@@ -193,5 +206,78 @@ describe('AppScreen', () => {
     })
     expect(await screen.findByText('resume content')).toBeInTheDocument()
     expect(useSystem.getState().wm.windows).toHaveLength(2)
+  })
+
+  it('keeps an app\'s local state after going home and coming back', async () => {
+    useSystem.setState({ locked: false })
+    useSystem.getState().openMobileApp('finder')
+    render(<MobileShell />)
+    fireEvent.click(await screen.findByRole('button', { name: 'finder taps 0' }))
+    fireEvent.click(screen.getByRole('button', { name: 'finder taps 1' }))
+    act(() => useSystem.getState().goHome())
+    expect(screen.getByRole('button', { name: 'finder taps 2', hidden: true })).toBeInTheDocument()
+    act(() => useSystem.getState().openMobileApp('finder'))
+    expect(screen.getByRole('button', { name: 'finder taps 2' })).toBeInTheDocument()
+  })
+
+  it('hides an inactive app from Tab and assistive tech', async () => {
+    useSystem.getState().openMobileApp('finder')
+    render(<AppScreen />)
+    await screen.findByText('finder content')
+    act(() => useSystem.getState().openMobileApp('resume'))
+    await screen.findByText('resume content')
+    expect(screen.queryByRole('region', { name: 'Finder' })).toBeNull()
+    const finder = screen.getByText('finder content').closest('[inert]')
+    expect(finder).toHaveClass('invisible')
+    expect(finder).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it('does not mount a window never shown on the phone', async () => {
+    act(() => {
+      useSystem.getState().openApp('finder')
+      useSystem.getState().openApp('resume')
+      useSystem.setState({ mobileHome: false })
+    })
+    render(<AppScreen />)
+    expect(await screen.findByText('resume content')).toBeInTheDocument()
+    expect(screen.queryByText('finder content')).toBeNull()
+  })
+
+  it('drops a closed window', async () => {
+    useSystem.getState().openMobileApp('finder')
+    render(<AppScreen />)
+    await screen.findByText('finder content')
+    const finderId = useSystem.getState().wm.windows[0].id
+    act(() => useSystem.getState().openMobileApp('resume'))
+    await screen.findByText('resume content')
+    act(() => useSystem.getState().close(finderId))
+    expect(screen.queryByText('finder content')).toBeNull()
+    expect(screen.getByText('resume content')).toBeInTheDocument()
+  })
+
+  it('moves focus to the region each time the app becomes active, and replays no animation while inactive', async () => {
+    const animate = vi.fn(() => ({ cancel() {} }))
+    Object.defineProperty(HTMLElement.prototype, 'animate', { value: animate, configurable: true })
+    try {
+      useSystem.getState().openMobileApp('finder')
+      render(<AppScreen />)
+      await screen.findByText('finder content')
+      expect(screen.getByRole('region', { name: 'Finder' })).toHaveFocus()
+      expect(animate).toHaveBeenCalledTimes(1)
+
+      act(() => useSystem.getState().openMobileApp('resume'))
+      await screen.findByText('resume content')
+      expect(screen.getByRole('region', { name: 'Resume' })).toHaveFocus()
+      expect(animate).toHaveBeenCalledTimes(2)
+
+      act(() => useSystem.getState().openMobileApp('finder'))
+      expect(screen.getByRole('region', { name: 'Finder' })).toHaveFocus()
+      expect(animate).toHaveBeenCalledTimes(3)
+
+      act(() => useSystem.getState().goHome())
+      expect(animate).toHaveBeenCalledTimes(3)
+    } finally {
+      delete (HTMLElement.prototype as { animate?: unknown }).animate
+    }
   })
 })

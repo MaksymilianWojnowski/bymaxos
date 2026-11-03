@@ -16,6 +16,7 @@ export function MobileShell() {
   const focused = useSystem((s) => s.wm.windows.find((w) => w.id === focusedId))
   const openMobileApp = useSystem((s) => s.openMobileApp)
   const homeRef = useRef<HTMLDivElement>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
   const leftHome = useRef(false)
   const wasLocked = useRef(locked)
   const seenFocus = useRef<string | null>(null)
@@ -42,6 +43,26 @@ export function MobileShell() {
     if (focusedId && focusedId !== seenFocus.current && focusedId !== homeFocus) useSystem.setState({ mobileHome: false })
     seenFocus.current = focusedId
   }, [focusedId])
+
+  // iOS keeps 100dvh at full height when the keyboard opens, so the shell follows the visual viewport instead.
+  useEffect(() => {
+    const vv = window.visualViewport
+    const el = rootRef.current
+    if (!vv || !el) return
+    // Pinch-zoom also changes the visual viewport; above scale 1 the shell keeps its height.
+    const fit = () => {
+      if (vv.scale > 1.01) return
+      el.style.height = `${vv.height}px`
+      window.scrollTo(0, 0)
+    }
+    vv.addEventListener('resize', fit)
+    vv.addEventListener('scroll', fit)
+    return () => {
+      vv.removeEventListener('resize', fit)
+      vv.removeEventListener('scroll', fit)
+      el.style.height = ''
+    }
+  }, [locked])
 
   // A deep link waits for unlock, so it opens after the lock screen is gone.
   useEffect(() => {
@@ -73,7 +94,7 @@ export function MobileShell() {
   if (locked) return <LockScreen />
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div ref={rootRef} className="relative h-full w-full overflow-hidden">
       {(showHome || sheet) && (
         <div
           ref={homeRef}
@@ -84,7 +105,7 @@ export function MobileShell() {
           <HomeScreen onSearch={() => setSearchOpen(true)} />
         </div>
       )}
-      {!showHome && <AppScreen />}
+      <AppScreen />
       {searchOpen && <MobileSearch onClose={() => setSearchOpen(false)} />}
     </div>
   )

@@ -69,6 +69,46 @@ describe('MobileShell', () => {
     expect(screen.getByRole('button', { name: 'Search' })).toHaveFocus()
   })
 
+  describe('keyboard', () => {
+    // A stand-in for the visual viewport; EventTarget gives it real resize and scroll events.
+    const stubViewport = (height: number, scale = 1) => {
+      const vv = Object.assign(new EventTarget(), { height, scale })
+      Object.defineProperty(window, 'visualViewport', { value: vv, configurable: true })
+      return vv
+    }
+
+    afterEach(() => {
+      delete (window as { visualViewport?: unknown }).visualViewport
+    })
+
+    it('root height follows visualViewport when the keyboard opens', () => {
+      useSystem.setState({ locked: false })
+      vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+      const vv = stubViewport(844)
+      const { container } = render(<MobileShell />)
+      vv.height = 400
+      vv.dispatchEvent(new Event('resize'))
+      expect((container.firstElementChild as HTMLElement).style.height).toBe('400px')
+    })
+
+    it('ignores visualViewport while pinch-zoomed', () => {
+      useSystem.setState({ locked: false })
+      vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+      const vv = stubViewport(844)
+      const { container } = render(<MobileShell />)
+      vv.scale = 2
+      vv.height = 400
+      vv.dispatchEvent(new Event('resize'))
+      expect((container.firstElementChild as HTMLElement).style.height).toBe('')
+    })
+
+    it('works when visualViewport is undefined', () => {
+      useSystem.setState({ locked: false })
+      render(<MobileShell />)
+      expect(screen.getByRole('button', { name: /— open Resume$/ })).toBeInTheDocument()
+    })
+  })
+
   describe('deep links', () => {
     it('?app=resume while locked: after unlock Resume is open', () => {
       goTo('?app=resume')
