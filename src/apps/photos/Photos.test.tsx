@@ -173,4 +173,14 @@ describe('Photos', () => {
     expect(thumbFocus.at(-1)).toEqual({ alt: 'Beta', inert: false })
     expect(thumb('Beta')).toHaveFocus()
   })
+
+  it('a props.item opened again after closing the lightbox shows that photo again', async () => {
+    const user = userEvent.setup()
+    const { rerender } = render(<PhotosApp windowId="w1" props={{ item: 't2' }} />)
+    await user.click(lightboxButton('Close'))
+    expect(dialog()).toBeNull()
+
+    rerender(<PhotosApp windowId="w1" props={{ item: 't2' }} />)
+    expect(dialog()).toHaveAccessibleName('Beta')
+  })
 })

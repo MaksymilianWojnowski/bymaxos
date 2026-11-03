@@ -144,4 +144,14 @@ describe('Music', () => {
     rerender(<MusicApp windowId="w1" props={{ item: 'a1' }} />)
     expect(within(detail()).getByRole('heading', { name: 'Artist One', level: 2 })).toBeInTheDocument()
   })
+
+  it('reselects an item opened again with the same item after picking another', async () => {
+    const user = userEvent.setup()
+    const { rerender } = render(<MusicApp windowId="w1" props={{ item: 'p2' }} />)
+    await user.click(screen.getByRole('button', { name: 'Morning' }))
+    expect(within(detail()).getByRole('heading', { name: 'Morning', level: 2 })).toBeInTheDocument()
+
+    rerender(<MusicApp windowId="w1" props={{ item: 'p2' }} />)
+    expect(within(detail()).getByRole('heading', { name: 'Night', level: 2 })).toBeInTheDocument()
+  })
 })

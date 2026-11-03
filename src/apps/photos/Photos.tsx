@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { getContent } from '../../content'
 import { allPhotos, photoUrl } from '../../system/photos'
 import type { AppProps } from '../types'
+import { useOpenProps } from '../useOpenProps'
 
 const SWIPE_PX = 50
 const NAV =
@@ -12,7 +13,6 @@ const NAV =
 export default function PhotosApp({ props }: AppProps) {
   const albums = getContent().photoAlbums
   const everyPhoto = useMemo(() => allPhotos(albums), [albums])
-  const itemId = typeof props?.item === 'string' ? props.item : undefined
   const [albumId, setAlbumId] = useState<string | null>(null)
   // Index into the photos on screen; null when the lightbox is closed.
   const [index, setIndex] = useState<number | null>(null)
@@ -31,16 +31,13 @@ export default function PhotosApp({ props }: AppProps) {
   }, [isOpen])
 
   // Photos is a single window: a new item from Finder, Spotlight or Terminal arrives as new props.
-  // Adjusted during render (not in an effect) so the lightbox opens in the same pass.
-  const [seenItem, setSeenItem] = useState<string | undefined>(undefined)
-  if (itemId !== seenItem) {
-    setSeenItem(itemId)
-    const i = everyPhoto.findIndex((p) => p.id === itemId)
+  useOpenProps(props, (p) => {
+    const i = everyPhoto.findIndex((photo) => photo.id === p.item)
     if (i >= 0) {
       setAlbumId(null)
       setIndex(i)
     }
-  }
+  })
 
   const selectAlbum = (id: string | null) => {
     setAlbumId(id)

@@ -4,6 +4,7 @@ import { getContent } from '../../content'
 import { WindowLayer } from '../../shells/desktop/WindowLayer'
 import { canDispatch, dispatch, installSystemCommands } from '../../system/commands'
 import { resetSystem, useSystem } from '../../system/store'
+import FinderApp from './Finder'
 
 let disposeCommands: () => void
 
@@ -162,5 +163,11 @@ describe('Finder', () => {
     render(<WindowLayer />)
     expect(await screen.findByText('Trash is empty.')).toBeInTheDocument()
     expect(screen.getByRole('dialog', { name: 'Trash' })).toBeInTheDocument()
+  })
+
+  it('a new folderId prop moves a mounted window there', () => {
+    const view = render(<FinderApp windowId="w1" props={{ folderId: 'desktop' }} />)
+    view.rerender(<FinderApp windowId="w1" props={{ folderId: 'projects' }} />)
+    expect(screen.getByRole('heading', { level: 2, name: 'Projects' })).toBeInTheDocument()
   })
 })

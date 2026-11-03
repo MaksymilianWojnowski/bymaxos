@@ -4,6 +4,7 @@ import { ACCENTS, type Accent, type Appearance } from '../../system/settings'
 import { useSystem } from '../../system/store'
 import { Switch } from '../../ui/Switch'
 import type { AppProps } from '../types'
+import { useOpenProps } from '../useOpenProps'
 
 type Section = 'appearance' | 'wallpaper' | 'accessibility' | 'dock'
 
@@ -115,6 +116,11 @@ export default function SettingsApp({ props }: AppProps) {
   const [section, setSection] = useState<Section>(
     () => SECTIONS.find((s) => s.id === props?.item)?.id ?? 'appearance',
   )
+  // A new item while Settings is open switches section, as a deep link from Spotlight or Terminal does.
+  useOpenProps(props, (p) => {
+    const hit = SECTIONS.find((s) => s.id === p.item)
+    if (hit) setSection(hit.id)
+  })
   const settings = useSystem((s) => s.settings)
   const updateSettings = useSystem((s) => s.updateSettings)
   const wallpapers = getContent().site.wallpapers

@@ -7,6 +7,7 @@ import { KEYS, safeStorage } from '../../system/storage'
 import { useSystem } from '../../system/store'
 import { Sheet } from '../../ui/Sheet'
 import type { AppProps } from '../types'
+import { useOpenProps } from '../useOpenProps'
 import {
   addNote,
   deleteNote,
@@ -54,16 +55,13 @@ export default function NotesApp({ windowId, props }: AppProps) {
   const current = notes.find((n) => n.id === selectedId) ?? notes[0]
 
   // Notes is a single window: a note from Spotlight arrives as new props and must be selected.
-  // Adjusted during render (as Photos does), so the editor shows that note in the same pass.
-  const itemId = typeof props?.item === 'string' ? props.item : undefined
-  const [seenItem, setSeenItem] = useState<string | undefined>(undefined)
-  if (itemId !== seenItem) {
-    setSeenItem(itemId)
+  useOpenProps(props, (p) => {
+    const itemId = typeof p.item === 'string' ? p.item : undefined
     if (itemId !== undefined && notes.some((n) => n.id === itemId)) {
       setSelectedId(itemId)
       setQuery('')
     }
-  }
+  })
 
   const q = query.trim().toLowerCase()
   const visible = q

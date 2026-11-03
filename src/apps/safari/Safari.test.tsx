@@ -318,4 +318,19 @@ describe('Safari framing rule', () => {
     await go('https://demo.example/')
     expect(reload()).toBeInTheDocument()
   })
+
+  it('a new url prop navigates while mounted', () => {
+    const view = render(<SafariApp windowId="w1" props={undefined} />)
+    view.rerender(<SafariApp windowId="w1" props={{ url: plain.url }} />)
+    expect(address()).toHaveValue(plain.url)
+    expect(cannotShow()).toBeInTheDocument()
+  })
+
+  it('the first render does not navigate again', async () => {
+    const view = render(<SafariApp windowId="w1" props={{ url: plain.url }} />)
+    await userEvent.type(address(), ' typed')
+    view.rerender(<SafariApp windowId="w1" props={{ url: plain.url }} />)
+    expect(address()).toHaveValue(`${plain.url} typed`)
+    expect(screen.getAllByRole('tab')).toHaveLength(1)
+  })
 })

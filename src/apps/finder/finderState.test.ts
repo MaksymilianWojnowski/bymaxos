@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { VNode } from '../../system/vfs'
-import { back, forward, initFinder, navigate, openTarget } from './finderState'
+import { back, finderReducer, forward, initFinder, navigate, openTarget } from './finderState'
 import { vfs } from './vfsInstance'
 
 describe('finder history', () => {
@@ -29,6 +29,16 @@ describe('finder history', () => {
   it('treats back at the first folder as a no-op', () => {
     const s = initFinder()
     expect(back(s)).toBe(s)
+  })
+})
+
+describe('finder root', () => {
+  it('root resets history', () => {
+    const s = { ...navigate(initFinder(), 'projects'), selected: 'resume-pdf' }
+    const r = finderReducer(s, { type: 'root', folderId: 'work' })
+    expect(r.history).toEqual(['work'])
+    expect(r.index).toBe(0)
+    expect(r.selected).toBeNull()
   })
 })
 

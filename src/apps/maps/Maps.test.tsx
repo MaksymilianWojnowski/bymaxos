@@ -107,4 +107,14 @@ describe('Maps', () => {
     expect(screen.getByText('No places yet.')).toBeInTheDocument()
     expect(screen.queryByRole('img', { name: 'World map' })).toBeNull()
   })
+
+  it('reselects a place opened again with the same item after picking another', async () => {
+    const user = userEvent.setup()
+    const { rerender } = render(<MapsApp windowId="w1" props={{ item: 'tokyo' }} />)
+    await user.click(entry('Wrocław'))
+    expect(within(detail()).getByRole('heading', { name: 'Wrocław' })).toBeInTheDocument()
+
+    rerender(<MapsApp windowId="w1" props={{ item: 'tokyo' }} />)
+    expect(within(detail()).getByRole('heading', { name: 'Tokyo' })).toBeInTheDocument()
+  })
 })

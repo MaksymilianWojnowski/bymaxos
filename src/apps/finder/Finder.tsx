@@ -18,6 +18,7 @@ import { pathTo, type FileType, type VNode } from '../../system/vfs'
 import { iconFor } from '../../ui/fileIcon'
 import { useContextMenu } from '../../ui/useContextMenu'
 import type { AppProps, MenuItemDef } from '../types'
+import { useOpenProps } from '../useOpenProps'
 import { finderReducer, initFinder, openTarget, quickLookTarget } from './finderState'
 import { finderViews } from './menus'
 import { nodeById, vfs } from './vfsInstance'
@@ -72,6 +73,14 @@ export default function FinderApp({ windowId, props }: AppProps) {
   const activeId = state.selected === null ? undefined : optionId(state.selected)
   const canBack = state.index > 0
   const canForward = state.index < state.history.length - 1
+
+  // A new folder while the window is open moves it there, as a Dock or Spotlight open does.
+  useOpenProps(props, (p) => {
+    const folderId = p.folderId
+    if (typeof folderId === 'string' && nodeById(folderId)?.kind === 'folder' && folderId !== currentId) {
+      send({ type: 'root', folderId })
+    }
+  })
 
   useEffect(() => {
     setTitle(windowId, folderName)

@@ -198,4 +198,15 @@ describe('Notes', () => {
     expect(within(list).getAllByRole('button')).toHaveLength(1)
     expect(within(list).getByRole('button', { name: new RegExp(lookingFor.title) })).toBeInTheDocument()
   })
+
+  it('reselects a note opened again with the same item after picking another', async () => {
+    const user = userEvent.setup()
+    const windowId = useSystem.getState().openApp('notes') as string
+    const view = render(<NotesApp windowId={windowId} props={{ item: lookingFor.id }} />)
+    await user.click(within(screen.getByRole('list', { name: 'Notes' })).getByText(workingStyle.title))
+    expect(titleField()).toHaveValue(workingStyle.title)
+
+    view.rerender(<NotesApp windowId={windowId} props={{ item: lookingFor.id }} />)
+    expect(titleField()).toHaveValue(lookingFor.title)
+  })
 })

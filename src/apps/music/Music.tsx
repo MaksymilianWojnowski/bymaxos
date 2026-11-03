@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { getContent } from '../../content'
 import type { AppProps } from '../types'
+import { useOpenProps } from '../useOpenProps'
 
 type Selection = { kind: 'playlist' | 'artist' | 'album'; id: string }
 
@@ -12,7 +13,6 @@ const openLink = (url: string) => window.open(url, '_blank', 'noopener,noreferre
 
 export default function MusicApp({ props }: AppProps) {
   const { artists, albums, playlists } = getContent().music
-  const itemId = typeof props?.item === 'string' ? props.item : undefined
   const [selected, setSelected] = useState<Selection | null>(() => {
     const first = playlists[0] ?? artists[0] ?? albums[0]
     if (!first) return null
@@ -34,17 +34,15 @@ export default function MusicApp({ props }: AppProps) {
   }
 
   // Music is a single window: a new item from Spotlight or Terminal arrives as new props.
-  // Adjusted during render (not in an effect) so the selection changes in the same pass.
-  const [seenItem, setSeenItem] = useState<string | undefined>(undefined)
-  if (itemId !== seenItem) {
-    setSeenItem(itemId)
+  useOpenProps(props, (p) => {
+    const itemId = typeof p.item === 'string' ? p.item : undefined
     const hit: Selection | undefined =
-      playlists.some((p) => p.id === itemId) ? { kind: 'playlist', id: itemId! }
+      playlists.some((x) => x.id === itemId) ? { kind: 'playlist', id: itemId! }
       : artists.some((a) => a.id === itemId) ? { kind: 'artist', id: itemId! }
       : albums.some((a) => a.id === itemId) ? { kind: 'album', id: itemId! }
       : undefined
     if (hit) choose(hit)
-  }
+  })
 
   if (playlists.length + artists.length + albums.length === 0) {
     return (

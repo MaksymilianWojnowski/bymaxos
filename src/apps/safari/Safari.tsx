@@ -3,6 +3,7 @@ import { Plus, RotateCw, X } from 'lucide-react'
 import { getContent } from '../../content'
 import type { Bookmark } from '../../content/types'
 import type { AppProps } from '../types'
+import { useOpenProps } from '../useOpenProps'
 import { parseAddress } from './address'
 
 const CANNOT_SHOW = "This site can't be shown inside bymaxOS"
@@ -57,6 +58,12 @@ export default function SafariApp({ props }: AppProps) {
     setAddress(url ?? '')
     setError(null)
   }
+
+  // A url that is already open is not navigated again, so a mount with the start url stays put.
+  useOpenProps(props, (p) => {
+    const next = typeof p.url === 'string' ? parseAddress(p.url) : null
+    if (next?.ok && next.url !== current) navigate(next.url)
+  })
 
   const openTab = () => {
     const id = Math.max(...tabs.map((t) => t.id)) + 1

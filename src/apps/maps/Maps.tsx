@@ -3,6 +3,7 @@ import { getContent } from '../../content'
 import type { Place } from '../../content/types'
 import { formatRange } from '../../lib/format'
 import type { AppProps } from '../types'
+import { useOpenProps } from '../useOpenProps'
 import { MAP_H, MAP_W, project } from './project'
 import { WORLD_PATH } from './worldPath'
 
@@ -19,16 +20,13 @@ const newestFirst = (a: Place, b: Place) => {
 export default function MapsApp({ props }: AppProps) {
   const places = getContent().places
   const timeline = [...places].sort(newestFirst)
-  const itemId = typeof props?.item === 'string' ? props.item : undefined
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   // Maps is a single window: a new item from Spotlight or Terminal arrives as new props.
-  // Adjusted during render (not in an effect) so the selection changes in the same pass.
-  const [seenItem, setSeenItem] = useState<string | undefined>(undefined)
-  if (itemId !== seenItem) {
-    setSeenItem(itemId)
-    if (places.some((p) => p.id === itemId)) setSelectedId(itemId!)
-  }
+  useOpenProps(props, (p) => {
+    const itemId = typeof p.item === 'string' ? p.item : undefined
+    if (places.some((place) => place.id === itemId)) setSelectedId(itemId!)
+  })
 
   if (places.length === 0) {
     return (

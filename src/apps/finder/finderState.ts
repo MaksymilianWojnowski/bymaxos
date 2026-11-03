@@ -39,6 +39,7 @@ export const setView = (s: FinderState, view: FinderView): FinderState => ({ ...
 
 export type FinderAction =
   | { type: 'navigate'; folderId: string }
+  | { type: 'root'; folderId: string }
   | { type: 'back' }
   | { type: 'forward' }
   | { type: 'select'; id: string | null }
@@ -48,6 +49,8 @@ export function finderReducer(s: FinderState, a: FinderAction): FinderState {
   switch (a.type) {
     case 'navigate':
       return navigate(s, a.folderId)
+    case 'root':
+      return { ...s, history: [a.folderId], index: 0, selected: null }
     case 'back':
       return back(s)
     case 'forward':

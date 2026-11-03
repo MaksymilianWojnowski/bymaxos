@@ -107,4 +107,12 @@ describe('SettingsApp', () => {
     fireEvent.click(magnification)
     expect(settings().dockMagnification).toBe(false)
   })
+
+  it('a new item switches section while mounted', () => {
+    const view = renderApp()
+    expect(sectionButton('Appearance')).toHaveAttribute('aria-current', 'page')
+
+    view.rerender(<SettingsApp windowId="w1" props={{ item: 'dock' }} />)
+    expect(sectionButton('Dock')).toHaveAttribute('aria-current', 'page')
+  })
 })
