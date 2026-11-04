@@ -73,7 +73,7 @@ export default function MapsApp({ props }: AppProps) {
         </ol>
       </nav>
 
-      <section aria-label="Map" className="min-w-0 flex-1 overflow-auto p-5 phone:overflow-visible">
+      <section aria-label="Map" className="min-w-0 flex-1 overflow-auto p-5 phone:flex-none phone:overflow-visible">
         {/* Pins live in a sibling layer, not inside the svg: role img makes its children presentational. */}
         <div className="relative w-full aspect-[2/1]">
           <svg role="img" aria-label="World map" viewBox={`0 0 ${MAP_W} ${MAP_H}`} className="absolute inset-0 h-full w-full">
