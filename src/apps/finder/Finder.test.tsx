@@ -242,4 +242,37 @@ describe('Finder on a phone', () => {
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
   })
+
+  it('phone: entering a subfolder keeps focus inside the detail, and Escape then goes back', () => {
+    mockPhone()
+    render(<FinderApp windowId="w1" props={{ folderId: 'desktop' }} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Projects' }))
+    const detail = screen.getByRole('heading', { level: 2, name: 'Projects' }).closest('[data-detail-pane]') as HTMLElement
+    expect(detail).toContainElement(document.activeElement as HTMLElement)
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Escape' })
+    expect(screen.getByRole('heading', { level: 2, name: 'Desktop' })).toBeInTheDocument()
+  })
+
+  it('phone: Back through two subfolders then to the locations', () => {
+    mockPhone()
+    render(<FinderApp windowId="w1" props={{ folderId: 'root' }} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Desktop' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Projects' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByRole('heading', { level: 2, name: 'Desktop' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByRole('heading', { level: 2, name: 'bymaxOS' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.queryByRole('button', { name: 'Back' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Desktop' })).toBeInTheDocument()
+  })
+
+  it('phone: reopening with the same folderId after Back to the locations opens it again', () => {
+    mockPhone()
+    const view = render(<FinderApp windowId="w1" props={{ folderId: 'projects' }} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.queryByRole('button', { name: 'Back' })).not.toBeInTheDocument()
+    view.rerender(<FinderApp windowId="w1" props={{ folderId: 'projects' }} />)
+    expect(screen.getByRole('heading', { level: 2, name: 'Projects' })).toBeInTheDocument()
+  })
 })

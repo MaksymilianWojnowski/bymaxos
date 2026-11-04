@@ -1,4 +1,4 @@
-import { useEffect, useRef, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import { ChevronLeft } from 'lucide-react'
 import { EDGE_WIDTH, releaseVelocity, shouldEdgeBack, type Sample } from '../shells/mobile/gestures'
@@ -27,6 +27,11 @@ export function NavStack({ title, listActions, list, open, detailTitle, detailAc
   const wasOpen = useRef(open)
   const scroller = useRef<HTMLDivElement>(null)
   const gesture = useRef<{ pointerId: number; startX: number; startY: number; samples: Sample[] } | null>(null)
+  const isOpen = useRef(open)
+  // Layout effects run inside flushSync, so goBack reads the committed value.
+  useLayoutEffect(() => {
+    isOpen.current = open
+  }, [open])
 
   // Focus moves only when open changes, and not when a child already took focus inside the detail.
   useEffect(() => {
@@ -37,9 +42,18 @@ export function NavStack({ title, listActions, list, open, detailTitle, detailAc
     }
   }, [open])
 
+  // A title change can unmount the focused control (a subfolder replaces its children); focus left on body would strand Escape.
+  const seenTitle = useRef(detailTitle)
+  useEffect(() => {
+    if (seenTitle.current === detailTitle) return
+    seenTitle.current = detailTitle
+    if (open && document.activeElement === document.body) heading.current?.focus({ preventScroll: true })
+  }, [open, detailTitle])
+
   const goBack = () => {
     // Focus can only land once the list pane is no longer inert, so the state change commits first.
     flushSync(onBack)
+    if (isOpen.current) return
     const row = opener.current
     const control = listPane.current?.querySelector<HTMLElement>('button:not(:disabled), input:not(:disabled)')
     const target = row?.isConnected ? row : (control ?? scroller.current)

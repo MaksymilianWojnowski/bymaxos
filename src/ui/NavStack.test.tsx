@@ -209,4 +209,58 @@ describe('NavStack', () => {
     expect(active.getAttribute('tabindex')).toBe('0')
     expect(screen.getByRole('heading', { name: 'Notes', hidden: true }).closest('header')?.parentElement).toContainElement(active)
   })
+
+  it('a detail that changes title with focus lost refocuses its heading', () => {
+    const view = render(
+      <NavStack title="Notes" list={<p>Row</p>} open detailTitle="One" onBack={() => {}} detail={<p>Body</p>} />,
+    )
+    ;(document.activeElement as HTMLElement).blur()
+    view.rerender(<NavStack title="Notes" list={<p>Row</p>} open detailTitle="Two" onBack={() => {}} detail={<p>Body</p>} />)
+    expect(screen.getByRole('heading', { name: 'Two' })).toHaveFocus()
+  })
+
+  it('typing in a field whose value drives the title keeps focus', () => {
+    const view = render(
+      <NavStack
+        title="Notes"
+        list={<p>Row</p>}
+        open
+        detailTitle="One"
+        onBack={() => {}}
+        detail={<input aria-label="Title" />}
+      />,
+    )
+    const field = screen.getByRole('textbox', { name: 'Title' })
+    field.focus()
+    view.rerender(
+      <NavStack
+        title="Notes"
+        list={<p>Row</p>}
+        open
+        detailTitle="Typed"
+        onBack={() => {}}
+        detail={<input aria-label="Title" />}
+      />,
+    )
+    expect(field).toHaveFocus()
+  })
+
+  it('Back that keeps the detail open does not focus the list', () => {
+    const onBack = vi.fn()
+    render(
+      <NavStack
+        title="Notes"
+        list={<button type="button">Row</button>}
+        open
+        detailTitle="Detail"
+        onBack={onBack}
+        detail={<p>Body</p>}
+      />,
+    )
+    const back = screen.getByRole('button', { name: 'Back' })
+    back.focus()
+    fireEvent.click(back)
+    expect(onBack).toHaveBeenCalledTimes(1)
+    expect(back).toHaveFocus()
+  })
 })

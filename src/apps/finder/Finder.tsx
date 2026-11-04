@@ -114,7 +114,10 @@ export default function FinderApp({ windowId, props }: AppProps) {
     'file.newWindow': () => useSystem.getState().openApp('finder'),
     'finder.navigate': (cmd) => {
       const folderId = cmd.folderId
-      if (typeof folderId === 'string' && nodeById(folderId)?.kind === 'folder') goTo(folderId)
+      if (typeof folderId === 'string' && nodeById(folderId)?.kind === 'folder') {
+        goTo(folderId)
+        setDetailOpen(true)
+      }
     },
     'view.icons': () => send({ type: 'view', view: 'icons' }),
     'view.list': () => send({ type: 'view', view: 'list' }),
@@ -178,7 +181,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
   const path = pathTo(vfs, currentId)
 
   const viewToggle = (
-    <div role="group" aria-label="View" className="flex rounded-md bg-black/5 p-0.5">
+    <div role="group" aria-label="View" className="flex rounded-md bg-black/5 p-0.5 phone:p-0">
       {(['icons', 'list'] as const).map((view) => (
         <button
           key={view}
