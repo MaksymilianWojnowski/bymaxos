@@ -2,9 +2,11 @@ import { useEffect, useId, useState, type KeyboardEvent } from 'react'
 import { getContent } from '../../content'
 import { formatDate } from '../../lib/format'
 import { fetchLanguages, githubUser, loadRepos, type Repo, type RepoSource } from '../../lib/github'
+import { useShell } from '../../system/shell'
+import { NavStack } from '../../ui/NavStack'
 
 const BUTTON =
-  'rounded-[6px] border border-black/15 bg-white px-3 py-1 text-[13px] text-black dark:border-white/15 dark:bg-[#2a2a2a] dark:text-white'
+  'rounded-[6px] border border-black/15 bg-white px-3 py-1 text-[13px] text-black phone:min-h-11 dark:border-white/15 dark:bg-[#2a2a2a] dark:text-white'
 
 // Language breakdowns are fetched once per repo and kept for the page's lifetime.
 const languageCache = new Map<string, Record<string, number>>()
@@ -43,6 +45,9 @@ export default function DeveloperApp() {
   const [picked, setPicked] = useState<string | null>(null)
   const [langState, setLangState] = useState<{ repo: string; bytes: Record<string, number> | null } | null>(null)
   const uid = useId()
+  // Phones show the list or the detail one at a time; the detail slides over the list.
+  const [detailOpen, setDetailOpen] = useState(false)
+  const shell = useShell()
 
   useEffect(() => {
     if (!user) return
@@ -102,16 +107,104 @@ export default function DeveloperApp() {
   const homepage = active?.homepage?.trim() ?? ''
   const breakdown = bytes ? percentages(bytes) : []
 
+  const fallbackNotice = loaded.source === 'fallback' && (
+    <p className="p-3 text-text-2">GitHub is unreachable — showing a saved list.</p>
+  )
+  const emptyNote = (
+    <p className="p-3 text-text-2">
+      {loaded.source === 'fallback' ? 'No saved repositories.' : 'No public repositories yet.'}
+    </p>
+  )
+
+  const detailView = active && (
+    <section className={shell === 'mobile' ? 'p-5' : 'min-h-0 flex-1 overflow-auto p-5'}>
+      {shell !== 'mobile' && <h2 className="text-[16px] font-semibold">{active.name}</h2>}
+      {active.description && <p className="mt-1 text-text-2">{active.description}</p>}
+      {active.topics.length > 0 && (
+        <ul aria-label="Topics" className="mt-3 flex flex-wrap gap-1.5">
+          {active.topics.map((topic) => (
+            <li key={topic} className="rounded-full bg-black/5 px-2 py-0.5 text-[12px] dark:bg-white/10">
+              {topic}
+            </li>
+          ))}
+        </ul>
+      )}
+      {active.language && <p className="mt-3">Primary language: {active.language}</p>}
+      {breakdown.length > 0 && (
+        <ul aria-label="Languages" className="mt-1 text-text-2">
+          {breakdown.map(([lang, pct]) => (
+            <li key={lang}>{`${lang} ${pct}%`}</li>
+          ))}
+        </ul>
+      )}
+      {stats(active) && <p className="mt-3 text-text-2">{stats(active)}</p>}
+      {active.updatedAt && <p className="mt-1 text-text-2">{`Updated ${formatDate(active.updatedAt)}`}</p>}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button type="button" className={BUTTON} onClick={() => openExternal(active.url)}>
+          View on GitHub ↗
+        </button>
+        {homepage && (
+          <button type="button" className={BUTTON} onClick={() => openExternal(withScheme(homepage))}>
+            Open demo ↗
+          </button>
+        )}
+      </div>
+    </section>
+  )
+
+  if (shell === 'mobile') {
+    return (
+      <div className="h-full min-h-0 bg-window font-sans text-[13px] text-text-1">
+        <NavStack
+          title="Developer"
+          list={
+            <>
+              {fallbackNotice}
+              {repos.length === 0 ? (
+                emptyNote
+              ) : (
+                <ul aria-label="Repositories" className="p-1.5">
+                  {repos.map((repo) => {
+                    // Only an open detail marks its row; the list alone highlights nothing.
+                    const marked = repo === active && detailOpen
+                    return (
+                      <li key={repo.name}>
+                        <button
+                          type="button"
+                          aria-current={marked ? 'true' : undefined}
+                          onClick={() => {
+                            setPicked(repo.name)
+                            setDetailOpen(true)
+                          }}
+                          className={`block w-full cursor-default rounded-md px-2 py-1 text-left phone:min-h-11 focus-visible:ring-2 focus-visible:ring-accent-link ${marked ? 'bg-accent-strong text-white' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
+                        >
+                          <span className="block truncate">{repo.name}</span>
+                          {repo.language && (
+                            <span className={`block truncate text-[12px] ${marked ? '' : 'opacity-70'}`}>{repo.language}</span>
+                          )}
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </>
+          }
+          open={detailOpen}
+          detailTitle={active?.name ?? ''}
+          onBack={() => setDetailOpen(false)}
+          detail={detailView}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-window font-sans text-[13px] text-text-1 md:flex-row">
       <aside className="flex min-h-0 flex-col border-b border-black/10 md:w-56 md:shrink-0 md:border-r md:border-b-0">
-        {loaded.source === 'fallback' && (
-          <p className="p-3 text-text-2">GitHub is unreachable — showing a saved list.</p>
-        )}
+        {fallbackNotice}
         {repos.length === 0 ? (
-          <p className="p-3 text-text-2">
-            {loaded.source === 'fallback' ? 'No saved repositories.' : 'No public repositories yet.'}
-          </p>
+          emptyNote
         ) : (
           <div
             role="listbox"
@@ -145,41 +238,7 @@ export default function DeveloperApp() {
         )}
       </aside>
 
-      {active && (
-        <section className="min-h-0 flex-1 overflow-auto p-5">
-          <h2 className="text-[16px] font-semibold">{active.name}</h2>
-          {active.description && <p className="mt-1 text-text-2">{active.description}</p>}
-          {active.topics.length > 0 && (
-            <ul aria-label="Topics" className="mt-3 flex flex-wrap gap-1.5">
-              {active.topics.map((topic) => (
-                <li key={topic} className="rounded-full bg-black/5 px-2 py-0.5 text-[12px] dark:bg-white/10">
-                  {topic}
-                </li>
-              ))}
-            </ul>
-          )}
-          {active.language && <p className="mt-3">Primary language: {active.language}</p>}
-          {breakdown.length > 0 && (
-            <ul aria-label="Languages" className="mt-1 text-text-2">
-              {breakdown.map(([lang, pct]) => (
-                <li key={lang}>{`${lang} ${pct}%`}</li>
-              ))}
-            </ul>
-          )}
-          {stats(active) && <p className="mt-3 text-text-2">{stats(active)}</p>}
-          {active.updatedAt && <p className="mt-1 text-text-2">{`Updated ${formatDate(active.updatedAt)}`}</p>}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" className={BUTTON} onClick={() => openExternal(active.url)}>
-              View on GitHub ↗
-            </button>
-            {homepage && (
-              <button type="button" className={BUTTON} onClick={() => openExternal(withScheme(homepage))}>
-                Open demo ↗
-              </button>
-            )}
-          </div>
-        </section>
-      )}
+      {detailView}
     </div>
   )
 }

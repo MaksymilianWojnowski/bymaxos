@@ -1,7 +1,20 @@
+import { fileURLToPath } from 'node:url'
 import { expect, test, type Page } from '@playwright/test'
 import { phoneAudit, unlockMobile } from './helpers.ts'
 
+const REPOS_FIXTURE = fileURLToPath(new URL('./fixtures/repos.json', import.meta.url))
+const GITHUB_API = 'https://api.github.com/**'
+
 // Each phone app task appends its states here; every state is audited at both phone sizes.
+const openDeveloper = async (page: Page) => {
+  await page.route(GITHUB_API, (route) => {
+    if (route.request().url().includes('/languages')) return route.fulfill({ json: { TypeScript: 100 } })
+    return route.fulfill({ path: REPOS_FIXTURE, contentType: 'application/json' })
+  })
+  await page.getByRole('button', { name: 'Developer', exact: true }).click()
+  await expect(page.getByRole('button', { name: /^bymaxos/ })).toBeVisible()
+}
+
 const openNotes = async (page: Page) => {
   await page.getByRole('button', { name: 'Notes', exact: true }).click()
   await expect(page.getByRole('list', { name: 'Notes' })).toBeVisible()
@@ -45,6 +58,18 @@ const PHONE_STATES: { name: string; open: (page: Page) => Promise<void> }[] = [
   { name: 'Settings Appearance', open: async (page) => { await openSettings(page); await page.getByRole('button', { name: 'Appearance', exact: true }).click(); await expect(page.getByRole('radiogroup', { name: 'Appearance' })).toBeVisible() } },
   { name: 'Settings Wallpaper', open: async (page) => { await openSettings(page); await page.getByRole('button', { name: 'Wallpaper', exact: true }).click(); await expect(page.getByRole('radiogroup', { name: 'Wallpaper' })).toBeVisible() } },
   { name: 'Settings Accessibility', open: async (page) => { await openSettings(page); await page.getByRole('button', { name: 'Accessibility', exact: true }).click(); await expect(page.getByRole('switch', { name: 'Reduce motion' })).toBeVisible() } },
+  { name: 'Developer list', open: openDeveloper },
+  {
+    name: 'Developer detail',
+    open: async (page) => {
+      await openDeveloper(page)
+      await page.getByRole('button', { name: /^bymaxos/ }).click()
+      const heading = page.getByRole('heading', { name: 'bymaxos', exact: true })
+      await expect(heading).toBeVisible()
+      // Audit only once the detail has slid in; mid-slide it sits past the right edge.
+      await expect(heading.locator('xpath=ancestor::div[@data-detail-pane][1]')).toHaveCSS('translate', 'none')
+    },
+  },
 ]
 
 test.describe('phone foundations at 390x844', () => {

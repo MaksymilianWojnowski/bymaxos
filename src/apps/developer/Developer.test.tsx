@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { mockPhone } from '../../test/mockPhone'
 import DeveloperApp from './Developer'
 
 // Lets a test empty the content projects, which the fallback list is built from.
@@ -210,3 +211,50 @@ describe('Developer', () => {
     expect(within(list).getByText('Shell')).toHaveClass('opacity-70')
   })
 })
+
+describe('Developer on a phone', () => {
+  it('phone: starts on the repository list, and a row opens its details', async () => {
+    mockPhone()
+    const user = userEvent.setup()
+    render(<DeveloperApp />)
+    const row = await screen.findByRole('button', { name: /^bymaxos/ })
+    expect(screen.queryByRole('heading', { name: 'bymaxos' })).not.toBeInTheDocument()
+    expect(row).not.toHaveAttribute('aria-current')
+
+    await user.click(row)
+
+    expect(await screen.findByRole('heading', { name: 'bymaxos' })).toBeInTheDocument()
+    expect(row).toHaveAttribute('aria-current', 'true')
+    expect(screen.getByRole('button', { name: 'View on GitHub ↗' })).toBeInTheDocument()
+  })
+
+  it('phone: rows are buttons, not a listbox', async () => {
+    mockPhone()
+    render(<DeveloperApp />)
+    await screen.findByRole('button', { name: /^bymaxos/ })
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+  })
+
+  it('phone: the fallback notice shows on the list', async () => {
+    mockPhone()
+    apiStatus = 503
+    render(<DeveloperApp />)
+    expect(await screen.findByText('GitHub is unreachable — showing a saved list.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'LigaPWr Web App' })).toBeInTheDocument()
+  })
+
+  it('phone: an empty list shows its message with no detail', async () => {
+    mockPhone()
+    apiRepos = []
+    render(<DeveloperApp />)
+    expect(await screen.findByText('No public repositories yet.')).toBeInTheDocument()
+    expect(document.querySelector('[data-detail-pane]')).toHaveAttribute('inert')
+  })
+
+  it('phone: the loading state renders', () => {
+    mockPhone()
+    render(<DeveloperApp />)
+    expect(screen.getByRole('status')).toHaveTextContent('Loading repositories…')
+  })
+})
+
