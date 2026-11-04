@@ -106,7 +106,7 @@ export default function MailApp({ windowId }: AppProps) {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-1">
+      <div className="flex min-h-0 flex-1 flex-col gap-1 phone:flex-none">
         <label htmlFor="mail-message">Message</label>
         <textarea
           id="mail-message"

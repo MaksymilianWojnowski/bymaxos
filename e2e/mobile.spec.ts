@@ -479,3 +479,25 @@ test.describe('phone apps that only need to fit at 390x844', () => {
     expect(article.width).toBeGreaterThanOrEqual(340)
   })
 })
+
+test.describe('phone Mail in landscape', () => {
+  test.use({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true })
+
+  test('Mail: the message field scrolls fully into view in landscape', async ({ page }) => {
+    await unlockMobile(page)
+    await dock(page).getByRole('button', { name: 'Mail', exact: true }).click()
+    const message = page.getByRole('dialog', { name: 'Mail', exact: true }).getByRole('textbox', { name: 'Message' })
+    const scroller = message.locator('xpath=ancestor::form[1]')
+    await message.scrollIntoViewIfNeeded()
+    // scrollIntoViewIfNeeded can stop half a pixel short; scrolling to the end shows the field with its bottom padding.
+    await scroller.evaluate((el) => {
+      el.scrollTop = el.scrollHeight
+    })
+    const form = await scroller.boundingBox()
+    const box = await message.boundingBox()
+    if (!form || !box) throw new Error('no boxes')
+    expect(box.height).toBeGreaterThanOrEqual(120)
+    expect(box.y).toBeGreaterThanOrEqual(form.y)
+    expect(box.y + box.height).toBeLessThanOrEqual(form.y + form.height)
+  })
+})

@@ -100,7 +100,7 @@ export default function PhotosApp({ props }: AppProps) {
       type="button"
       aria-current={albumId === id ? 'true' : undefined}
       onClick={() => selectAlbum(id)}
-      className={`block w-full truncate rounded-[6px] px-2 py-1 text-left phone:min-h-11 phone:w-auto phone:shrink-0 focus-visible:ring-2 focus-visible:ring-accent-link ${albumId === id ? 'bg-black/10 font-medium dark:bg-white/15' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
+      className={`block w-full truncate rounded-[6px] px-2 py-1 text-left phone:min-h-11 phone:w-auto focus-visible:ring-2 focus-visible:ring-accent-link ${albumId === id ? 'bg-black/10 font-medium dark:bg-white/15' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
     >
       {label}
     </button>
@@ -114,14 +114,14 @@ export default function PhotosApp({ props }: AppProps) {
         className="w-[150px] shrink-0 overflow-auto border-r border-black/10 p-2 dark:border-white/15 phone:w-full phone:border-r-0 phone:border-b"
       >
         <ul className="flex flex-col gap-0.5 phone:flex-row phone:overflow-x-auto">
-          <li>{sidebarButton(null, 'All Photos')}</li>
+          <li className="phone:shrink-0">{sidebarButton(null, 'All Photos')}</li>
           {albums.map((a) => (
-            <li key={a.id}>{sidebarButton(a.id, a.title)}</li>
+            <li key={a.id} className="phone:shrink-0">{sidebarButton(a.id, a.title)}</li>
           ))}
         </ul>
       </nav>
 
-      <section className="relative flex min-w-0 flex-1 flex-col">
+      <section className="relative flex min-w-0 flex-1 flex-col phone:min-h-0">
         {everyPhoto.length === 0 ? (
           <p className="m-auto px-6 text-center text-text-2">Photos will appear here once they're added.</p>
         ) : (
