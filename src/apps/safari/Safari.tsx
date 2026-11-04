@@ -9,9 +9,9 @@ import { parseAddress } from './address'
 const CANNOT_SHOW = "This site can't be shown inside bymaxOS"
 const SANDBOX = 'allow-scripts allow-same-origin allow-popups allow-forms'
 const ICON_BUTTON =
-  'grid h-7 w-7 shrink-0 place-items-center rounded-[4px] text-text-2 hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-accent-link disabled:opacity-40 dark:hover:bg-white/10'
+  'grid h-7 w-7 shrink-0 phone:h-11 phone:w-11 place-items-center rounded-[4px] text-text-2 hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-accent-link disabled:opacity-40 dark:hover:bg-white/10'
 const PILL =
-  'max-w-[180px] truncate rounded-[6px] px-2.5 py-1 text-[13px] hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-accent-link dark:hover:bg-white/10'
+  'max-w-[180px] truncate rounded-[6px] px-2.5 py-1 text-[13px] phone:min-h-11 hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-accent-link dark:hover:bg-white/10'
 
 // A tab's url is null on the Favorites start page.
 interface Tab {
@@ -183,7 +183,7 @@ export default function SafariApp({ props }: AppProps) {
               setError(null)
             }}
             placeholder="Enter a web address"
-            className="w-full rounded-[6px] bg-white px-3 py-1 text-[13px] text-text-1 shadow-inner outline-none placeholder:text-text-2 focus-visible:ring-2 focus-visible:ring-accent-link dark:bg-black/30"
+            className="w-full rounded-[6px] bg-white px-3 py-1 text-[13px] text-text-1 phone:min-h-11 shadow-inner outline-none placeholder:text-text-2 focus-visible:ring-2 focus-visible:ring-accent-link dark:bg-black/30"
           />
           {error && (
             <p id={`${ids}-error`} role="alert" className="mt-1 text-[12px] text-text-1">
@@ -205,14 +205,14 @@ export default function SafariApp({ props }: AppProps) {
 
       <nav
         aria-label="Bookmarks"
-        className="flex gap-1 overflow-x-auto border-b border-black/10 px-3 py-1 dark:border-white/10"
+        className="flex gap-1 overflow-x-auto border-b border-black/10 px-3 py-1 [@media(max-height:500px)]:phone:hidden dark:border-white/10"
       >
         {bookmarks.map((b) => (
           <button
             key={b.id}
             type="button"
             onClick={() => navigate(b.url)}
-            className="shrink-0 rounded-[6px] px-2 py-0.5 text-[12px] text-text-1 hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-accent-link dark:hover:bg-white/10"
+            className="shrink-0 rounded-[6px] px-2 py-0.5 text-[12px] text-text-1 phone:min-h-11 hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-accent-link dark:hover:bg-white/10"
           >
             {b.title}
           </button>

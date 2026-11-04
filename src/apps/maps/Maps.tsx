@@ -7,7 +7,7 @@ import { useOpenProps } from '../useOpenProps'
 import { MAP_H, MAP_W, project } from './project'
 import { WORLD_PATH } from './worldPath'
 
-const ROW = 'block w-full rounded-[6px] px-2 py-1.5 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-window focus-visible:ring-accent-link'
+const ROW = 'block w-full rounded-[6px] px-2 py-1.5 text-left phone:min-h-11 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-window focus-visible:ring-accent-link'
 
 // Newest first by start date; undated places go last. The sort is stable, so undated keep their content order.
 const newestFirst = (a: Place, b: Place) => {
@@ -39,8 +39,8 @@ export default function MapsApp({ props }: AppProps) {
   const selected = places.find((p) => p.id === selectedId) ?? timeline[0]
 
   return (
-    <div className="flex h-full min-h-0 bg-window font-sans text-[13px] text-text-1">
-      <nav aria-label="Travel timeline" className="w-[240px] shrink-0 overflow-auto border-r border-black/10 bg-window p-2 dark:border-white/15">
+    <div className="flex h-full min-h-0 bg-window font-sans text-[13px] text-text-1 phone:flex-col phone:overflow-auto">
+      <nav aria-label="Travel timeline" className="w-[240px] shrink-0 overflow-auto border-r border-black/10 bg-window p-2 dark:border-white/15 phone:order-last phone:w-full phone:border-r-0 phone:overflow-visible">
         <ol className="flex flex-col gap-0.5">
           {timeline.map((place) => {
             const active = place.id === selected.id
@@ -63,7 +63,7 @@ export default function MapsApp({ props }: AppProps) {
         </ol>
       </nav>
 
-      <section aria-label="Map" className="min-w-0 flex-1 overflow-auto p-5">
+      <section aria-label="Map" className="min-w-0 flex-1 overflow-auto p-5 phone:overflow-visible">
         {/* Pins live in a sibling layer, not inside the svg: role img makes its children presentational. */}
         <div className="relative w-full aspect-[2/1]">
           <svg role="img" aria-label="World map" viewBox={`0 0 ${MAP_W} ${MAP_H}`} className="absolute inset-0 h-full w-full">
@@ -82,7 +82,7 @@ export default function MapsApp({ props }: AppProps) {
                   aria-current={active ? 'true' : undefined}
                   onClick={() => setSelectedId(place.id)}
                   style={{ left: `${(x / MAP_W) * 100}%`, top: `${(y / MAP_H) * 100}%` }}
-                  className="absolute grid h-6 w-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full focus-visible:ring-2 focus-visible:ring-accent-link"
+                  className="absolute grid h-6 w-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full phone:h-11 phone:w-11 focus-visible:ring-2 focus-visible:ring-accent-link"
                 >
                   <span
                     className={`block h-3 w-3 rounded-full border-2 border-white bg-[#d70015] transition-transform dark:bg-[#ff6961] ${active ? 'scale-125' : ''}`}

@@ -5,9 +5,9 @@ import { monthGrid } from '../../lib/calendar'
 import { dispatch } from '../../system/commands'
 
 const BUTTON =
-  'rounded-[6px] border border-black/15 bg-white px-3 py-1 text-[13px] text-black dark:border-white/15 dark:bg-[#2a2a2a] dark:text-white'
+  'rounded-[6px] border border-black/15 bg-white px-3 py-1 text-[13px] text-black phone:min-h-11 dark:border-white/15 dark:bg-[#2a2a2a] dark:text-white'
 const ICON_BUTTON =
-  'grid h-7 w-7 place-items-center rounded-[4px] text-text-2 hover:bg-black/5 dark:hover:bg-white/10'
+  'grid h-7 w-7 phone:h-11 phone:w-11 place-items-center rounded-[4px] text-text-2 hover:bg-black/5 dark:hover:bg-white/10'
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 interface View {

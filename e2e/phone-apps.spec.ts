@@ -35,6 +35,13 @@ const openSettings = async (page: Page) => {
   await expect(page.getByRole('navigation', { name: 'Settings sections' })).toBeVisible()
 }
 
+// Dock apps and home-grid apps both open from the page; the names are unique across the two.
+// The screen scales in over 220ms, which shifts the sizes the audit reads, so wait it out.
+const openApp = async (page: Page, name: string) => {
+  await page.getByRole('button', { name, exact: true }).click()
+  await page.waitForTimeout(300)
+}
+
 const PHONE_STATES: { name: string; open: (page: Page) => Promise<void> }[] = [
   { name: 'Home screen', open: async () => {} },
   { name: 'Notes list', open: openNotes },
@@ -70,6 +77,13 @@ const PHONE_STATES: { name: string; open: (page: Page) => Promise<void> }[] = [
       await expect(heading.locator('xpath=ancestor::div[@data-detail-pane][1]')).toHaveCSS('translate', 'none')
     },
   },
+  { name: 'Maps', open: async (page) => { await openApp(page, 'Maps'); await expect(page.getByRole('img', { name: 'World map' })).toBeVisible() } },
+  { name: 'Photos empty state', open: async (page) => { await openApp(page, 'Photos'); await expect(page.getByText("Photos will appear here once they're added.")).toBeVisible() } },
+  { name: 'Contacts', open: async (page) => { await openApp(page, 'Contacts'); await expect(page.getByRole('button', { name: 'Copy email', exact: true })).toBeVisible() } },
+  { name: 'Calendar', open: async (page) => { await openApp(page, 'Calendar'); await expect(page.getByRole('grid')).toBeVisible() } },
+  { name: 'Mail sheet', open: async (page) => { await openApp(page, 'Mail'); await expect(page.getByRole('dialog', { name: 'Mail', exact: true })).toBeVisible() } },
+  { name: 'Resume', open: async (page) => { await openApp(page, 'Resume'); await expect(page.getByRole('toolbar', { name: 'Resume' })).toBeVisible() } },
+  { name: 'Safari favorites', open: async (page) => { await openApp(page, 'Safari'); await expect(page.getByRole('region', { name: 'Favorites' })).toBeVisible() } },
 ]
 
 test.describe('phone foundations at 390x844', () => {

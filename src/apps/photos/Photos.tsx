@@ -8,7 +8,7 @@ import { useOpenProps } from '../useOpenProps'
 
 const SWIPE_PX = 50
 const NAV =
-  'grid h-9 w-9 shrink-0 place-items-center rounded-full bg-black/50 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white aria-disabled:opacity-40'
+  'grid h-9 w-9 shrink-0 place-items-center rounded-full bg-black/50 text-white phone:h-11 phone:w-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white aria-disabled:opacity-40'
 
 export default function PhotosApp({ props }: AppProps) {
   const albums = getContent().photoAlbums
@@ -100,20 +100,20 @@ export default function PhotosApp({ props }: AppProps) {
       type="button"
       aria-current={albumId === id ? 'true' : undefined}
       onClick={() => selectAlbum(id)}
-      className={`block w-full truncate rounded-[6px] px-2 py-1 text-left focus-visible:ring-2 focus-visible:ring-accent-link ${albumId === id ? 'bg-black/10 font-medium dark:bg-white/15' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
+      className={`block w-full truncate rounded-[6px] px-2 py-1 text-left phone:min-h-11 phone:w-auto phone:shrink-0 focus-visible:ring-2 focus-visible:ring-accent-link ${albumId === id ? 'bg-black/10 font-medium dark:bg-white/15' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
     >
       {label}
     </button>
   )
 
   return (
-    <div className="flex h-full min-h-0 bg-window font-sans text-[13px] text-text-1">
+    <div className="flex h-full min-h-0 bg-window font-sans text-[13px] text-text-1 phone:flex-col">
       <nav
         aria-label="Albums"
         inert={isOpen}
-        className="w-[150px] shrink-0 overflow-auto border-r border-black/10 p-2 dark:border-white/15"
+        className="w-[150px] shrink-0 overflow-auto border-r border-black/10 p-2 dark:border-white/15 phone:w-full phone:border-r-0 phone:border-b"
       >
-        <ul className="flex flex-col gap-0.5">
+        <ul className="flex flex-col gap-0.5 phone:flex-row phone:overflow-x-auto">
           <li>{sidebarButton(null, 'All Photos')}</li>
           {albums.map((a) => (
             <li key={a.id}>{sidebarButton(a.id, a.title)}</li>
@@ -173,13 +173,13 @@ export default function PhotosApp({ props }: AppProps) {
                 <X aria-hidden="true" className="h-5 w-5" />
               </button>
             </div>
-            <div className="flex min-h-0 flex-1 items-center gap-2 px-2">
+            <div className="relative flex min-h-0 flex-1 items-center gap-2 px-2">
               <button
                 type="button"
                 aria-label="Previous photo"
                 aria-disabled={index === 0 ? 'true' : undefined}
                 onClick={() => move(-1)}
-                className={NAV}
+                className={`${NAV} phone:absolute phone:left-2 phone:top-1/2 phone:z-10 phone:-translate-y-1/2`}
               >
                 <ChevronLeft aria-hidden="true" className="h-5 w-5" />
               </button>
@@ -194,7 +194,7 @@ export default function PhotosApp({ props }: AppProps) {
                 aria-label="Next photo"
                 aria-disabled={index === last ? 'true' : undefined}
                 onClick={() => move(1)}
-                className={NAV}
+                className={`${NAV} phone:absolute phone:right-2 phone:top-1/2 phone:z-10 phone:-translate-y-1/2`}
               >
                 <ChevronRight aria-hidden="true" className="h-5 w-5" />
               </button>

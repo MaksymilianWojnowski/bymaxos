@@ -457,3 +457,25 @@ test.describe('Notes stack touch at 390x844', () => {
 
 const detailOf = (page: Page) =>
   page.getByRole('textbox', { name: 'Note title' }).locator('xpath=ancestor::div[@data-detail-pane][1]')
+
+test.describe('phone apps that only need to fit at 390x844', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
+
+  test('Maps: the map fills the width with the timeline below it', async ({ page }) => {
+    await unlockMobile(page)
+    await page.getByRole('button', { name: 'Maps', exact: true }).click()
+    const map = await page.getByRole('img', { name: 'World map' }).boundingBox()
+    const timeline = await page.getByRole('navigation', { name: 'Travel timeline' }).boundingBox()
+    if (!map || !timeline) throw new Error('no boxes')
+    expect(map.width).toBeGreaterThanOrEqual(350)
+    expect(timeline.y).toBeGreaterThanOrEqual(map.y + map.height)
+  })
+
+  test('Resume: the page is at least 340px wide at 390', async ({ page }) => {
+    await unlockMobile(page)
+    await dock(page).getByRole('button', { name: 'Resume', exact: true }).click()
+    const article = await page.locator('article').boundingBox()
+    if (!article) throw new Error('no article box')
+    expect(article.width).toBeGreaterThanOrEqual(340)
+  })
+})

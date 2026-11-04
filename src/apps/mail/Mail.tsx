@@ -9,7 +9,7 @@ import { Sheet } from '../../ui/Sheet'
 import type { AppProps } from '../types'
 
 const FIELD =
-  'w-full rounded-[6px] border border-black/15 bg-white px-2 py-1 text-[13px] text-black focus-visible:ring-2 focus-visible:ring-accent-link dark:border-white/15 dark:bg-[#1e1e1e] dark:text-white'
+  'w-full rounded-[6px] border border-black/15 bg-white px-2 py-1 text-[13px] text-black phone:min-h-11 focus-visible:ring-2 focus-visible:ring-accent-link dark:border-white/15 dark:bg-[#1e1e1e] dark:text-white'
 const ERROR = 'text-[12px] text-red-700 dark:text-red-400'
 
 // Compose only: the draft goes to the visitor's email app. Nothing is sent from this page.
@@ -59,14 +59,14 @@ export default function MailApp({ windowId }: AppProps) {
         e.preventDefault()
         send()
       }}
-      className="flex h-full min-h-0 flex-col gap-3 bg-window p-4 font-sans text-[13px] text-text-1"
+      className="flex h-full min-h-0 flex-col gap-3 bg-window p-4 font-sans text-[13px] text-text-1 phone:overflow-auto"
     >
       <div className="flex justify-end">
         <button
           type="submit"
           aria-label="Send"
           title="Send"
-          className="grid h-7 w-8 place-items-center rounded-[6px] bg-accent-strong text-white"
+          className="grid h-7 w-8 place-items-center rounded-[6px] bg-accent-strong text-white phone:h-11 phone:w-11"
         >
           <Send className="h-4 w-4" aria-hidden />
         </button>
@@ -110,7 +110,7 @@ export default function MailApp({ windowId }: AppProps) {
         <label htmlFor="mail-message">Message</label>
         <textarea
           id="mail-message"
-          className={`${FIELD} min-h-0 flex-1 resize-none`}
+          className={`${FIELD} min-h-0 flex-1 resize-none phone:min-h-[120px]`}
           ref={messageRef}
           value={message}
           aria-invalid={errors.message}
@@ -137,7 +137,7 @@ export default function MailApp({ windowId }: AppProps) {
             <button
               type="button"
               onClick={copyAddress}
-              className="rounded-[6px] border border-black/15 px-3 py-1 dark:border-white/15"
+              className="rounded-[6px] border border-black/15 px-3 py-1 phone:min-h-11 dark:border-white/15"
             >
               Copy address
             </button>

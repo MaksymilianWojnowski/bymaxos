@@ -79,7 +79,7 @@ export function Sheet({ title, onClose, children }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-[6px] bg-accent-strong px-3 py-1 text-white"
+            className="rounded-[6px] bg-accent-strong px-3 py-1 text-white phone:min-h-11"
           >
             Done
           </button>

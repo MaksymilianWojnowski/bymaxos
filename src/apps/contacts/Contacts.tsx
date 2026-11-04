@@ -7,8 +7,8 @@ import { dispatch } from '../../system/commands'
 import { useSystem } from '../../system/store'
 
 const BUTTON =
-  'rounded-[6px] border border-black/15 bg-white px-3 py-1 text-[13px] text-black dark:border-white/15 dark:bg-[#2a2a2a] dark:text-white'
-const LINK = 'truncate text-left text-accent-link underline'
+  'rounded-[6px] border border-black/15 bg-white px-3 py-1 text-[13px] text-black phone:min-h-11 dark:border-white/15 dark:bg-[#2a2a2a] dark:text-white'
+const LINK = 'truncate text-left text-accent-link underline phone:min-h-11'
 
 const initials = (name: string) =>
   name
@@ -122,7 +122,7 @@ export default function ContactsApp() {
                 aria-label={`Copy ${row.label}`}
                 title={`Copy ${row.label}`}
                 onClick={() => copy(row.label, row.copyValue)}
-                className="grid h-6 w-6 shrink-0 place-items-center rounded-[4px] text-text-2 hover:bg-black/5 dark:hover:bg-white/10"
+                className="grid h-6 w-6 shrink-0 place-items-center rounded-[4px] text-text-2 phone:h-11 phone:w-11 hover:bg-black/5 dark:hover:bg-white/10"
               >
                 <Copy className="h-3.5 w-3.5" aria-hidden />
               </button>
