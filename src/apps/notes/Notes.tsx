@@ -51,7 +51,7 @@ export default function NotesApp({ windowId, props }: AppProps) {
   const shell = useShell()
 
   const titleRef = useRef<HTMLInputElement>(null)
-  const searchRef = useRef<HTMLInputElement>(null)
+  const newRef = useRef<HTMLButtonElement>(null)
   const bodyRef = useRef<HTMLTextAreaElement>(null)
   // Edit commands act on the field the visitor last used; the body is the default.
   const lastField = useRef<Field>('body')
@@ -111,7 +111,8 @@ export default function NotesApp({ windowId, props }: AppProps) {
         commit(deleteNote(stored, current.id))
         setDetailOpen(false)
       })
-      searchRef.current?.focus()
+      // A tap-focused search field would pop the iPhone keyboard over the list.
+      newRef.current?.focus()
       return
     }
     commit(deleteNote(stored, current.id))
@@ -179,7 +180,14 @@ export default function NotesApp({ windowId, props }: AppProps) {
   }, [selectedId])
 
   const newButton = (
-    <button type="button" aria-label="New Note" title="New Note" onClick={newNote} className={ICON_BUTTON}>
+    <button
+      ref={newRef}
+      type="button"
+      aria-label="New Note"
+      title="New Note"
+      onClick={newNote}
+      className={ICON_BUTTON}
+    >
       <Plus className="h-4 w-4" aria-hidden />
     </button>
   )
@@ -197,11 +205,13 @@ export default function NotesApp({ windowId, props }: AppProps) {
     </button>
   )
 
+  // On a phone the highlight means "open in the editor", so no row is marked until one is open.
+  const highlightId = shell === 'mobile' && !detailOpen ? undefined : current?.id
+
   const list = (
     <>
       <div className="p-2">
         <input
-          ref={searchRef}
           type="search"
           aria-label="Search notes"
           placeholder="Search"
@@ -212,7 +222,7 @@ export default function NotesApp({ windowId, props }: AppProps) {
       </div>
       <ul aria-label="Notes" className="min-h-0 flex-1 overflow-auto px-2 pb-2">
         {visible.map((n) => {
-          const selected = n.id === current?.id
+          const selected = n.id === highlightId
           const muted = selected ? 'text-white' : 'text-text-2'
           const preview = previewLine(n.body)
           return (

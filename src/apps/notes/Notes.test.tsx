@@ -243,7 +243,19 @@ describe('Notes on a phone', () => {
     await user.click(screen.getByRole('button', { name: 'New Note' }))
     await user.click(screen.getByRole('button', { name: 'Delete note' }))
     editorHidden()
-    expect(screen.getByRole('searchbox', { name: 'Search notes' })).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'New Note' })).toHaveFocus()
+  })
+
+  it('phone: the list marks no row until a note is open', async () => {
+    mockPhone()
+    const user = userEvent.setup()
+    openNotes()
+    const first = within(screen.getByRole('list', { name: 'Notes' })).getByRole('button', {
+      name: new RegExp(workingStyle.title),
+    })
+    expect(first).not.toHaveAttribute('aria-current')
+    await user.click(first)
+    expect(first).toHaveAttribute('aria-current', 'true')
   })
 
   it('phone: opening with an item starts in the editor', () => {

@@ -153,7 +153,7 @@ export function NavStack({ title, listActions, list, open, detailTitle, detailAc
         </header>
         <div
           tabIndex={0}
-          className="min-h-0 flex-1 overflow-y-auto focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-link focus-visible:outline-none"
+          className="min-h-0 flex-1 touch-pan-y overflow-y-auto focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-link focus-visible:outline-none"
         >
           {detail}
         </div>

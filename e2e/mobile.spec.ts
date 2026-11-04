@@ -1,6 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { centreOf, seriousViolations, touchDrag, unlockMobile } from './helpers.ts'
+import { centreOf, phoneAudit, seriousViolations, touchDrag, unlockMobile } from './helpers.ts'
 
 const dock = (page: Page) => page.getByRole('toolbar', { name: 'Dock' })
 const lockHint = (page: Page) => page.getByText('Swipe up to unlock')
@@ -384,6 +384,7 @@ test.describe('Notes stack touch at 390x844', () => {
     const title = page.getByRole('textbox', { name: 'Note title' })
     await expect(title).toBeVisible()
     const detail = title.locator('xpath=ancestor::div[@data-detail-pane][1]')
+    await expect(detail).toHaveCSS('translate', 'none')
     expect(await detail.locator('xpath=..').evaluate((el) => el.scrollLeft)).toBe(0)
     const box = await title.boundingBox()
     expect(box && box.x >= 0 && box.x < 390).toBe(true)
@@ -391,4 +392,68 @@ test.describe('Notes stack touch at 390x844', () => {
     expect(style.transitionProperty).toContain('translate')
     expect(style.transitionDuration).toBe('0.22s')
   })
+
+  test('Notes: edge swipe returns to the list; a mid-screen swipe does not', async ({ page }) => {
+    await unlockMobile(page)
+    await page.getByRole('button', { name: 'Notes', exact: true }).click()
+    const title = page.getByRole('textbox', { name: 'Note title' })
+    await page.getByRole('list', { name: 'Notes' }).getByRole('button').first().click()
+    await expect(title).toBeVisible()
+    await expect(detailOf(page)).toHaveCSS('translate', 'none')
+    const { y } = await centreOf(title)
+    await touchDrag(page, { x: 5, y }, { x: 300, y })
+    await expect(title).toBeHidden()
+
+    await page.getByRole('list', { name: 'Notes' }).getByRole('button').first().click()
+    await expect(title).toBeVisible()
+    await expect(detailOf(page)).toHaveCSS('translate', 'none')
+    // Same 295px length, but starting at 90 so it is not an edge swipe; the Back trigger must ignore it.
+    await touchDrag(page, { x: 90, y }, { x: 385, y })
+    await page.waitForTimeout(400)
+    await expect(title).toBeVisible()
+    await expect(detailOf(page)).toHaveCSS('translate', 'none')
+  })
+
+  test('rotating with a note open keeps it open with no overflow', async ({ page }) => {
+    await unlockMobile(page)
+    await page.getByRole('button', { name: 'Notes', exact: true }).click()
+    await page.getByRole('list', { name: 'Notes' }).getByRole('button').first().click()
+    const body = page.getByRole('textbox', { name: 'Note body' })
+    await expect(body).toBeVisible()
+    await expect(detailOf(page)).toHaveCSS('translate', 'none')
+
+    await page.setViewportSize({ width: 844, height: 390 })
+    await expect(body).toBeVisible()
+    expect((await phoneAudit(page)).overflowing).toEqual([])
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(body).toBeVisible()
+    expect((await phoneAudit(page)).overflowing).toEqual([])
+  })
+
+  test('search opens the note, Back, same search opens it again', async ({ page }) => {
+    await unlockMobile(page)
+    const search = async () => {
+      await page.getByRole('button', { name: 'Search', exact: true }).click()
+      const dialog = page.getByRole('dialog', { name: 'Search', exact: true })
+      await dialog.getByRole('combobox', { name: 'Search', exact: true }).fill("What I'm looking for")
+      await dialog.getByRole('option', { name: /What I'm looking for/ }).click()
+      await expect(dialog).toBeHidden()
+    }
+    const title = page.getByRole('textbox', { name: 'Note title' })
+
+    await search()
+    await expect(title).toHaveValue("What I'm looking for")
+    await expect(detailOf(page)).toHaveCSS('translate', 'none')
+    await page.getByRole('button', { name: 'Back', exact: true }).click()
+    await expect(title).toBeHidden()
+
+    await page.getByRole('button', { name: 'Home', exact: true }).click()
+    await search()
+    await expect(title).toHaveValue("What I'm looking for")
+    await expect(detailOf(page)).toHaveCSS('translate', 'none')
+  })
 })
+
+const detailOf = (page: Page) =>
+  page.getByRole('textbox', { name: 'Note title' }).locator('xpath=ancestor::div[@data-detail-pane][1]')
