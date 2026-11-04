@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useId, useReducer, useRef, type KeyboardEvent, type MouseEvent } from 'react'
+import { Fragment, useEffect, useId, useReducer, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react'
 import {
   Briefcase,
   ChevronLeft,
@@ -13,9 +13,11 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { dispatch, useWindowCommands, type HandlerRecord } from '../../system/commands'
+import { useShell } from '../../system/shell'
 import { useSystem } from '../../system/store'
 import { pathTo, type FileType, type VNode } from '../../system/vfs'
 import { iconFor } from '../../ui/fileIcon'
+import { NavStack } from '../../ui/NavStack'
 import { useContextMenu } from '../../ui/useContextMenu'
 import type { AppProps, MenuItemDef } from '../types'
 import { useOpenProps } from '../useOpenProps'
@@ -55,8 +57,11 @@ const KIND: Record<FileType, string> = {
 const kindOf = (node: VNode): string => (node.kind === 'folder' ? 'Folder' : KIND[node.fileType])
 
 export default function FinderApp({ windowId, props }: AppProps) {
-  const start = nodeById(props?.folderId)?.kind === 'folder' ? (props?.folderId as string) : 'desktop'
-  const [state, send] = useReducer(finderReducer, start, initFinder)
+  const folderProp = nodeById(props?.folderId)?.kind === 'folder' ? (props?.folderId as string) : undefined
+  const [state, send] = useReducer(finderReducer, folderProp ?? 'desktop', initFinder)
+  // Phones start on the locations list unless a folder prop opens one.
+  const [detailOpen, setDetailOpen] = useState(folderProp !== undefined)
+  const shell = useShell()
   const setTitle = useSystem((s) => s.setTitle)
   const menu = useContextMenu()
   // The icons grid is measured for its column count; it is the only element whose layout matters here.
@@ -77,8 +82,9 @@ export default function FinderApp({ windowId, props }: AppProps) {
   // A new folder while the window is open moves it there, as a Dock or Spotlight open does.
   useOpenProps(props, (p) => {
     const folderId = p.folderId
-    if (typeof folderId === 'string' && nodeById(folderId)?.kind === 'folder' && folderId !== currentId) {
-      send({ type: 'root', folderId })
+    if (typeof folderId === 'string' && nodeById(folderId)?.kind === 'folder') {
+      setDetailOpen(true)
+      if (folderId !== currentId) send({ type: 'root', folderId })
     }
   })
 
@@ -171,6 +177,93 @@ export default function FinderApp({ windowId, props }: AppProps) {
 
   const path = pathTo(vfs, currentId)
 
+  const viewToggle = (
+    <div role="group" aria-label="View" className="flex rounded-md bg-black/5 p-0.5">
+      {(['icons', 'list'] as const).map((view) => (
+        <button
+          key={view}
+          type="button"
+          aria-pressed={state.view === view}
+          onClick={() => send({ type: 'view', view })}
+          className={`rounded px-2 py-0.5 text-[12px] outline-none focus-visible:ring-2 focus-visible:ring-accent-link phone:min-h-11 phone:min-w-11 ${state.view === view ? 'bg-white shadow-sm dark:bg-white/20' : ''}`}
+        >
+          {view === 'icons' ? 'Icons' : 'List'}
+        </button>
+      ))}
+    </div>
+  )
+
+  if (shell === 'mobile') {
+    const locations = SIDEBAR.map((group) => (
+      <div key={group.label} className="mb-3">
+        <p className="px-4 pb-1 pt-2 text-[11px] font-semibold text-text-2">{group.label}</p>
+        {group.items.map(({ id, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => {
+              send({ type: 'root', folderId: id })
+              setDetailOpen(true)
+            }}
+            className="flex min-h-11 w-full items-center gap-2 px-4 text-left outline-none hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-link"
+          >
+            <Icon aria-hidden className="h-4 w-4 shrink-0 text-accent" />
+            <span className="truncate">{vfs.nodes[id]?.name}</span>
+          </button>
+        ))}
+      </div>
+    ))
+
+    const items = children.map((id) => {
+      const node = vfs.nodes[id]
+      return state.view === 'icons' ? (
+        <button
+          key={id}
+          type="button"
+          onClick={() => openNode(id)}
+          className="flex min-h-11 w-24 flex-col items-center gap-1 rounded-md p-1 outline-none focus-visible:ring-2 focus-visible:ring-accent-link"
+        >
+          <img src={iconFor(node)} alt="" aria-hidden draggable={false} className="h-16 w-16" />
+          <span className="line-clamp-2 break-words text-center text-[12px]">{node.name}</span>
+        </button>
+      ) : (
+        <button
+          key={id}
+          type="button"
+          onClick={() => openNode(id)}
+          className="flex min-h-11 w-full items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-accent-link"
+        >
+          <img src={iconFor(node)} alt="" aria-hidden draggable={false} className="h-6 w-6 shrink-0" />
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate">{node.name}</span>
+            <span className="truncate text-[12px] text-text-2">{kindOf(node)}</span>
+          </span>
+        </button>
+      )
+    })
+
+    const detail =
+      children.length === 0 ? (
+        placeholder && <p className="text-[13px] text-text-2">{placeholder}</p>
+      ) : (
+        <div className={state.view === 'icons' ? 'grid grid-cols-[repeat(auto-fill,96px)] gap-2' : 'flex flex-col'}>{items}</div>
+      )
+
+    return (
+      <div className="h-full min-h-0 text-[13px] text-text-1">
+        <NavStack
+          title="Finder"
+          list={locations}
+          open={detailOpen}
+          detailTitle={folderName}
+          detailActions={viewToggle}
+          onBack={() => (canBack ? send({ type: 'back' }) : setDetailOpen(false))}
+          detail={<div className="p-4">{detail}</div>}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-full min-h-0 text-[13px] text-text-1">
       <aside aria-label="Sidebar" className="w-40 shrink-0 overflow-y-auto border-r border-black/10 bg-black/[0.03] p-2">
@@ -214,19 +307,7 @@ export default function FinderApp({ windowId, props }: AppProps) {
             <ChevronRight aria-hidden className="h-4 w-4" />
           </button>
           <h2 className="flex-1 truncate text-center font-semibold">{folderName}</h2>
-          <div role="group" aria-label="View" className="flex rounded-md bg-black/5 p-0.5">
-            {(['icons', 'list'] as const).map((view) => (
-              <button
-                key={view}
-                type="button"
-                aria-pressed={state.view === view}
-                onClick={() => send({ type: 'view', view })}
-                className={`rounded px-2 py-0.5 text-[12px] outline-none focus-visible:ring-2 focus-visible:ring-accent-link ${state.view === view ? 'bg-white shadow-sm dark:bg-white/20' : ''}`}
-              >
-                {view === 'icons' ? 'Icons' : 'List'}
-              </button>
-            ))}
-          </div>
+          {viewToggle}
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto p-4">

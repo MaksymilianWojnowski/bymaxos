@@ -21,7 +21,7 @@ export default function TextEditApp({ windowId, props }: AppProps) {
 
   return (
     <div className="min-h-full bg-[#f5f5f5] px-4 py-6 dark:bg-[#2b2b2b]">
-      <article className="mx-auto max-w-[680px] select-text bg-white px-10 py-10 text-black dark:bg-[#1e1e1e] dark:text-white">
+      <article className="mx-auto max-w-[680px] select-text bg-white px-10 py-10 phone:px-5 text-black dark:bg-[#1e1e1e] dark:text-white">
         <LightMarkdown source={file.preview.body} />
       </article>
     </div>

@@ -4,6 +4,7 @@ import { getContent } from '../../content'
 import { WindowLayer } from '../../shells/desktop/WindowLayer'
 import { canDispatch, dispatch, installSystemCommands } from '../../system/commands'
 import { resetSystem, useSystem } from '../../system/store'
+import { mockPhone } from '../../test/mockPhone'
 import FinderApp from './Finder'
 
 let disposeCommands: () => void
@@ -169,5 +170,76 @@ describe('Finder', () => {
     const view = render(<FinderApp windowId="w1" props={{ folderId: 'desktop' }} />)
     view.rerender(<FinderApp windowId="w1" props={{ folderId: 'projects' }} />)
     expect(screen.getByRole('heading', { level: 2, name: 'Projects' })).toBeInTheDocument()
+  })
+})
+
+describe('Finder on a phone', () => {
+  it('phone: starts on the locations list', () => {
+    mockPhone()
+    render(<FinderApp windowId="w1" props={undefined} />)
+    expect(screen.getByRole('button', { name: 'Desktop' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Trash' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Back' })).not.toBeInTheDocument()
+  })
+
+  it('phone: tapping a location opens that folder', () => {
+    mockPhone()
+    render(<FinderApp windowId="w1" props={undefined} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Projects' }))
+    expect(screen.getByRole('heading', { level: 2, name: 'Projects' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'LigaPWr Web App.md' })).toBeInTheDocument()
+  })
+
+  it('phone: one tap on a subfolder enters it, and Back returns to the parent', () => {
+    mockPhone()
+    render(<FinderApp windowId="w1" props={undefined} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Desktop' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Projects' }))
+    expect(screen.getByRole('heading', { level: 2, name: 'Projects' })).toBeInTheDocument()
+    expect(screen.queryByRole('toolbar')).not.toBeInTheDocument()
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByRole('heading', { level: 2, name: 'Desktop' })).toBeInTheDocument()
+  })
+
+  it('phone: Back from the first folder returns to the locations, not an earlier location', () => {
+    mockPhone()
+    render(<FinderApp windowId="w1" props={undefined} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Work' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Documents' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.queryByRole('button', { name: 'Back' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Work' })).toBeInTheDocument()
+  })
+
+  it('phone: one tap on a file dispatches its open target', () => {
+    mockPhone()
+    render(<FinderApp windowId="w1" props={undefined} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Desktop' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Resume.pdf' }))
+    expect(useSystem.getState().wm.windows.some((w) => w.appId === 'resume')).toBe(true)
+  })
+
+  it('phone: opening with a folderId starts inside that folder', () => {
+    mockPhone()
+    render(<FinderApp windowId="w1" props={{ folderId: 'projects' }} />)
+    expect(screen.getByRole('heading', { level: 2, name: 'Projects' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Work' })).not.toBeInTheDocument()
+  })
+
+  it('phone: an empty folder shows its placeholder', () => {
+    mockPhone()
+    render(<FinderApp windowId="w1" props={{ folderId: 'trash' }} />)
+    expect(screen.getByText('Trash is empty.')).toBeInTheDocument()
+    expect(screen.queryByRole('toolbar')).not.toBeInTheDocument()
+  })
+
+  it('phone: items are buttons with no context menu', () => {
+    mockPhone()
+    render(<FinderApp windowId="w1" props={{ folderId: 'desktop' }} />)
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Resume.pdf' }))
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
   })
 })

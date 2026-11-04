@@ -7,9 +7,18 @@ const openNotes = async (page: Page) => {
   await expect(page.getByRole('list', { name: 'Notes' })).toBeVisible()
 }
 
+const openFinder = async (page: Page) => {
+  await page.getByRole('button', { name: 'Finder', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Desktop', exact: true })).toBeVisible()
+}
+
 const PHONE_STATES: { name: string; open: (page: Page) => Promise<void> }[] = [
   { name: 'Home screen', open: async () => {} },
   { name: 'Notes list', open: openNotes },
+  { name: 'Finder locations', open: openFinder },
+  { name: 'Finder folder icons', open: async (page) => { await openFinder(page); await page.getByRole('button', { name: 'Desktop', exact: true }).click() } },
+  { name: 'Finder folder list', open: async (page) => { await openFinder(page); await page.getByRole('button', { name: 'Desktop', exact: true }).click(); await page.getByRole('button', { name: 'List', exact: true }).click() } },
+  { name: 'TextEdit document', open: async (page) => { await openFinder(page); await page.getByRole('button', { name: 'About Me', exact: true }).click(); await page.getByRole('button', { name: 'Hello.md', exact: true }).click(); await expect(page.locator('article')).toBeVisible() } },
   {
     name: 'Notes editor',
     open: async (page) => {
