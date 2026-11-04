@@ -501,3 +501,16 @@ test.describe('phone Mail in landscape', () => {
     expect(box.y + box.height).toBeLessThanOrEqual(form.y + form.height)
   })
 })
+
+test.describe('phone Mail in portrait', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test('Mail: the message field fills the free height in portrait', async ({ page }) => {
+    await unlockMobile(page)
+    await dock(page).getByRole('button', { name: 'Mail', exact: true }).click()
+    const message = page.getByRole('dialog', { name: 'Mail', exact: true }).getByRole('textbox', { name: 'Message' })
+    const box = await message.boundingBox()
+    if (!box) throw new Error('no box')
+    expect(box.height).toBeGreaterThan(200)
+  })
+})
