@@ -44,6 +44,9 @@ const HELP = [
 // Completion tries these names in order, so the list order is also the order of ties.
 const COMMANDS = HELP.map((line) => line.split(' ')[0])
 
+// Phone chips in the Terminal toolbar; kept here because Terminal.tsx may only export components.
+export const QUICK_COMMANDS = ['help', 'whoami', 'about', 'experience', 'projects', 'skills', 'contact', 'clear']
+
 const folderChildren = (cwd: string): VNode[] => {
   const node = nodeById(cwd)
   if (node?.kind !== 'folder') return []

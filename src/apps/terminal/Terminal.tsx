@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { dispatch } from '../../system/commands'
-import { complete, promptFor, runCommand } from './commands'
+import { useShell } from '../../system/shell'
+import { complete, promptFor, QUICK_COMMANDS, runCommand } from './commands'
 
 interface Row {
   id: number
@@ -30,6 +31,7 @@ export default function TerminalApp() {
   const nextId = useRef(1)
   const outputRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const shell = useShell()
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -40,25 +42,26 @@ export default function TerminalApp() {
     if (el) el.scrollTop = el.scrollHeight
   }, [rows])
 
-  const submit = () => {
-    const result = runCommand(input, { cwd, history })
+  // Runs a line without touching the typed input, so a chip tap leaves the draft alone.
+  const run = (line: string) => {
+    const result = runCommand(line, { cwd, history })
     const echo: Row[] = [
-      { id: nextId.current++, prompt: promptFor(cwd), text: input },
+      { id: nextId.current++, prompt: promptFor(cwd), text: line },
       ...result.lines.map((text) => ({ id: nextId.current++, text })),
     ]
     if (result.clear) setRows([])
     else setRows((prev) => [...prev, ...echo])
-    if (input.trim() !== '') setHistory((h) => [...h, input.trim()])
+    if (line.trim() !== '') setHistory((h) => [...h, line.trim()])
     if (result.cwd !== undefined) setCwd(result.cwd)
     if (result.open) dispatch(result.open)
-    setInput('')
-    setPos(null)
-    setDraft('')
   }
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
-    submit()
+    run(input)
+    setInput('')
+    setPos(null)
+    setDraft('')
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -108,6 +111,25 @@ export default function TerminalApp() {
           </div>
         ))}
       </div>
+      {shell === 'mobile' && (
+        <div
+          role="toolbar"
+          aria-label="Quick commands"
+          className="flex shrink-0 gap-2 overflow-x-auto px-3 pb-2"
+        >
+          {QUICK_COMMANDS.map((name) => (
+            // Chips never move focus to the input: focusing it would open the phone keyboard.
+            <button
+              key={name}
+              type="button"
+              onClick={() => run(name)}
+              className="min-h-11 min-w-11 shrink-0 rounded-sm bg-[#333333] px-3 text-[#e5e5e5] hover:bg-[#3c3c3c] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
       <form onSubmit={onSubmit} className="flex shrink-0 items-center gap-2 px-3 pb-3">
         <span className="shrink-0 whitespace-pre text-[#7ee787]">{promptFor(cwd)}</span>
         <input
@@ -123,7 +145,7 @@ export default function TerminalApp() {
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck={false}
-          className="min-w-0 flex-1 rounded-sm bg-transparent text-[#e5e5e5] caret-white focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+          className="min-w-0 flex-1 rounded-sm bg-transparent text-[#e5e5e5] caret-white focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none phone:min-h-11"
         />
       </form>
     </div>

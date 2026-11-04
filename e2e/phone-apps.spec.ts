@@ -84,6 +84,7 @@ const PHONE_STATES: { name: string; open: (page: Page) => Promise<void> }[] = [
   { name: 'Mail sheet', open: async (page) => { await openApp(page, 'Mail'); await expect(page.getByRole('dialog', { name: 'Mail', exact: true })).toBeVisible() } },
   { name: 'Resume', open: async (page) => { await openApp(page, 'Resume'); await expect(page.getByRole('toolbar', { name: 'Resume' })).toBeVisible() } },
   { name: 'Safari favorites', open: async (page) => { await openApp(page, 'Safari'); await expect(page.getByRole('region', { name: 'Favorites' })).toBeVisible() } },
+  { name: 'Terminal', open: async (page) => { await openApp(page, 'Terminal'); await expect(page.getByRole('toolbar', { name: 'Quick commands' })).toBeVisible() } },
 ]
 
 test.describe('phone foundations at 390x844', () => {
