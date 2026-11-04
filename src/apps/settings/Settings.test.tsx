@@ -1,7 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { getContent } from '../../content'
 import { resetSystem, useSystem } from '../../system/store'
+import { mockPhone } from '../../test/mockPhone'
 import SettingsApp from './Settings'
 
 const wallpapers = getContent().site.wallpapers
@@ -17,6 +19,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  vi.restoreAllMocks()
 })
 
 describe('SettingsApp', () => {
@@ -114,5 +117,45 @@ describe('SettingsApp', () => {
 
     view.rerender(<SettingsApp windowId="w1" props={{ item: 'dock' }} />)
     expect(sectionButton('Dock')).toHaveAttribute('aria-current', 'page')
+  })
+})
+
+describe('Settings on a phone', () => {
+  const list = () => screen.getByRole('navigation', { name: 'Settings sections' })
+
+  it('phone: lists Appearance, Wallpaper and Accessibility, and no Dock', () => {
+    mockPhone()
+    renderApp()
+    expect(within(list()).getAllByRole('button').map((b) => b.textContent)).toEqual([
+      'Appearance',
+      'Wallpaper',
+      'Accessibility',
+    ])
+  })
+
+  it('phone: a section opens and Back returns', async () => {
+    mockPhone()
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(within(list()).getByRole('button', { name: 'Wallpaper' }))
+    expect(screen.getByRole('radiogroup', { name: 'Wallpaper' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.queryByRole('radiogroup', { name: 'Wallpaper' })).not.toBeInTheDocument()
+    expect(list()).toBeInTheDocument()
+  })
+
+  it('phone: item=dock stays on the list', () => {
+    mockPhone()
+    renderApp({ item: 'dock' })
+    expect(list()).toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+  })
+
+  it('phone: opening with item=wallpaper starts in that section', () => {
+    mockPhone()
+    renderApp({ item: 'wallpaper' })
+    expect(screen.getByRole('heading', { level: 2, name: 'Wallpaper' })).toBeInTheDocument()
+    expect(screen.getByRole('radiogroup', { name: 'Wallpaper' })).toBeInTheDocument()
   })
 })

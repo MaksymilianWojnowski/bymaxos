@@ -1,7 +1,9 @@
 import { useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
 import { getContent } from '../../content'
 import { ACCENTS, type Accent, type Appearance } from '../../system/settings'
+import { useShell } from '../../system/shell'
 import { useSystem } from '../../system/store'
+import { NavStack } from '../../ui/NavStack'
 import { Switch } from '../../ui/Switch'
 import type { AppProps } from '../types'
 import { useOpenProps } from '../useOpenProps'
@@ -113,119 +115,157 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export default function SettingsApp({ props }: AppProps) {
+  const shell = useShell()
+  // The Dock section is a desktop-only setting, so a phone never lists it or opens it.
+  const sections = shell === 'mobile' ? SECTIONS.filter((s) => s.id !== 'dock') : SECTIONS
   const [section, setSection] = useState<Section>(
-    () => SECTIONS.find((s) => s.id === props?.item)?.id ?? 'appearance',
+    () => sections.find((s) => s.id === props?.item)?.id ?? 'appearance',
   )
+  // Phones show the list or one section at a time; a valid item opens its section.
+  const [detailOpen, setDetailOpen] = useState(() => sections.some((s) => s.id === props?.item))
   // A new item while Settings is open switches section, as a deep link from Spotlight or Terminal does.
   useOpenProps(props, (p) => {
-    const hit = SECTIONS.find((s) => s.id === p.item)
-    if (hit) setSection(hit.id)
+    const hit = sections.find((s) => s.id === p.item)
+    if (hit) {
+      setSection(hit.id)
+      setDetailOpen(true)
+    }
   })
   const settings = useSystem((s) => s.settings)
   const updateSettings = useSystem((s) => s.updateSettings)
   const wallpapers = getContent().site.wallpapers
-  const current = SECTIONS.find((s) => s.id === section) ?? SECTIONS[0]
+  const current = sections.find((s) => s.id === section) ?? sections[0]
+
+  const sectionList = (
+    <nav
+      aria-label="Settings sections"
+      className={
+        shell === 'mobile'
+          ? 'flex flex-col gap-0.5 p-2'
+          : 'flex w-[180px] shrink-0 flex-col gap-0.5 overflow-auto border-r border-black/10 bg-sidebar p-2 dark:border-white/10'
+      }
+    >
+      {sections.map((s) => {
+        const selected = s.id === current.id && (shell !== 'mobile' || detailOpen)
+        return (
+          <button
+            key={s.id}
+            type="button"
+            aria-current={selected ? 'page' : undefined}
+            onClick={() => {
+              setSection(s.id)
+              setDetailOpen(true)
+            }}
+            className={`rounded-[6px] px-2 py-1 text-left phone:min-h-11 ${
+              selected ? 'bg-accent-strong text-white' : 'hover:bg-black/5 dark:hover:bg-white/10'
+            }`}
+          >
+            {s.label}
+          </button>
+        )
+      })}
+    </nav>
+  )
+
+  const content = (
+    <>
+      {current.id === 'appearance' && (
+        <>
+          <Row label="Mode">
+            <RadioGroup
+              label="Appearance"
+              options={APPEARANCES}
+              value={settings.appearance}
+              onChange={(v) => updateSettings({ appearance: v })}
+              className="grid w-[260px] grid-cols-3 gap-1 rounded-[8px] bg-black/5 p-0.5 phone:w-full dark:bg-white/10"
+              itemClass="h-[26px] rounded-[6px] phone:h-11 text-[12px] aria-checked:bg-white aria-checked:font-medium aria-checked:text-black aria-checked:shadow dark:aria-checked:bg-white/25 dark:aria-checked:text-white"
+              showText
+            />
+          </Row>
+          <Row label="Accent colour">
+            <RadioGroup
+              label="Accent colour"
+              options={ACCENT_OPTIONS}
+              value={settings.accent}
+              onChange={(v) => updateSettings({ accent: v })}
+              className="flex flex-wrap gap-3"
+              itemClass="h-[24px] w-[24px] rounded-full phone:h-11 phone:w-11 ring-offset-2 ring-offset-window aria-checked:ring-2 aria-checked:ring-accent-link"
+            />
+          </Row>
+        </>
+      )}
+
+      {current.id === 'wallpaper' && (
+        <RadioGroup
+          label="Wallpaper"
+          options={wallpapers.map((w) => ({ value: w.id, label: w.name, style: { backgroundImage: w.gradient } }))}
+          value={settings.wallpaperId}
+          onChange={(v) => updateSettings({ wallpaperId: v })}
+          className="grid grid-cols-2 gap-3"
+          itemClass="h-[72px] rounded-[8px] ring-offset-2 ring-offset-window aria-checked:ring-2 aria-checked:ring-accent-link"
+        />
+      )}
+
+      {current.id === 'accessibility' && (
+        <div className="flex flex-col gap-1">
+          <Switch
+            label="Reduce motion"
+            checked={settings.reduceMotion}
+            onChange={(v) => updateSettings({ reduceMotion: v })}
+          />
+          <Switch
+            label="Reduce transparency"
+            checked={settings.reduceTransparency}
+            onChange={(v) => updateSettings({ reduceTransparency: v })}
+          />
+        </div>
+      )}
+
+      {current.id === 'dock' && (
+        <div className="flex flex-col gap-3">
+          <label className="flex items-center gap-3">
+            <span className="w-[80px] shrink-0">Size</span>
+            <input
+              type="range"
+              min={40}
+              max={72}
+              step={4}
+              value={settings.dockSize}
+              onChange={(e) => updateSettings({ dockSize: Number(e.target.value) })}
+              className="flex-1 accent-accent-strong dark:accent-accent"
+            />
+          </label>
+          <Switch
+            label="Magnification"
+            checked={settings.dockMagnification}
+            onChange={(v) => updateSettings({ dockMagnification: v })}
+          />
+        </div>
+      )}
+    </>
+  )
+
+  if (shell === 'mobile') {
+    return (
+      <div className="h-full min-h-0 font-sans text-[13px] text-text-1">
+        <NavStack
+          title="Settings"
+          list={sectionList}
+          open={detailOpen}
+          detailTitle={current.label}
+          onBack={() => setDetailOpen(false)}
+          detail={<div className="flex flex-col gap-5 p-5">{content}</div>}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-full min-h-0 font-sans text-[13px] text-text-1">
-      <nav
-        aria-label="Settings sections"
-        className="flex w-[180px] shrink-0 flex-col gap-0.5 overflow-auto border-r border-black/10 bg-sidebar p-2 dark:border-white/10"
-      >
-        {SECTIONS.map((s) => {
-          const selected = s.id === section
-          return (
-            <button
-              key={s.id}
-              type="button"
-              aria-current={selected ? 'page' : undefined}
-              onClick={() => setSection(s.id)}
-              className={`rounded-[6px] px-2 py-1 text-left ${
-                selected ? 'bg-accent-strong text-white' : 'hover:bg-black/5 dark:hover:bg-white/10'
-              }`}
-            >
-              {s.label}
-            </button>
-          )
-        })}
-      </nav>
-
+      {sectionList}
       <div className="flex min-w-0 flex-1 flex-col gap-5 overflow-auto bg-window p-5">
         <h2 className="text-[15px] font-semibold">{current.label}</h2>
-
-        {section === 'appearance' && (
-          <>
-            <Row label="Mode">
-              <RadioGroup
-                label="Appearance"
-                options={APPEARANCES}
-                value={settings.appearance}
-                onChange={(v) => updateSettings({ appearance: v })}
-                className="grid w-[260px] grid-cols-3 gap-1 rounded-[8px] bg-black/5 p-0.5 dark:bg-white/10"
-                itemClass="h-[26px] rounded-[6px] text-[12px] aria-checked:bg-white aria-checked:font-medium aria-checked:text-black aria-checked:shadow dark:aria-checked:bg-white/25 dark:aria-checked:text-white"
-                showText
-              />
-            </Row>
-            <Row label="Accent colour">
-              <RadioGroup
-                label="Accent colour"
-                options={ACCENT_OPTIONS}
-                value={settings.accent}
-                onChange={(v) => updateSettings({ accent: v })}
-                className="flex flex-wrap gap-3"
-                itemClass="h-[24px] w-[24px] rounded-full ring-offset-2 ring-offset-window aria-checked:ring-2 aria-checked:ring-accent-link"
-              />
-            </Row>
-          </>
-        )}
-
-        {section === 'wallpaper' && (
-          <RadioGroup
-            label="Wallpaper"
-            options={wallpapers.map((w) => ({ value: w.id, label: w.name, style: { backgroundImage: w.gradient } }))}
-            value={settings.wallpaperId}
-            onChange={(v) => updateSettings({ wallpaperId: v })}
-            className="grid grid-cols-2 gap-3"
-            itemClass="h-[72px] rounded-[8px] ring-offset-2 ring-offset-window aria-checked:ring-2 aria-checked:ring-accent-link"
-          />
-        )}
-
-        {section === 'accessibility' && (
-          <div className="flex flex-col gap-1">
-            <Switch
-              label="Reduce motion"
-              checked={settings.reduceMotion}
-              onChange={(v) => updateSettings({ reduceMotion: v })}
-            />
-            <Switch
-              label="Reduce transparency"
-              checked={settings.reduceTransparency}
-              onChange={(v) => updateSettings({ reduceTransparency: v })}
-            />
-          </div>
-        )}
-
-        {section === 'dock' && (
-          <div className="flex flex-col gap-3">
-            <label className="flex items-center gap-3">
-              <span className="w-[80px] shrink-0">Size</span>
-              <input
-                type="range"
-                min={40}
-                max={72}
-                step={4}
-                value={settings.dockSize}
-                onChange={(e) => updateSettings({ dockSize: Number(e.target.value) })}
-                className="flex-1 accent-accent-strong dark:accent-accent"
-              />
-            </label>
-            <Switch
-              label="Magnification"
-              checked={settings.dockMagnification}
-              onChange={(v) => updateSettings({ dockMagnification: v })}
-            />
-          </div>
-        )}
+        {content}
       </div>
     </div>
   )

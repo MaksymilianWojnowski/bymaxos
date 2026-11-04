@@ -6,7 +6,7 @@ export function Switch({ label, checked, onChange }: { label: string; checked: b
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className="flex h-[26px] w-full items-center justify-between text-left"
+      className="flex h-[26px] w-full items-center justify-between text-left phone:h-11"
     >
       <span aria-hidden="true">{label}</span>
       <span

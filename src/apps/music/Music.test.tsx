@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { MusicAlbum, MusicArtist, MusicPlaylist } from '../../content/types'
+import { mockPhone } from '../../test/mockPhone'
 import MusicApp from './Music'
 
 const state = vi.hoisted(() => ({
@@ -153,5 +154,46 @@ describe('Music', () => {
 
     rerender(<MusicApp windowId="w1" props={{ item: 'p2' }} />)
     expect(within(detail()).getByRole('heading', { name: 'Night', level: 2 })).toBeInTheDocument()
+  })
+})
+
+describe('Music on a phone', () => {
+  const library = () => screen.getByRole('navigation', { name: 'Library' })
+
+  it('phone: starts on the library, and a row opens its detail', async () => {
+    mockPhone()
+    const user = userEvent.setup()
+    render(<MusicApp windowId="w1" />)
+    expect(library()).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Music detail' })).not.toBeInTheDocument()
+
+    await user.click(within(library()).getByRole('button', { name: 'Night' }))
+    expect(within(detail()).getByRole('heading', { name: 'Night', level: 2 })).toBeInTheDocument()
+  })
+
+  it('phone: opening with an item starts in the detail', () => {
+    mockPhone()
+    render(<MusicApp windowId="w1" props={{ item: 'p2' }} />)
+    expect(within(detail()).getByRole('heading', { name: 'Night', level: 2 })).toBeInTheDocument()
+  })
+
+  it('phone: the empty state still renders', () => {
+    mockPhone()
+    state.artists = []
+    state.albums = []
+    state.playlists = []
+    render(<MusicApp windowId="w1" />)
+    expect(screen.getByText("Music isn't configured yet.")).toBeInTheDocument()
+  })
+
+  it('phone: the Spotify player loads only after its button is tapped', async () => {
+    mockPhone()
+    const user = userEvent.setup()
+    render(<MusicApp windowId="w1" />)
+    await user.click(within(library()).getByRole('button', { name: 'Morning' }))
+    expect(document.querySelector('iframe')).toBeNull()
+
+    await user.click(within(detail()).getByRole('button', { name: 'Load Spotify player' }))
+    expect(screen.getByTitle('Spotify player — Morning')).toBeInTheDocument()
   })
 })

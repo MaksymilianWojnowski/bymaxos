@@ -12,6 +12,16 @@ const openFinder = async (page: Page) => {
   await expect(page.getByRole('button', { name: 'Desktop', exact: true })).toBeVisible()
 }
 
+const openMusic = async (page: Page) => {
+  await page.getByRole('button', { name: 'Music', exact: true }).click()
+  await expect(page.getByText("Music isn't configured yet.")).toBeVisible()
+}
+
+const openSettings = async (page: Page) => {
+  await page.getByRole('button', { name: 'System Settings', exact: true }).click()
+  await expect(page.getByRole('navigation', { name: 'Settings sections' })).toBeVisible()
+}
+
 const PHONE_STATES: { name: string; open: (page: Page) => Promise<void> }[] = [
   { name: 'Home screen', open: async () => {} },
   { name: 'Notes list', open: openNotes },
@@ -30,6 +40,11 @@ const PHONE_STATES: { name: string; open: (page: Page) => Promise<void> }[] = [
       await expect(title.locator('xpath=ancestor::div[@data-detail-pane][1]')).toHaveCSS('translate', 'none')
     },
   },
+  { name: 'Music empty state', open: openMusic },
+  { name: 'Settings list', open: openSettings },
+  { name: 'Settings Appearance', open: async (page) => { await openSettings(page); await page.getByRole('button', { name: 'Appearance', exact: true }).click(); await expect(page.getByRole('radiogroup', { name: 'Appearance' })).toBeVisible() } },
+  { name: 'Settings Wallpaper', open: async (page) => { await openSettings(page); await page.getByRole('button', { name: 'Wallpaper', exact: true }).click(); await expect(page.getByRole('radiogroup', { name: 'Wallpaper' })).toBeVisible() } },
+  { name: 'Settings Accessibility', open: async (page) => { await openSettings(page); await page.getByRole('button', { name: 'Accessibility', exact: true }).click(); await expect(page.getByRole('switch', { name: 'Reduce motion' })).toBeVisible() } },
 ]
 
 test.describe('phone foundations at 390x844', () => {
