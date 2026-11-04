@@ -130,7 +130,7 @@ export default function PhotosApp({ props }: AppProps) {
             <div
               ref={gridRef}
               inert={isOpen}
-              className="grid flex-1 grid-cols-[repeat(auto-fill,minmax(140px,1fr))] content-start gap-2 overflow-auto p-3"
+              className="grid flex-1 grid-cols-[repeat(auto-fill,minmax(140px,1fr))] auto-rows-max content-start gap-2 overflow-auto p-3"
             >
               {shown.map((p, i) => (
                 <button

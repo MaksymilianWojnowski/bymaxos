@@ -58,6 +58,12 @@ describe('Photos', () => {
     expect(screen.getAllByRole('img')).toHaveLength(1)
   })
 
+  it('the photo grid sizes its rows to their thumbnails', () => {
+    render(<PhotosApp windowId="w1" />)
+    const grid = screen.getByRole('img', { name: 'Alpha' }).closest('.grid')
+    expect(grid).toHaveClass('auto-rows-max')
+  })
+
   it('clicking a thumbnail opens a lightbox dialog named by the photo alt; arrows move; Escape closes and returns focus', async () => {
     render(<PhotosApp windowId="w1" />)
     await userEvent.click(thumb('Alpha'))
