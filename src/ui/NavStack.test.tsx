@@ -245,6 +245,26 @@ describe('NavStack', () => {
     expect(field).toHaveFocus()
   })
 
+  it('a new detail title starts at the top', () => {
+    const props = { title: 'Notes', list: <p>Row</p>, open: true, onBack: () => {}, detail: <p>Body</p> }
+    const view = render(<NavStack {...props} detailTitle="One" />)
+    const scroller = screen.getByText('Body').parentElement as HTMLElement
+    scroller.scrollTop = 120
+    view.rerender(<NavStack {...props} detailTitle="Two" />)
+    expect(scroller.scrollTop).toBe(0)
+  })
+
+  it('typing in a field that drives the title keeps the scroll position', () => {
+    const props = { title: 'Notes', list: <p>Row</p>, open: true, onBack: () => {} }
+    const view = render(<NavStack {...props} detailTitle="One" detail={<input aria-label="Title" />} />)
+    const field = screen.getByRole('textbox', { name: 'Title' })
+    const scroller = field.parentElement as HTMLElement
+    field.focus()
+    scroller.scrollTop = 120
+    view.rerender(<NavStack {...props} detailTitle="Typed" detail={<input aria-label="Title" />} />)
+    expect(scroller.scrollTop).toBe(120)
+  })
+
   it('Back that keeps the detail open does not focus the list', () => {
     const onBack = vi.fn()
     render(

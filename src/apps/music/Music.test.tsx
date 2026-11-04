@@ -168,13 +168,13 @@ describe('Music on a phone', () => {
     expect(screen.queryByRole('region', { name: 'Music detail' })).not.toBeInTheDocument()
 
     await user.click(within(library()).getByRole('button', { name: 'Night' }))
-    expect(within(detail()).getByRole('heading', { name: 'Night', level: 2 })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Night', level: 2 })).toBeInTheDocument()
   })
 
   it('phone: opening with an item starts in the detail', () => {
     mockPhone()
     render(<MusicApp windowId="w1" props={{ item: 'p2' }} />)
-    expect(within(detail()).getByRole('heading', { name: 'Night', level: 2 })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Night', level: 2 })).toBeInTheDocument()
   })
 
   it('phone: the empty state still renders', () => {
@@ -195,5 +195,25 @@ describe('Music on a phone', () => {
 
     await user.click(within(detail()).getByRole('button', { name: 'Load Spotify player' }))
     expect(screen.getByTitle('Spotify player — Morning')).toBeInTheDocument()
+  })
+
+  it('phone: Back unmounts a loaded Spotify player', async () => {
+    mockPhone()
+    const user = userEvent.setup()
+    render(<MusicApp windowId="w1" />)
+    await user.click(within(library()).getByRole('button', { name: 'Morning' }))
+    await user.click(within(detail()).getByRole('button', { name: 'Load Spotify player' }))
+    expect(screen.getByTitle('Spotify player — Morning')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(document.querySelector('iframe')).toBeNull()
+  })
+
+  it('phone: the detail shows its title once', async () => {
+    mockPhone()
+    const user = userEvent.setup()
+    render(<MusicApp windowId="w1" />)
+    await user.click(within(library()).getByRole('button', { name: 'Night' }))
+    expect(screen.getAllByRole('heading', { name: 'Night' })).toHaveLength(1)
   })
 })

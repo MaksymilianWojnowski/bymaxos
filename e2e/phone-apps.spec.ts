@@ -36,10 +36,8 @@ const openSettings = async (page: Page) => {
 }
 
 // Dock apps and home-grid apps both open from the page; the names are unique across the two.
-// The screen scales in over 220ms, which shifts the sizes the audit reads, so wait it out.
 const openApp = async (page: Page, name: string) => {
   await page.getByRole('button', { name, exact: true }).click()
-  await page.waitForTimeout(300)
 }
 
 const PHONE_STATES: { name: string; open: (page: Page) => Promise<void> }[] = [

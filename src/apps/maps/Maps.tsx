@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { getContent } from '../../content'
 import type { Place } from '../../content/types'
 import { formatRange } from '../../lib/format'
+import { useShell } from '../../system/shell'
 import type { AppProps } from '../types'
 import { useOpenProps } from '../useOpenProps'
 import { MAP_H, MAP_W, project } from './project'
@@ -21,12 +23,20 @@ export default function MapsApp({ props }: AppProps) {
   const places = getContent().places
   const timeline = [...places].sort(newestFirst)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const shell = useShell()
+  const card = useRef<HTMLElement>(null)
 
   // Maps is a single window: a new item from Spotlight or Terminal arrives as new props.
   useOpenProps(props, (p) => {
     const itemId = typeof p.item === 'string' ? p.item : undefined
     if (places.some((place) => place.id === itemId)) setSelectedId(itemId!)
   })
+
+  // On a phone the card sits below the map and timeline, so a pick outside the view would change it unseen.
+  const choose = (id: string) => {
+    flushSync(() => setSelectedId(id))
+    if (shell === 'mobile') card.current?.scrollIntoView?.({ block: 'nearest' })
+  }
 
   if (places.length === 0) {
     return (
@@ -49,7 +59,7 @@ export default function MapsApp({ props }: AppProps) {
                 <button
                   type="button"
                   aria-current={active ? 'true' : undefined}
-                  onClick={() => setSelectedId(place.id)}
+                  onClick={() => choose(place.id)}
                   className={`${ROW} ${active ? 'bg-accent-strong text-white' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
                 >
                   <span className="block truncate font-medium">{place.name}</span>
@@ -80,7 +90,7 @@ export default function MapsApp({ props }: AppProps) {
                   type="button"
                   aria-label={place.name}
                   aria-current={active ? 'true' : undefined}
-                  onClick={() => setSelectedId(place.id)}
+                  onClick={() => choose(place.id)}
                   style={{ left: `${(x / MAP_W) * 100}%`, top: `${(y / MAP_H) * 100}%` }}
                   className="absolute grid h-6 w-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full phone:h-11 phone:w-11 focus-visible:ring-2 focus-visible:ring-accent-link"
                 >
@@ -93,7 +103,7 @@ export default function MapsApp({ props }: AppProps) {
           </div>
         </div>
 
-        <section aria-label="Place details" className="mt-4 rounded-[10px] border border-black/10 bg-window p-4 dark:border-white/15">
+        <section ref={card} aria-label="Place details" className="mt-4 rounded-[10px] border border-black/10 bg-window p-4 dark:border-white/15">
           <h2 className="text-[17px] font-semibold">{selected.name}</h2>
           <p className="mt-1 text-text-2">
             {selected.country}

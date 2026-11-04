@@ -503,3 +503,27 @@ test.describe('phone Mail in portrait', () => {
     expect(box.height).toBeGreaterThan(200)
   })
 })
+
+test.describe('phone Maps in landscape', () => {
+  test.use({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true })
+
+  test('Maps: choosing a timeline row brings its card into view', async ({ page }) => {
+    await unlockMobile(page)
+    await page.getByRole('button', { name: 'Maps', exact: true }).click()
+    const card = page.getByRole('region', { name: 'Place details' })
+    await expect(card).not.toBeInViewport()
+    // On a phone the timeline sits below the map, so its last row is the one furthest from the card.
+    await page.getByRole('navigation', { name: 'Travel timeline' }).getByRole('button').last().click()
+    await expect(card).toBeInViewport({ ratio: 1 })
+  })
+
+  test('Maps: choosing a pin on the map brings its card into view', async ({ page }) => {
+    await unlockMobile(page)
+    await page.getByRole('button', { name: 'Maps', exact: true }).click()
+    const card = page.getByRole('region', { name: 'Place details' })
+    // At the top of the page the map pins are on screen and the card is not, so the pick must scroll it in.
+    await expect(card).not.toBeInViewport()
+    await page.getByRole('button', { name: 'Wrocław', exact: true }).click()
+    await expect(card).toBeInViewport({ ratio: 1 })
+  })
+})

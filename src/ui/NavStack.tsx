@@ -26,6 +26,7 @@ export function NavStack({ title, listActions, list, open, detailTitle, detailAc
   const opener = useRef<HTMLElement | null>(null)
   const wasOpen = useRef(open)
   const scroller = useRef<HTMLDivElement>(null)
+  const detailScroller = useRef<HTMLDivElement>(null)
   const gesture = useRef<{ pointerId: number; startX: number; startY: number; samples: Sample[] } | null>(null)
   const isOpen = useRef(open)
   // Layout effects run inside flushSync, so goBack reads the committed value.
@@ -41,6 +42,13 @@ export function NavStack({ title, listActions, list, open, detailTitle, detailAc
       heading.current?.focus({ preventScroll: true })
     }
   }, [open])
+
+  // The detail pane stays mounted, so its scroll would carry over to the next item. Typing in a field that drives the title must not jump the page.
+  useLayoutEffect(() => {
+    const focused = document.activeElement
+    const typing = (focused instanceof HTMLInputElement || focused instanceof HTMLTextAreaElement) && !!detailPane.current?.contains(focused)
+    if (open && !typing && detailScroller.current) detailScroller.current.scrollTop = 0
+  }, [open, detailTitle])
 
   // A title change can unmount the focused control (a subfolder replaces its children); focus left on body would strand Escape.
   const seenTitle = useRef(detailTitle)
@@ -133,7 +141,7 @@ export function NavStack({ title, listActions, list, open, detailTitle, detailAc
         <div
           ref={scroller}
           tabIndex={0}
-          className="min-h-0 flex-1 touch-pan-y overflow-y-auto focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-link focus-visible:outline-none"
+          className="min-h-0 flex-1 touch-pan-y touch-pinch-zoom overflow-y-auto focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-link focus-visible:outline-none"
         >
           {list}
         </div>
@@ -145,7 +153,7 @@ export function NavStack({ title, listActions, list, open, detailTitle, detailAc
         inert={!open}
         aria-hidden={!open || undefined}
         onKeyDown={onDetailKey}
-        className={`absolute inset-0 flex touch-pan-y flex-col bg-window transition-[translate,visibility] duration-[220ms] ${open ? '' : 'invisible translate-x-full'}`}
+        className={`absolute inset-0 flex touch-pan-y touch-pinch-zoom flex-col bg-window transition-[translate,visibility] duration-[220ms] ${open ? '' : 'invisible translate-x-full'}`}
       >
         <header className="flex h-11 shrink-0 items-center px-1">
           <button
@@ -166,8 +174,9 @@ export function NavStack({ title, listActions, list, open, detailTitle, detailAc
           <div className="flex min-w-11 justify-end">{detailActions}</div>
         </header>
         <div
+          ref={detailScroller}
           tabIndex={0}
-          className="min-h-0 flex-1 touch-pan-y overflow-y-auto focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-link focus-visible:outline-none"
+          className="min-h-0 flex-1 touch-pan-y touch-pinch-zoom overflow-y-auto focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-link focus-visible:outline-none"
         >
           {detail}
         </div>

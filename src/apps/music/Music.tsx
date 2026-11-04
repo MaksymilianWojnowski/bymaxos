@@ -107,7 +107,7 @@ export default function MusicApp({ props }: AppProps) {
     <section aria-label="Music detail" tabIndex={shell === 'mobile' ? undefined : 0} className="min-w-0 flex-1 overflow-auto p-5">
       {playlist && (
         <>
-          <h2 className="text-[17px] font-semibold">{playlist.title}</h2>
+          {shell !== 'mobile' && <h2 className="text-[17px] font-semibold">{playlist.title}</h2>}
           {playlist.description && <p className="mt-1 text-text-2">{playlist.description}</p>}
           <div className="mt-4 flex flex-wrap gap-2">
             {playlist.spotifyUrl && (
@@ -141,7 +141,7 @@ export default function MusicApp({ props }: AppProps) {
       )}
       {artist && (
         <>
-          <h2 className="text-[17px] font-semibold">{artist.name}</h2>
+          {shell !== 'mobile' && <h2 className="text-[17px] font-semibold">{artist.name}</h2>}
           {artist.url && (
             <div className="mt-4">
               <button type="button" className={BUTTON} onClick={() => openLink(artist.url!)}>
@@ -153,7 +153,7 @@ export default function MusicApp({ props }: AppProps) {
       )}
       {album && (
         <>
-          <h2 className="text-[17px] font-semibold">{album.title}</h2>
+          {shell !== 'mobile' && <h2 className="text-[17px] font-semibold">{album.title}</h2>}
           <p className="mt-1 text-text-2">
             {album.artist}
             {album.year !== undefined && ` · ${album.year}`}
@@ -178,7 +178,11 @@ export default function MusicApp({ props }: AppProps) {
           list={library}
           open={detailOpen}
           detailTitle={playlist?.title ?? artist?.name ?? album?.title ?? ''}
-          onBack={() => setDetailOpen(false)}
+          onBack={() => {
+            setDetailOpen(false)
+            // Back closes the player; going home leaves the Music app mounted, so its audio keeps playing.
+            setEmbedded(false)
+          }}
           detail={detailView}
         />
       </div>

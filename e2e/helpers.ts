@@ -93,7 +93,7 @@ export const settleAnimations = (page: Page) =>
       document
         .getAnimations()
         .filter((a) => a.effect?.getComputedTiming().endTime !== Infinity)
-        .map((a) => a.finished),
+        .map((a) => a.finished.catch(() => {})),
     ),
   )
 
@@ -101,6 +101,8 @@ export type PhoneAudit = { smallTargets: string[]; overflowing: string[] }
 
 // Layout checks for a phone state: touch targets under 44px and anything past the viewport's right edge.
 export async function phoneAudit(page: Page): Promise<PhoneAudit> {
+  // Sizes read mid scale-in are off by a fraction of a pixel, so wait for the screen to settle.
+  await settleAnimations(page)
   return page.evaluate(() => {
     // The accessible name when it is easy to read (aria-label, else trimmed text), cut to 40 characters, else the tag.
     const describe = (el: Element) => {
@@ -115,7 +117,7 @@ export async function phoneAudit(page: Page): Promise<PhoneAudit> {
       if (el.closest('[inert]') || getComputedStyle(el).visibility === 'hidden') continue
       const box = el.getBoundingClientRect()
       if (box.width < 44 || box.height < 44) {
-        smallTargets.push(`${describe(el)} ${Math.round(box.width)}x${Math.round(box.height)}`)
+        smallTargets.push(`${describe(el)} ${box.width.toFixed(1)}x${box.height.toFixed(1)}`)
       }
     }
     const overflowing: string[] = []
