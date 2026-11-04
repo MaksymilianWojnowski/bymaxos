@@ -86,6 +86,17 @@ export async function seriousViolations(page: Page): Promise<string[]> {
     .map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)
 }
 
+// The app screen fades in over 220ms, and a scan mid-fade reads the text as low contrast. Infinite animations (the lock chevron) never finish, so they are skipped.
+export const settleAnimations = (page: Page) =>
+  page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.getComputedTiming().endTime !== Infinity)
+        .map((a) => a.finished),
+    ),
+  )
+
 export type PhoneAudit = { smallTargets: string[]; overflowing: string[] }
 
 // Layout checks for a phone state: touch targets under 44px and anything past the viewport's right edge.

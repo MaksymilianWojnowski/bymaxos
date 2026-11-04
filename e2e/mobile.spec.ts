@@ -1,6 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { centreOf, phoneAudit, seriousViolations, touchDrag, unlockMobile } from './helpers.ts'
+import { centreOf, phoneAudit, seriousViolations, settleAnimations, touchDrag, unlockMobile } from './helpers.ts'
 
 const dock = (page: Page) => page.getByRole('toolbar', { name: 'Dock' })
 const lockHint = (page: Page) => page.getByText('Swipe up to unlock')
@@ -22,17 +22,6 @@ async function opaqueContrastUnchecked(page: Page, surface?: Locator): Promise<s
     selectors,
   )
 }
-
-// The app screen fades in over 220ms, and a scan mid-fade reads the text as low contrast. Infinite animations (the lock chevron) never finish, so they are skipped.
-const settleAnimations = (page: Page) =>
-  page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().endTime !== Infinity)
-        .map((a) => a.finished),
-    ),
-  )
 
 test.beforeEach(async ({ page }) => {
   await page.route('https://api.github.com/**', (route) => route.abort())

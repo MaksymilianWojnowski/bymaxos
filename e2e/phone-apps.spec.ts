@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 import { expect, test, type Page } from '@playwright/test'
-import { phoneAudit, unlockMobile } from './helpers.ts'
+import { phoneAudit, seriousViolations, settleAnimations, unlockMobile } from './helpers.ts'
 
 const REPOS_FIXTURE = fileURLToPath(new URL('./fixtures/repos.json', import.meta.url))
 const GITHUB_API = 'https://api.github.com/**'
@@ -103,11 +103,36 @@ test.describe('phone states at 390x844', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
   for (const state of PHONE_STATES) {
-    test(`${state.name} has 44px targets and no sideways overflow`, async ({ page }) => {
+    test(`${state.name} has 44px targets, no sideways overflow and 16px fields`, async ({ page }) => {
       await unlockMobile(page)
       await state.open(page)
       expect(await phoneAudit(page)).toEqual({ smallTargets: [], overflowing: [] })
+      // Below 16px iOS Safari zooms the page on focus.
+      const smallFields = await page.evaluate(() =>
+        [...document.querySelectorAll('input, textarea, select')]
+          .filter((el) => el.getClientRects().length > 0 && !el.closest('[inert]') && getComputedStyle(el).visibility !== 'hidden')
+          .map((el) => ({ tag: el.tagName.toLowerCase(), size: parseFloat(getComputedStyle(el).fontSize) }))
+          .filter((field) => field.size < 16),
+      )
+      expect(smallFields).toEqual([])
     })
+  }
+})
+
+test.describe('phone states axe at 390x844', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  for (const colorScheme of ['light', 'dark'] as const) {
+    for (const state of PHONE_STATES) {
+      test(`${state.name} axe passes (${colorScheme})`, async ({ page }) => {
+        await page.emulateMedia({ colorScheme })
+        await unlockMobile(page)
+        await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme)
+        await state.open(page)
+        await settleAnimations(page)
+        expect(await seriousViolations(page)).toEqual([])
+      })
+    }
   }
 })
 
@@ -119,6 +144,22 @@ test.describe('phone states at 320x568', () => {
       await unlockMobile(page)
       await state.open(page)
       expect((await phoneAudit(page)).overflowing).toEqual([])
+    })
+  }
+})
+
+test.describe('phone states in landscape at 844x390', () => {
+  test.use({ viewport: { width: 844, height: 390 }, hasTouch: true })
+
+  for (const state of PHONE_STATES) {
+    test(`${state.name} has no sideways overflow and keeps its exit in view`, async ({ page }) => {
+      await unlockMobile(page)
+      await state.open(page)
+      expect((await phoneAudit(page)).overflowing).toEqual([])
+      // A sheet has no home indicator, so its Close button is the way out; the home screen has no exit.
+      if (state.name === 'Home screen') return
+      const exit = state.name === 'Mail sheet' ? 'Close' : 'Home'
+      await expect(page.getByRole('button', { name: exit, exact: true })).toBeInViewport()
     })
   }
 })
