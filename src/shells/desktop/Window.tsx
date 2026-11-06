@@ -1,9 +1,11 @@
 import { useEffect, useRef, type CSSProperties, type PointerEvent, type ReactNode } from 'react'
 import { Minus, Plus, X, type LucideIcon } from 'lucide-react'
 import type { AppDefinition } from '../../apps/types'
+import { genieRestores } from '../../system/genieSignals'
 import { useSystem } from '../../system/store'
 import type { Rect, WindowState } from '../../system/types'
 import { dockIconRects } from './dockIconRects'
+import { playGenie } from './genieLayer'
 import { resizeRect, type ResizeDir } from './resize'
 
 interface Props {
@@ -51,10 +53,35 @@ export function Window({ win, app, focused, children, mission }: Props) {
   const rootRef = useRef<HTMLDivElement>(null)
   const gesture = useRef<Gesture | null>(null)
   const animating = useRef(false)
-  const animation = useRef<Animation | null>(null)
+  const animations = useRef<Animation[]>([])
   const resizable = app.window?.resizable ?? false
   const minSize = app.window?.minSize ?? { w: 0, h: 0 }
   const titleId = `win-title-${win.id}`
+
+  // A window restored from the Dock plays the genie in reverse, hidden until the strips land.
+  // It runs before the focus effect below, so the hidden root is never focused; focus moves on at the end.
+  useEffect(() => {
+    if (!genieRestores.delete(win.id)) return
+    const el = rootRef.current
+    const target = dockIconRects.get(win.appId)
+    if (!el || !target || document.documentElement.classList.contains('reduce-motion')) return
+    // The open animation is still scaling the root, so the box comes from the stored rect, not the live one.
+    const parent = el.offsetParent instanceof Element ? el.offsetParent.getBoundingClientRect() : { x: 0, y: 0 }
+    const from = { x: parent.x + win.rect.x, y: parent.y + win.rect.y, width: win.rect.w, height: win.rect.h }
+    const anims = playGenie(el, from, target, 'restore')
+    if (!anims) return
+    animations.current = anims
+    el.style.visibility = 'hidden'
+    Promise.all(anims.map((a) => a.finished)).then(
+      () => {
+        el.style.visibility = ''
+        el.focus({ preventScroll: true })
+      },
+      () => {},
+    )
+    // Mount-only: a restore is a one-off event, and its deps would replay it on every store change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Focus the window on open; hand focus back to whatever had it before the window existed.
   useEffect(() => {
@@ -65,15 +92,33 @@ export function Window({ win, app, focused, children, mission }: Props) {
     }
   }, [])
 
-  // Cancelling on unmount stops a minimize still in flight when the window closes.
-  useEffect(() => () => animation.current?.cancel(), [])
+  // Cancelling on unmount stops a minimize or restore still in flight when the window closes.
+  useEffect(() => () => animations.current.forEach((a) => a.cancel()), [])
 
   const minimize = () => {
     if (animating.current) return
     const el = rootRef.current
     const target = dockIconRects.get(win.appId)
     const reduceMotion = document.documentElement.classList.contains('reduce-motion')
-    if (reduceMotion || !target || !el || typeof el.animate !== 'function') {
+    if (reduceMotion || !target || !el) {
+      minimizeWin(win.id)
+      return
+    }
+    const genie = playGenie(el, el.getBoundingClientRect(), target, 'minimize')
+    if (genie) {
+      animating.current = true
+      animations.current = genie
+      el.style.visibility = 'hidden'
+      Promise.all(genie.map((a) => a.finished)).then(
+        () => minimizeWin(win.id),
+        () => {
+          animating.current = false
+        },
+      )
+      return
+    }
+    // Scale fallback: used when the genie cannot run (no animate, or too many DOM nodes).
+    if (typeof el.animate !== 'function') {
       minimizeWin(win.id)
       return
     }
@@ -88,7 +133,7 @@ export function Window({ win, app, focused, children, mission }: Props) {
       ],
       { duration: 220, easing: 'ease-in', fill: 'forwards' },
     )
-    animation.current = anim
+    animations.current = [anim]
     anim.onfinish = () => minimizeWin(win.id)
     // cancel() does not fire onfinish, so a cancelled run must release the guard here.
     anim.oncancel = () => {

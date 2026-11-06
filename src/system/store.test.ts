@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { KEYS, safeStorage } from './storage'
 import type { AppDefinition } from '../apps/types'
 import { resetSystem, setAppLookup, setAppResolver, useSystem } from './store'
+import { genieRestores } from './genieSignals'
 import { activeAppId } from './wm'
 import type { WindowSpec } from './types'
 
@@ -307,5 +308,15 @@ describe('openMobileApp', () => {
     useSystem.getState().openMobileApp('quicklook')
     expect(useSystem.getState().mobileHome).toBe(true)
     expect(useSystem.getState().wm.windows).toHaveLength(0)
+  })
+})
+
+describe('genie restores', () => {
+  it('restore records the id in genieRestores', () => {
+    const id = useSystem.getState().openApp('finder') as string
+    useSystem.getState().minimize(id)
+    useSystem.getState().restore(id)
+    expect(genieRestores.has(id)).toBe(true)
+    genieRestores.clear()
   })
 })

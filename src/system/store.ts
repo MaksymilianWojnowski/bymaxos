@@ -2,6 +2,7 @@ import { create, type StoreApi, type UseBoundStore } from 'zustand'
 import type { AppDefinition } from '../apps/types'
 import { dockClickAction } from '../shells/desktop/dockLogic'
 import { getWorkArea } from './layout'
+import { genieRestores } from './genieSignals'
 import { ACCENTS, applyAppearance, defaultSettings, type Settings } from './settings'
 import { KEYS, safeStorage } from './storage'
 import { runningAppsByRecency } from './switcher'
@@ -227,7 +228,9 @@ export const useSystem: UseBoundStore<StoreApi<SystemState>> = create<SystemStat
     },
 
     restore(id) {
-      set({ wm: wm.restoreWindow(get().wm, id) })
+      const s = get().wm
+      if (s.windows.some((w) => w.id === id && w.mode === 'minimized')) genieRestores.add(id)
+      set({ wm: wm.restoreWindow(s, id) })
     },
 
     toggleMaximize(id) {

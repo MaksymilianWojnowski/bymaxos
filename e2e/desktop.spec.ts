@@ -82,6 +82,7 @@ test.describe('desktop', () => {
     const win = desktopWindow(page)
     await expect(win).toBeVisible()
     await win.getByRole('button', { name: 'Minimize' }).click()
+    await expect(page.locator('[data-genie-layer]')).toHaveCount(0)
     await expect(win).toBeHidden()
     await openDock(page, 'Finder')
     await expect(win).toBeVisible()
