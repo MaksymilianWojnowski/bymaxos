@@ -162,3 +162,68 @@ export async function scanWindow(page: Page, name: string, prepare?: (win: Locat
   await win.getByRole('button', { name: 'Close', exact: true }).click()
   await expect(win).toBeHidden()
 }
+
+type Rgba = [number, number, number, number]
+
+// Parses a computed colour: rgb()/rgba(), or oklab()/oklch() which Tailwind's palette and colour-mix produce. Returns 0-255 sRGB and alpha 0-1.
+export function parseRgba(css: string): Rgba {
+  const m = css.match(/(rgba?|oklab|oklch)\(([^)]+)\)/)
+  if (!m) throw new Error(`not a colour: ${css}`)
+  const parts = m[2].split(/[\s,/]+/).filter(Boolean)
+  const alpha = parts[3] === undefined ? 1 : parts[3].endsWith('%') ? parseFloat(parts[3]) / 100 : Number(parts[3])
+  if (m[1].startsWith('rgb')) return [Number(parts[0]), Number(parts[1]), Number(parts[2]), alpha]
+  const num = (v: string, scale: number) => (v.endsWith('%') ? (parseFloat(v) / 100) * scale : Number(v))
+  const L = num(parts[0], 1)
+  let a: number
+  let b: number
+  if (m[1] === 'oklab') {
+    a = num(parts[1], 0.4)
+    b = num(parts[2], 0.4)
+  } else {
+    const C = num(parts[1], 0.4)
+    const h = (Number(parts[2].replace('deg', '')) * Math.PI) / 180
+    a = C * Math.cos(h)
+    b = C * Math.sin(h)
+  }
+  // OKLab to linear sRGB (Ottosson's matrices), then the sRGB transfer curve.
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3
+  const mm = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3
+  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3
+  const lin = [
+    4.0767416621 * l - 3.3077115913 * mm + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * mm - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * mm + 1.707614701 * s,
+  ]
+  const encode = (c: number) => {
+    const v = Math.min(1, Math.max(0, c))
+    return 255 * (v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055)
+  }
+  return [encode(lin[0]), encode(lin[1]), encode(lin[2]), alpha]
+}
+
+// Source-over: `fg` laid over `backdrop`. The result is opaque when the backdrop is opaque.
+export function composite(fg: string, backdrop: string): string {
+  const [fr, fg2, fb, fa] = parseRgba(fg)
+  const [br, bg, bb, ba] = parseRgba(backdrop)
+  const outA = fa + ba * (1 - fa)
+  const mix = (f: number, b: number) => (outA === 0 ? 0 : (f * fa + b * ba * (1 - fa)) / outA)
+  const [r, g, b] = [mix(fr, br), mix(fg2, bg), mix(fb, bb)].map((v) => Math.round(v))
+  return outA >= 1 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${outA.toFixed(3)})`
+}
+
+// WCAG relative luminance of an opaque colour.
+function luminance(css: string): number {
+  const [r, g, b] = parseRgba(css).map((c) => {
+    const s = c / 255
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+// WCAG contrast of `a` over `b`. A translucent `a` is composited over `b` first; `b` must be opaque.
+export function contrastRatio(a: string, b: string): number {
+  if (parseRgba(b)[3] < 1) throw new Error(`backdrop must be opaque: ${b}`)
+  const fg = parseRgba(a)[3] < 1 ? composite(a, b) : a
+  const [hi, lo] = [luminance(fg), luminance(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
+}

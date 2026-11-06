@@ -23,9 +23,11 @@ const linkedinUrl = getContent().links.find((l) => l.id === 'linkedin')!.url
 const finderWindows = () => useSystem.getState().wm.windows.filter((w) => w.appId === 'finder')
 
 describe('Dock', () => {
-  it('gives each dock item a link-coloured focus ring, which keeps 3:1 on the light dock glass', () => {
+  it('gives each dock item a white focus ring with a black outer shadow', () => {
     render(<Dock />)
-    expect(screen.getByRole('button', { name: 'Finder' })).toHaveClass('focus-visible:ring-accent-link')
+    const finder = screen.getByRole('button', { name: 'Finder' })
+    expect(finder).toHaveClass('focus-visible:ring-white')
+    expect(finder).toHaveClass('focus-visible:shadow-[0_0_0_4px_rgb(0_0_0/0.75)]')
   })
 
   it('renders the dock items in group and order', () => {

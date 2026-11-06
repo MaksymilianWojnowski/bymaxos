@@ -51,7 +51,7 @@
   --accent-link: #994a9b;
 }
 :root[data-theme='dark'][data-accent='purple'] {
-  --accent-link: #b76cb9;
+  --accent-link: #c17cc0;
 }
 :root[data-accent='pink'] {
   --accent: #f74f9e;
