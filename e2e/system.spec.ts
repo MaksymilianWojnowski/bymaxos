@@ -61,6 +61,26 @@ test.describe('system overlays and settings', () => {
     await expect(launchpad).toBeHidden()
   })
 
+  test("a Dock icon's context menu is on top and its items are clickable", async ({ page }) => {
+    await unlock(page)
+    await page.getByRole('toolbar', { name: 'Dock' }).getByRole('button', { name: 'Finder' }).click({ button: 'right' })
+    const menu = page.getByRole('menu')
+    const open = menu.getByRole('menuitem', { name: 'Open', exact: true })
+    await expect(open).toBeVisible()
+    // The last item sits lowest, the part a Dock above the menu would cover; its centre must hit that item.
+    const last = menu.getByRole('menuitem').last()
+    const lastText = (await last.textContent())?.trim()
+    const box = await last.boundingBox()
+    if (!box) throw new Error('last menu item has no box')
+    const hitText = await page.evaluate(
+      ([x, y]) => document.elementFromPoint(x, y)?.closest('[role="menuitem"]')?.textContent?.trim() ?? null,
+      [box.x + box.width / 2, box.y + box.height / 2],
+    )
+    expect(hitText).toBe(lastText)
+    await open.click()
+    await expect(appWindow(page, 'Finder')).toBeVisible()
+  })
+
   test('Launchpad leaves the Dock visible and clickable', async ({ page }) => {
     await unlock(page)
     await openDock(page, 'Launchpad')

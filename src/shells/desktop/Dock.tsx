@@ -24,14 +24,14 @@ function showAll(appId: AppId): void {
   if (top) useSystem.getState().focus(top.id)
 }
 
-// Launchpad covers the screen, so anything the Dock starts closes it first. Launchpad's own icon is the exception: it toggles.
-function closeLaunchpad(app: AppDefinition): void {
+// As on macOS, anything the Dock starts closes an open system overlay first. An overlay's own Dock icon is the exception: it toggles.
+function closeOverlay(app: AppDefinition): void {
   const store = useSystem.getState()
-  if (store.overlay === 'launchpad' && app.overlay !== 'launchpad') store.setOverlay(null)
+  if (store.overlay !== null && app.overlay !== store.overlay) store.setOverlay(null)
 }
 
 function clickDock(app: AppDefinition): void {
-  closeLaunchpad(app)
+  closeOverlay(app)
   activate(app)
 }
 
@@ -126,8 +126,8 @@ export function Dock() {
   }
 
   const onContextMenu = (e: MouseEvent, app: AppDefinition) => {
-    // The menu's items dispatch their commands after it closes, so Launchpad closes as the menu opens.
-    closeLaunchpad(app)
+    // The menu's items dispatch their commands after it closes, so the overlay closes as the menu opens.
+    closeOverlay(app)
     const items: MenuItemDef[] = app.external
       ? [{ label: 'Open', command: { type: 'dock.openLink', appId: app.id } }]
       : app.alias || app.overlay

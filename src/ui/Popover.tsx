@@ -56,7 +56,7 @@ export function Popover({ anchor, onClose, children, label, anchorEl }: Props) {
       ref={ref}
       role="dialog"
       aria-label={label}
-      className="fixed z-50 rounded-mac-menu p-3 font-sans text-[13px] text-text-1 shadow-lg"
+      className="fixed z-[56] rounded-mac-menu p-3 font-sans text-[13px] text-text-1 shadow-lg"
       style={{
         top: anchor.bottom + 6,
         left: anchor.left,

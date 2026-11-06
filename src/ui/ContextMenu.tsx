@@ -50,7 +50,7 @@ export function ContextMenu({ x, y, items, onClose }: Props) {
   }, [onClose])
 
   return createPortal(
-    <div ref={ref} className="fixed z-50" style={{ left: x, top: y }}>
+    <div ref={ref} className="fixed z-[56]" style={{ left: x, top: y }}>
       <MenuList items={items} onClose={onClose} />
     </div>,
     document.body,

@@ -132,6 +132,14 @@ describe('Dock', () => {
     expect(useSystem.getState().wm.windows).toHaveLength(1)
   })
 
+  it('a Dock click while Spotlight is open closes Spotlight and runs the click', () => {
+    render(<Dock />)
+    useSystem.setState({ overlay: 'spotlight' })
+    fireEvent.click(screen.getByRole('button', { name: 'Finder' }))
+    expect(useSystem.getState().overlay).toBeNull()
+    expect(finderWindows()).toHaveLength(1)
+  })
+
   it('opens Launchpad on click and closes it on a second click', () => {
     render(<Dock />)
     const launchpad = screen.getByRole('button', { name: 'Launchpad' })
