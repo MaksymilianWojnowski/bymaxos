@@ -137,6 +137,20 @@ describe('Notes', () => {
     expect(bodyField()).toHaveValue(workingStyle.body)
   })
 
+  it('when saving fails the footer says edits are not being saved', async () => {
+    const user = userEvent.setup()
+    openNotes()
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('full')
+    })
+    await user.type(bodyField(), '!')
+    expect(screen.getByRole('status')).toHaveTextContent("Couldn't save — your edits will be lost when you leave.")
+    spy.mockRestore()
+    await user.type(bodyField(), '?')
+    expect(screen.getByRole('status')).toHaveTextContent('Your edits stay on this device.')
+  })
+
+
   it('Edit > Copy copies the editor selection through copyText', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     stubClipboard({ writeText })

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { APPS } from '../../apps/registry'
 import { getContent } from '../../content'
+import { KEYS } from '../../system/storage'
 import { buildIndex, rank } from '../../system/search'
 import { resetSystem, useSystem } from '../../system/store'
 import { MobileSearch } from './MobileSearch'
@@ -108,5 +109,19 @@ describe('MobileSearch', () => {
     expect(field()).toHaveFocus()
     unmount()
     expect(opener).toHaveFocus()
+  })
+
+  it('a note the visitor added is found', () => {
+    window.localStorage.setItem(
+      KEYS.notes,
+      JSON.stringify({
+        edits: {},
+        added: [{ id: 'note-mine', folder: 'Notes', title: 'Zebra Plans', body: '', updated: '2026-11-01' }],
+        deleted: [],
+      }),
+    )
+    render(<MobileSearch onClose={vi.fn()} />)
+    fireEvent.change(field(), { target: { value: 'zebra' } })
+    expect(screen.getByText('Zebra Plans')).toBeInTheDocument()
   })
 })

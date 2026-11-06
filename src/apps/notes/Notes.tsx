@@ -46,6 +46,7 @@ export default function NotesApp({ windowId, props }: AppProps) {
   )
   const [query, setQuery] = useState('')
   const [confirming, setConfirming] = useState(false)
+  const [saveFailed, setSaveFailed] = useState(false)
   // Phones show one pane at a time; the editor is the detail that slides over the list.
   const [detailOpen, setDetailOpen] = useState(false)
   const shell = useShell()
@@ -79,7 +80,7 @@ export default function NotesApp({ windowId, props }: AppProps) {
   // Every change is written straight to localStorage; there is no separate save step.
   const commit = (next: StoredNotes) => {
     setStored(next)
-    safeStorage.set('local', KEYS.notes, next)
+    setSaveFailed(!safeStorage.set('local', KEYS.notes, next))
   }
 
   const change = (patch: { title?: string; body?: string }) => {
@@ -120,6 +121,7 @@ export default function NotesApp({ windowId, props }: AppProps) {
 
   const restoreOriginals = () => {
     safeStorage.remove('local', KEYS.notes)
+    setSaveFailed(false)
     setStored(emptyStoredNotes())
     setConfirming(false)
   }
@@ -277,7 +279,9 @@ export default function NotesApp({ windowId, props }: AppProps) {
 
   const footer = (
     <div className="flex items-center justify-between gap-3 border-t border-black/10 px-3 py-1.5 text-text-2 dark:border-white/15">
-      <span>Your edits stay on this device.</span>
+      <span role="status">
+        {saveFailed ? "Couldn't save — your edits will be lost when you leave." : 'Your edits stay on this device.'}
+      </span>
       <button type="button" onClick={() => setConfirming(true)} className={TEXT_BUTTON}>
         Restore originals
       </button>

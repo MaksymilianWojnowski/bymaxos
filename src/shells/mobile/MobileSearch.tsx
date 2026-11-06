@@ -2,8 +2,10 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 
 import { Search } from 'lucide-react'
 import { APPS, getApp } from '../../apps/registry'
 import { nodeById } from '../../apps/finder/vfsInstance'
+import { mergeNotes, parseStoredNotes } from '../../apps/notes/notesState'
 import { getContent } from '../../content'
 import { buildIndex, rank, type SearchItem } from '../../system/search'
+import { KEYS, safeStorage } from '../../system/storage'
 import { useSystem } from '../../system/store'
 import type { AppId } from '../../system/types'
 import { AppIcon } from '../../ui/AppIcon'
@@ -33,7 +35,11 @@ export function MobileSearch({ onClose }: { onClose: () => void }) {
   // A result whose app is hidden on mobile would open nothing, so it is left out.
   const index = useMemo(
     () =>
-      buildIndex(getContent(), APPS).filter(
+      buildIndex(
+        getContent(),
+        APPS,
+        mergeNotes(getContent().notes, parseStoredNotes(safeStorage.get<unknown>('local', KEYS.notes, null))),
+      ).filter(
         (item) => getApp(item.command.appId as AppId)?.mobile?.presentation !== 'hidden',
       ),
     [],

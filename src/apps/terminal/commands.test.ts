@@ -95,6 +95,14 @@ describe('runCommand', () => {
     expect(runCommand('ls nope', ctx())).toEqual({ lines: ['ls: no such folder: nope'] })
   })
 
+  it('ls .. lists the parent folder', () => {
+    expect(runCommand('ls ..', ctx('work')).lines).toEqual(runCommand('ls', ctx()).lines)
+  })
+
+  it('ls .. at root lists root', () => {
+    expect(runCommand('ls ..', ctx()).lines).toEqual(runCommand('ls', ctx()).lines)
+  })
+
   it('cd .. returns to the root, and cd .. at the root stays there', () => {
     expect(runCommand('cd ..', ctx('work')).cwd).toBe('root')
     expect(runCommand('cd ..', ctx()).cwd).toBe('root')

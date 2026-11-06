@@ -9,11 +9,14 @@ const APPS = launchpadApps()
 
 const LABEL_SHADOW = { textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)' }
 const FADE_MS = 150
+// The Dock's padding and border, on top of its icon size.
+const DOCK_CHROME_PX = 16
 
 // Full-screen grid of apps; it covers the menu bar and the dock, so Escape or a click on the background closes it.
 export function Launchpad() {
   const setOverlay = useSystem((s) => s.setOverlay)
   const reduceMotion = useSystem((s) => s.settings.reduceMotion)
+  const dockSize = useSystem((s) => s.settings.dockSize)
   const [query, setQuery] = useState('')
   const [closing, setClosing] = useState(false)
   const timer = useRef<number | undefined>(undefined)
@@ -67,7 +70,7 @@ export function Launchpad() {
   return (
     <div
       data-testid="launchpad-backdrop"
-      className={`launchpad-backdrop${closing ? ' launchpad-backdrop-closing' : ''} fixed inset-0 z-50 flex justify-center overflow-auto font-sans text-white`}
+      className={`launchpad-backdrop${closing ? ' launchpad-backdrop-closing' : ''} fixed inset-0 z-40 flex justify-center overflow-auto font-sans text-white`}
       onMouseDown={(e) => {
         if (!(e.target as Element).closest('button, input')) close()
       }}
@@ -76,7 +79,9 @@ export function Launchpad() {
         role="dialog"
         aria-label="Launchpad"
         onKeyDown={onKeyDown}
-        className="flex w-full max-w-[960px] flex-col items-center px-4 pt-14 pb-10"
+        className="flex w-full max-w-[960px] flex-col items-center px-4 pt-14"
+        // Bottom padding keeps the last row of apps clear of the Dock, which sits above Launchpad.
+        style={{ paddingBottom: dockSize + DOCK_CHROME_PX }}
       >
         <input
           ref={inputRef}

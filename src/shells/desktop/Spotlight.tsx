@@ -2,15 +2,14 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 
 import { Search } from 'lucide-react'
 import { APPS, getApp } from '../../apps/registry'
 import { nodeById } from '../../apps/finder/vfsInstance'
+import { mergeNotes, parseStoredNotes } from '../../apps/notes/notesState'
 import { getContent } from '../../content'
 import { dispatch } from '../../system/commands'
 import { buildIndex, rank, type SearchItem } from '../../system/search'
+import { KEYS, safeStorage } from '../../system/storage'
 import { useSystem } from '../../system/store'
 import { AppIcon } from '../../ui/AppIcon'
 import { iconFor } from '../../ui/fileIcon'
-
-// Content and the app registry are static, so the index is built once per page load.
-const INDEX = buildIndex(getContent(), APPS)
 
 // Text sits on the opaque window colour, not on the translucent glass, so its contrast is fixed (AA in both themes).
 const SOLID = { background: 'var(--window-bg)', borderColor: 'var(--glass-border)' }
@@ -30,7 +29,17 @@ export function Spotlight() {
   const [active, setActive] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const listId = useId()
-  const results = useMemo(() => rank(INDEX, query), [query])
+  // Spotlight mounts when it opens, so each open indexes the visitor's current notes.
+  const index = useMemo(
+    () =>
+      buildIndex(
+        getContent(),
+        APPS,
+        mergeNotes(getContent().notes, parseStoredNotes(safeStorage.get<unknown>('local', KEYS.notes, null))),
+      ),
+    [],
+  )
+  const results = useMemo(() => rank(index, query), [index, query])
   const activeItem = results[active]
 
   useEffect(() => {

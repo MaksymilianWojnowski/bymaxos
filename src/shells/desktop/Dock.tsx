@@ -24,6 +24,13 @@ function showAll(appId: AppId): void {
   if (top) useSystem.getState().focus(top.id)
 }
 
+// A Dock click over Launchpad closes it first, then runs the click; the Launchpad icon itself just toggles it.
+function clickDock(app: AppDefinition): void {
+  const store = useSystem.getState()
+  if (store.overlay === 'launchpad' && app.overlay !== 'launchpad') store.setOverlay(null)
+  activate(app)
+}
+
 // The single activation path: a click and the context-menu "Open" of an alias both use it.
 function activate(app: AppDefinition): void {
   const store = useSystem.getState()
@@ -158,7 +165,7 @@ export function Dock() {
                   }}
                   type="button"
                   aria-label={external ? `${app.name} (opens in new tab)` : app.name}
-                  onClick={() => activate(app)}
+                  onClick={() => clickDock(app)}
                   onContextMenu={(e) => onContextMenu(e, app)}
                   className="peer relative flex rounded-[22.5%] outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:shadow-[0_0_0_4px_rgb(0_0_0/0.75)]"
                   style={{

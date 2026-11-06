@@ -61,6 +61,17 @@ test.describe('system overlays and settings', () => {
     await expect(launchpad).toBeHidden()
   })
 
+  test('Launchpad leaves the Dock visible and clickable', async ({ page }) => {
+    await unlock(page)
+    await openDock(page, 'Launchpad')
+    const launchpad = page.getByRole('dialog', { name: 'Launchpad', exact: true })
+    await expect(launchpad).toBeVisible()
+    await expect(page.getByRole('toolbar', { name: 'Dock' })).toBeVisible()
+    await openDock(page, 'Finder')
+    await expect(appWindow(page, 'Finder')).toBeVisible()
+    await expect(launchpad).toBeHidden()
+  })
+
   test('⌥↑ shows Mission Control; clicking a window focuses it', async ({ page }) => {
     await unlock(page)
     await openDock(page, 'Finder')

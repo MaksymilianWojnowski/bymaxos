@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { KEYS } from '../../system/storage'
 import { resetSystem, useSystem } from '../../system/store'
 import { Dock } from './Dock'
 import { Spotlight } from './Spotlight'
@@ -92,5 +93,21 @@ describe('Spotlight', () => {
     fireEvent.change(search(), { target: { value: 'zzqxnomatch' } })
     expect(screen.getByText('No Results')).toBeInTheDocument()
     expect(screen.queryByRole('option')).not.toBeInTheDocument()
+  })
+
+  it('a note the visitor added is found', () => {
+    cleanup()
+    window.localStorage.setItem(
+      KEYS.notes,
+      JSON.stringify({
+        edits: {},
+        added: [{ id: 'note-mine', folder: 'Notes', title: 'Zebra Plans', body: '', updated: '2026-11-01' }],
+        deleted: [],
+      }),
+    )
+    useSystem.setState({ overlay: 'spotlight' })
+    render(<Spotlight />)
+    fireEvent.change(search(), { target: { value: 'zebra' } })
+    expect(screen.getByText('Zebra Plans')).toBeInTheDocument()
   })
 })

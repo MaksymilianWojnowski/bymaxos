@@ -92,4 +92,13 @@ describe('Launchpad', () => {
     fireEvent.mouseDown(screen.getByTestId('launchpad-backdrop'))
     expect(useSystem.getState().overlay).toBeNull()
   })
+
+  it('the Dock stays above Launchpad and works while it is open', () => {
+    const dock = screen.getByRole('toolbar', { name: 'Dock' })
+    expect(dock).toHaveClass('z-50')
+    expect(screen.getByTestId('launchpad-backdrop')).toHaveClass('z-40')
+    fireEvent.click(within(dock).getByRole('button', { name: 'Finder' }))
+    expect(useSystem.getState().overlay).toBeNull()
+    expect(useSystem.getState().wm.windows.some((w) => w.appId === 'finder')).toBe(true)
+  })
 })

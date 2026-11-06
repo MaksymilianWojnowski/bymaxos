@@ -1,4 +1,4 @@
-import { previewLine } from '../apps/notes/notesState'
+import { previewLine, type VisibleNote } from '../apps/notes/notesState'
 import type { AppDefinition } from '../apps/types'
 import type { Content } from '../content/types'
 import type { Command } from './commands'
@@ -32,7 +32,8 @@ const openInTextEdit = (fileId: string): Command => ({
   props: { fileId },
 })
 
-export function buildIndex(content: Content, apps: AppDefinition[]): SearchItem[] {
+// Notes come from the caller when the visitor's own notes matter; otherwise the seed notes are indexed.
+export function buildIndex(content: Content, apps: AppDefinition[], notes?: VisibleNote[]): SearchItem[] {
   const items: SearchItem[] = []
 
   // Apps that need a file to show (deepLink: false) are left out; the rest open through the Dock's dock.activate.
@@ -60,7 +61,7 @@ export function buildIndex(content: Content, apps: AppDefinition[]): SearchItem[
     })
   }
 
-  for (const n of content.notes) {
+  for (const n of notes ?? content.notes) {
     items.push({
       id: `note:${n.id}`,
       title: n.title,

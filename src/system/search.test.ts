@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getContent } from '../content'
 import { APPS } from '../apps/registry'
+import { mergeNotes, parseStoredNotes } from '../apps/notes/notesState'
 import { buildIndex, rank, type SearchItem } from './search'
 
 const index = buildIndex(getContent(), APPS)
@@ -130,5 +131,27 @@ describe('rank', () => {
     expect(rank(index, '   ')).toEqual([])
     expect(rank(index, 'e')).toHaveLength(8)
     expect(rank(index, 'e', 3)).toHaveLength(3)
+  })
+})
+
+describe('buildIndex with visitor notes', () => {
+  it("indexes the visitor's notes by their current titles and leaves out deleted ones", () => {
+    const [first, second] = getContent().notes
+    const notes = mergeNotes(
+      getContent().notes,
+      parseStoredNotes({
+        edits: { [first.id]: { title: 'Renamed Note', body: 'x', updated: '2026-11-02' } },
+        added: [{ id: 'note-mine', folder: 'Notes', title: 'Visitor Idea', body: 'hi', updated: '2026-11-01' }],
+        deleted: [second.id],
+      }),
+    )
+    const items = buildIndex(getContent(), APPS, notes)
+    expect(items.find((i) => i.id === `note:${first.id}`)).toMatchObject({
+      title: 'Renamed Note',
+      kind: 'note',
+      command: { type: 'app.open', appId: 'notes', props: { item: first.id } },
+    })
+    expect(items.find((i) => i.title === 'Visitor Idea')).toMatchObject({ kind: 'note', command: { props: { item: 'note-mine' } } })
+    expect(items.some((i) => i.id === `note:${second.id}`)).toBe(false)
   })
 })

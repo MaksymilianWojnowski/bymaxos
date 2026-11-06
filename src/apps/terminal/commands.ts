@@ -134,6 +134,7 @@ export function runCommand(input: string, ctx: TerminalContext): TerminalResult 
     }
     case 'ls': {
       if (arg === '') return { lines: listFolder(ctx.cwd) }
+      if (arg === '..') return { lines: listFolder(parentOf(ctx.cwd)) }
       const node = findChild(ctx.cwd, arg)
       if (!node) return { lines: [`ls: no such folder: ${arg}`] }
       if (node.kind !== 'folder') return { lines: [node.name] }

@@ -17,11 +17,14 @@ export const safeStorage = {
     }
   },
 
-  set(area: Area, key: string, value: unknown): void {
+  // False when nothing was written, so the caller can tell the visitor.
+  set(area: Area, key: string, value: unknown): boolean {
     try {
       store(area).setItem(key, JSON.stringify(value));
+      return true;
     } catch {
       // Storage unavailable or full: the app keeps working without persistence.
+      return false;
     }
   },
 

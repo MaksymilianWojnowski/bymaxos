@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { KEYS, safeStorage } from './storage'
 
 type AreaName = 'localStorage' | 'sessionStorage'
@@ -70,6 +70,15 @@ describe('safeStorage', () => {
     safeStorage.set('local', KEYS.settings, 'x')
     safeStorage.remove('local', KEYS.settings)
     expect(window.localStorage.getItem(KEYS.settings)).toBeNull()
+  })
+
+  it('set returns false when setItem throws, true otherwise', () => {
+    expect(safeStorage.set('local', KEYS.settings, { a: 1 })).toBe(true)
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('full')
+    })
+    expect(safeStorage.set('local', KEYS.settings, { a: 2 })).toBe(false)
+    spy.mockRestore()
   })
 
   it('returns the fallback and does not throw when local storage access is denied', () => {
