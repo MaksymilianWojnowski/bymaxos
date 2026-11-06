@@ -122,6 +122,19 @@ test.describe('genie', () => {
     })
   })
 
+  test('clicking the Dock icon mid-minimize brings the window back', async ({ page }) => {
+    await recordGenie(page)
+    await unlock(page)
+    await openDock(page, 'Finder')
+    const win = desktopWindow(page)
+    await settle(win)
+    await win.getByRole('button', { name: 'Minimize' }).click()
+    // No wait for the strips to clear: the Dock click lands while the minimize genie is still running.
+    await openDock(page, 'Finder')
+    await expect(win).toBeVisible()
+    await expect(page.locator('[data-genie-layer]')).toHaveCount(0)
+  })
+
   test('minimizing Safari on an embeddable page clones no iframe', async ({ page }) => {
     await recordGenie(page)
     await unlock(page)

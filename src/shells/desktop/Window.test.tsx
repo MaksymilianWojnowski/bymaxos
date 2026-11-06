@@ -1,3 +1,4 @@
+import { StrictMode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { dockIconRects } from './dockIconRects'
@@ -139,18 +140,14 @@ describe('Window', () => {
     expect(useSystem.getState().wm.windows[0].mode).toBe('minimized')
   })
 
-  it('runs the minimize animation once and ignores clicks while it runs', () => {
+  it('runs the minimize genie once and minimizes at once', () => {
     const { animate } = stubAnimate()
     dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
     openFinder()
     render(<WindowLayer />)
-    const minimize = screen.getByRole('button', { name: 'Minimize' })
-    fireEvent.click(minimize)
-    const started = animate.mock.calls.length
-    expect(started).toBeGreaterThan(0)
-    fireEvent.click(minimize)
-    expect(animate).toHaveBeenCalledTimes(started)
-    expect(useSystem.getState().wm.windows[0].mode).toBe('normal')
+    fireEvent.click(screen.getByRole('button', { name: 'Minimize' }))
+    expect(animate).toHaveBeenCalled()
+    expect(useSystem.getState().wm.windows[0].mode).toBe('minimized')
   })
 
   it('minimizes when the animation finishes', async () => {
@@ -170,11 +167,10 @@ describe('Window', () => {
     openFinder()
     render(<WindowLayer />)
     fireEvent.click(screen.getByRole('button', { name: 'Minimize' }))
-    expect(document.querySelector('[data-genie-layer]')).not.toBeNull()
-    expect(windowEl()?.style.visibility).toBe('hidden')
-    expect(useSystem.getState().wm.windows[0].mode).toBe('normal')
-    await finishAll(anims)
+    // The window minimizes at once; the strips keep playing on their own layer.
     expect(useSystem.getState().wm.windows[0].mode).toBe('minimized')
+    expect(document.querySelector('[data-genie-layer]')).not.toBeNull()
+    await finishAll(anims)
     expect(document.querySelector('[data-genie-layer]')).toBeNull()
   })
 
@@ -191,20 +187,19 @@ describe('Window', () => {
     expect(useSystem.getState().wm.windows[0].mode).toBe('minimized')
   })
 
-  it('closing mid-genie removes the layer and keeps focus off body', () => {
-    const { anims } = stubAnimate()
+  it('closing mid-restore removes the layer and keeps focus off body', () => {
+    stubAnimate()
     dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
+    const id = openFinder()
+    useSystem.getState().minimize(id)
     const opener = document.createElement('button')
     document.body.append(opener)
     opener.focus()
-    openFinder()
-    render(<WindowLayer />)
-    fireEvent.click(screen.getByRole('button', { name: 'Minimize' }))
-    fireEvent.click(document.querySelector<HTMLElement>('[aria-label="Close"]') as HTMLElement)
-    // The browser fires oncancel for each cancelled animation when the window unmounts.
-    for (const a of anims) a.oncancel?.()
+    useSystem.getState().restore(id)
+    const { unmount } = render(<WindowLayer />)
+    expect(document.querySelector('[data-genie-layer]')).not.toBeNull()
+    unmount()
     expect(document.querySelector('[data-genie-layer]')).toBeNull()
-    expect(useSystem.getState().wm.windows).toHaveLength(0)
     expect(document.activeElement).toBe(opener)
     opener.remove()
   })
@@ -241,6 +236,55 @@ describe('Window', () => {
     const expected = genieKeyframes(from, current, strips, 24)[0][24].transform
     expect(stripCount(windowEl()?.querySelectorAll('*').length ?? 0)).toBe(strips)
     expect((animate.mock.calls[0][0] as Array<{ transform: string }>)[0].transform).toBe(expected)
+  })
+
+  it('a Dock click during the minimize genie restores the window', async () => {
+    const { anims } = stubAnimate()
+    dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
+    const id = openFinder()
+    render(<WindowLayer />)
+    fireEvent.click(screen.getByRole('button', { name: 'Minimize' }))
+    const minimizing = anims.length
+    // The Dock click is the store's restore, sent while the minimize strips are still running.
+    act(() => useSystem.getState().restore(id))
+    expect(useSystem.getState().wm.windows[0].mode).toBe('normal')
+    expect(windowEl()?.style.visibility).toBe('hidden')
+    await finishAll(anims.slice(minimizing))
+    expect(windowEl()?.style.visibility).toBe('')
+    expect(useSystem.getState().wm.windows[0].mode).toBe('normal')
+    expect(document.querySelector('[data-genie-layer]')).toBeNull()
+  })
+
+  it('a restore cancelled before it finishes leaves the window visible', () => {
+    stubAnimate()
+    dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
+    const id = openFinder()
+    useSystem.getState().minimize(id)
+    useSystem.getState().restore(id)
+    // StrictMode mounts, cleans up and mounts again: the first run's restore is cancelled.
+    render(
+      <StrictMode>
+        <WindowLayer />
+      </StrictMode>,
+    )
+    expect(windowEl()?.style.visibility).toBe('')
+    expect(useSystem.getState().wm.windows[0].mode).toBe('normal')
+    expect(document.querySelector('[data-genie-layer]')).toBeNull()
+  })
+
+  it('a finished restore does not take focus from another window', async () => {
+    const { anims } = stubAnimate()
+    dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
+    const id = openFinder()
+    useSystem.getState().minimize(id)
+    useSystem.getState().restore(id)
+    render(<WindowLayer />)
+    const other = document.createElement('button')
+    document.body.append(other)
+    other.focus()
+    await finishAll(anims)
+    expect(document.activeElement).toBe(other)
+    other.remove()
   })
 
   it('toggles maximize on title bar double-click', () => {

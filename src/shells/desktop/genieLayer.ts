@@ -3,6 +3,19 @@ import { genieKeyframes, GENIE_MS, stripCount, type Box } from './genie'
 const STEPS = 24
 const MEDIA = 'iframe, video, audio'
 
+// Running layers by window id, so a restore can cancel the minimize it interrupts.
+const running = new Map<string, { layer: HTMLElement; anims: Animation[] }>()
+
+// Cancels the running genie of one window and removes its layer. With `anims`, only that run is cancelled,
+// so an old restore cleaning up cannot cancel a newer minimize of the same window.
+export function cancelGenie(windowId: string, anims?: Animation[]): void {
+  const entry = running.get(windowId)
+  if (!entry || (anims && entry.anims !== anims)) return
+  running.delete(windowId)
+  entry.anims.forEach((a) => a.cancel())
+  entry.layer.remove()
+}
+
 // Iframes and media cannot be cloned live, so each becomes a box of the same size.
 // Returns the original/clone pairs whose scroll offsets are copied once the clone is attached.
 function sanitise(source: HTMLElement, clone: HTMLElement): [Element, Element][] {
@@ -32,6 +45,7 @@ export function playGenie(
   from: Box,
   to: Box,
   direction: 'minimize' | 'restore',
+  windowId: string,
 ): Animation[] | null {
   if (typeof source.animate !== 'function') return null
   const count = stripCount(source.querySelectorAll('*').length)
@@ -58,8 +72,10 @@ export function playGenie(
   }
   document.body.append(layer)
   for (const [orig, copy] of scrolls) {
-    copy.scrollTop = orig.scrollTop
-    copy.scrollLeft = orig.scrollLeft
+    if (orig.scrollTop || orig.scrollLeft) {
+      copy.scrollTop = orig.scrollTop
+      copy.scrollLeft = orig.scrollLeft
+    }
   }
 
   const anims = Array.from(layer.children).map((wrap, i) => {
@@ -74,13 +90,18 @@ export function playGenie(
     return (wrap as HTMLElement).animate(keyframes, { duration: GENIE_MS, easing: 'linear', fill: 'forwards' })
   })
 
-  let running = anims.length
-  const remove = () => layer.remove()
+  const entry = { layer, anims }
+  running.set(windowId, entry)
+  let left = anims.length
+  const release = () => {
+    layer.remove()
+    if (running.get(windowId) === entry) running.delete(windowId)
+  }
   for (const anim of anims) {
     anim.onfinish = () => {
-      if (--running === 0) remove()
+      if (--left === 0) release()
     }
-    anim.oncancel = remove
+    anim.oncancel = release
   }
   return anims
 }

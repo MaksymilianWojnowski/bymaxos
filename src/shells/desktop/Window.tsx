@@ -5,7 +5,7 @@ import { genieRestores } from '../../system/genieSignals'
 import { useSystem } from '../../system/store'
 import type { Rect, WindowState } from '../../system/types'
 import { dockIconRects } from './dockIconRects'
-import { playGenie } from './genieLayer'
+import { cancelGenie, playGenie } from './genieLayer'
 import { resizeRect, type ResizeDir } from './resize'
 
 interface Props {
@@ -53,13 +53,13 @@ export function Window({ win, app, focused, children, mission }: Props) {
   const rootRef = useRef<HTMLDivElement>(null)
   const gesture = useRef<Gesture | null>(null)
   const animating = useRef(false)
-  const animations = useRef<Animation[]>([])
+  const animation = useRef<Animation | null>(null)
   const resizable = app.window?.resizable ?? false
   const minSize = app.window?.minSize ?? { w: 0, h: 0 }
   const titleId = `win-title-${win.id}`
 
   // A window restored from the Dock plays the genie in reverse, hidden until the strips land.
-  // It runs before the focus effect below, so the hidden root is never focused; focus moves on at the end.
+  // It runs before the focus effect below, so the hidden root is never focused.
   useEffect(() => {
     if (!genieRestores.delete(win.id)) return
     const el = rootRef.current
@@ -68,17 +68,24 @@ export function Window({ win, app, focused, children, mission }: Props) {
     // The open animation is still scaling the root, so the box comes from the stored rect, not the live one.
     const parent = el.offsetParent instanceof Element ? el.offsetParent.getBoundingClientRect() : { x: 0, y: 0 }
     const from = { x: parent.x + win.rect.x, y: parent.y + win.rect.y, width: win.rect.w, height: win.rect.h }
-    const anims = playGenie(el, from, target, 'restore')
+    // A minimize still running for this window hands over to the restore.
+    cancelGenie(win.id)
+    const anims = playGenie(el, from, target, 'restore', win.id)
     if (!anims) return
-    animations.current = anims
     el.style.visibility = 'hidden'
     Promise.all(anims.map((a) => a.finished)).then(
       () => {
         el.style.visibility = ''
-        el.focus({ preventScroll: true })
+        // Focus the root only when nothing took focus during the animation.
+        if (!document.activeElement || document.activeElement === document.body) el.focus({ preventScroll: true })
       },
       () => {},
     )
+    // StrictMode runs this effect twice: the cancel leaves the window visible, and the second run has no id left to play.
+    return () => {
+      cancelGenie(win.id, anims)
+      el.style.visibility = ''
+    }
     // Mount-only: a restore is a one-off event, and its deps would replay it on every store change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -92,8 +99,8 @@ export function Window({ win, app, focused, children, mission }: Props) {
     }
   }, [])
 
-  // Cancelling on unmount stops a minimize or restore still in flight when the window closes.
-  useEffect(() => () => animations.current.forEach((a) => a.cancel()), [])
+  // Cancelling on unmount stops a Scale minimize still in flight when the window closes.
+  useEffect(() => () => animation.current?.cancel(), [])
 
   const minimize = () => {
     if (animating.current) return
@@ -104,17 +111,9 @@ export function Window({ win, app, focused, children, mission }: Props) {
       minimizeWin(win.id)
       return
     }
-    const genie = playGenie(el, el.getBoundingClientRect(), target, 'minimize')
-    if (genie) {
-      animating.current = true
-      animations.current = genie
-      el.style.visibility = 'hidden'
-      Promise.all(genie.map((a) => a.finished)).then(
-        () => minimizeWin(win.id),
-        () => {
-          animating.current = false
-        },
-      )
+    // The genie clones the window synchronously and runs on its own layer, so the window minimizes at once.
+    if (playGenie(el, el.getBoundingClientRect(), target, 'minimize', win.id)) {
+      minimizeWin(win.id)
       return
     }
     // Scale fallback: used when the genie cannot run (no animate, or too many DOM nodes).
@@ -133,7 +132,7 @@ export function Window({ win, app, focused, children, mission }: Props) {
       ],
       { duration: 220, easing: 'ease-in', fill: 'forwards' },
     )
-    animations.current = [anim]
+    animation.current = anim
     anim.onfinish = () => minimizeWin(win.id)
     // cancel() does not fire onfinish, so a cancelled run must release the guard here.
     anim.oncancel = () => {
