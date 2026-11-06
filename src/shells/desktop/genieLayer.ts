@@ -3,6 +3,9 @@ import { genieKeyframes, GENIE_MS, stripCount, type Box } from './genie'
 const STEPS = 24
 const MEDIA = 'iframe, video, audio'
 
+// Each mounted desktop window's genie minimize, so every minimize path (⌘M, Hide, the button) animates.
+export const windowMinimizers = new Map<string, () => void>()
+
 // Running layers by window id, so a restore can cancel the minimize it interrupts.
 const running = new Map<string, { layer: HTMLElement; anims: Animation[] }>()
 

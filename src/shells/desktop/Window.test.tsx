@@ -6,6 +6,7 @@ import { genieKeyframes, stripCount } from './genie'
 import { WindowLayer } from './WindowLayer'
 import { genieRestores } from '../../system/genieSignals'
 import { setAppResolver, resetSystem, useSystem } from '../../system/store'
+import { dispatch, installSystemCommands } from '../../system/commands'
 import type { WindowSpec } from '../../system/types'
 
 // 'flaky' fails its first chunk load; each app id gets its own lazy cache entry.
@@ -150,7 +151,7 @@ describe('Window', () => {
     expect(useSystem.getState().wm.windows[0].mode).toBe('minimized')
   })
 
-  it('minimizes when the animation finishes', async () => {
+  it('the window stays minimized once its genie strips finish', async () => {
     const { anims } = stubAnimate()
     dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
     openFinder()
@@ -285,6 +286,39 @@ describe('Window', () => {
     await finishAll(anims)
     expect(document.activeElement).toBe(other)
     other.remove()
+  })
+
+  it('⌘M plays genie through the window\'s minimizer', () => {
+    const { animate } = stubAnimate()
+    dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
+    const dispose = installSystemCommands()
+    openFinder()
+    render(<WindowLayer />)
+    expect(dispatch({ type: 'window.minimize' })).toBe(true)
+    expect(animate).toHaveBeenCalled()
+    expect(document.querySelector('[data-genie-layer]')).not.toBeNull()
+    expect(useSystem.getState().wm.windows[0].mode).toBe('minimized')
+    dispose()
+  })
+
+  it('a Dock-click restore focuses the window', async () => {
+    const { anims } = stubAnimate()
+    dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
+    const id = openFinder()
+    useSystem.getState().minimize(id)
+    useSystem.getState().restore(id)
+    render(<WindowLayer />)
+    // Chrome leaves focus on the Dock button that was clicked.
+    const dock = document.createElement('div')
+    dock.setAttribute('role', 'toolbar')
+    dock.setAttribute('aria-label', 'Dock')
+    const button = document.createElement('button')
+    dock.append(button)
+    document.body.append(dock)
+    button.focus()
+    await finishAll(anims)
+    expect(document.activeElement).toBe(windowEl())
+    dock.remove()
   })
 
   it('toggles maximize on title bar double-click', () => {

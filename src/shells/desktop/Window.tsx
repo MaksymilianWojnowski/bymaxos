@@ -5,7 +5,7 @@ import { genieRestores } from '../../system/genieSignals'
 import { useSystem } from '../../system/store'
 import type { Rect, WindowState } from '../../system/types'
 import { dockIconRects } from './dockIconRects'
-import { cancelGenie, playGenie } from './genieLayer'
+import { cancelGenie, playGenie, windowMinimizers } from './genieLayer'
 import { resizeRect, type ResizeDir } from './resize'
 
 interface Props {
@@ -39,6 +39,8 @@ const LIGHTS: { name: 'Close' | 'Minimize' | 'Zoom'; color: string; Glyph: Lucid
 ]
 
 // Traffic-light clicks must not start a drag or a zoom, so the title bar checks for them.
+const DOCK_SELECTOR = '[role="toolbar"][aria-label="Dock"]'
+
 const onTrafficLight = (target: EventTarget): boolean =>
   target instanceof Element && target.closest('[data-traffic]') !== null
 
@@ -54,6 +56,8 @@ export function Window({ win, app, focused, children, mission }: Props) {
   const gesture = useRef<Gesture | null>(null)
   const animating = useRef(false)
   const animation = useRef<Animation | null>(null)
+  // Read by the registered minimizer, which must see the latest minimize.
+  const minimizeNow = useRef<() => void>(() => {})
   const resizable = app.window?.resizable ?? false
   const minSize = app.window?.minSize ?? { w: 0, h: 0 }
   const titleId = `win-title-${win.id}`
@@ -76,8 +80,10 @@ export function Window({ win, app, focused, children, mission }: Props) {
     Promise.all(anims.map((a) => a.finished)).then(
       () => {
         el.style.visibility = ''
-        // Focus the root only when nothing took focus during the animation.
-        if (!document.activeElement || document.activeElement === document.body) el.focus({ preventScroll: true })
+        // Chrome leaves focus on the Dock button that started the restore, so the Dock counts as "nothing took focus".
+        const active = document.activeElement
+        const onDock = active instanceof Element && active.closest(DOCK_SELECTOR) !== null
+        if (!active || active === document.body || onDock) el.focus({ preventScroll: true })
       },
       () => {},
     )
@@ -89,6 +95,15 @@ export function Window({ win, app, focused, children, mission }: Props) {
     // Mount-only: a restore is a one-off event, and its deps would replay it on every store change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // The Dock calls minimize through the store; this entry gives it the genie.
+  useEffect(() => {
+    const id = win.id
+    windowMinimizers.set(id, () => minimizeNow.current())
+    return () => {
+      windowMinimizers.delete(id)
+    }
+  }, [win.id])
 
   // Focus the window on open; hand focus back to whatever had it before the window existed.
   useEffect(() => {
@@ -139,6 +154,10 @@ export function Window({ win, app, focused, children, mission }: Props) {
       animating.current = false
     }
   }
+
+  useEffect(() => {
+    minimizeNow.current = minimize
+  })
 
   const onTitlePointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0 || onTrafficLight(e.target)) return

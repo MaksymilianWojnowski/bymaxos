@@ -135,6 +135,21 @@ test.describe('genie', () => {
     await expect(page.locator('[data-genie-layer]')).toHaveCount(0)
   })
 
+  // ⌘M is bound only under keyboard lock (fullscreen), so the Window menu sends the same window.minimize command.
+  test('Window menu Minimize minimizes with genie strips', async ({ page }) => {
+    await recordGenie(page)
+    await unlock(page)
+    await openDock(page, 'Finder')
+    const win = desktopWindow(page)
+    await settle(win)
+    await page.getByRole('menubar').getByRole('menuitem', { name: 'Window' }).click()
+    await page.getByRole('menuitem', { name: 'Minimize' }).click()
+    const recorded = await strips(page)
+    expect(recorded.length).toBeGreaterThanOrEqual(8)
+    await expect(page.locator('[data-genie-layer]')).toHaveCount(0)
+    await expect(win).toBeHidden()
+  })
+
   test('minimizing Safari on an embeddable page clones no iframe', async ({ page }) => {
     await recordGenie(page)
     await unlock(page)

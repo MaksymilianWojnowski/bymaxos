@@ -2,6 +2,14 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import { KEYS, safeStorage } from './storage'
 import { AVAILABLE_OVERLAYS, isResizable, useSystem, type Overlay } from './store'
 import { activeAppId, emptyWM, raiseAppWindows } from './wm'
+import { windowMinimizers } from '../shells/desktop/genieLayer'
+
+// The mounted window's genie minimize when it has one; the store alone has no animation.
+const minimizeWindow = (id: string) => {
+  const run = windowMinimizers.get(id)
+  if (run) run()
+  else state().minimize(id)
+}
 
 export type Command = { type: string; [key: string]: unknown }
 export type Handler = (cmd: Command) => void
@@ -112,7 +120,7 @@ type GlobalDef = [type: string, handler: Handler, enabled?: (cmd: Command) => bo
 
 const SYSTEM_GLOBALS: GlobalDef[] = [
   ['window.close', onFocused((id) => state().close(id)), hasFocus],
-  ['window.minimize', onFocused((id) => state().minimize(id)), hasFocus],
+  ['window.minimize', onFocused((id) => minimizeWindow(id)), hasFocus],
   ['window.zoom', onFocused((id) => state().toggleMaximize(id)), focusedIsResizable],
   [
     'window.focus',
@@ -139,7 +147,7 @@ const SYSTEM_GLOBALS: GlobalDef[] = [
     (cmd) => {
       const appId = targetApp(cmd)
       for (const w of state().wm.windows) {
-        if (w.appId === appId && w.mode !== 'minimized') state().minimize(w.id)
+        if (w.appId === appId && w.mode !== 'minimized') minimizeWindow(w.id)
       }
     },
     hasWindowsOf,
