@@ -143,13 +143,15 @@ describe('Notes', () => {
     const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('full')
     })
-    await user.type(bodyField(), '!')
-    expect(screen.getByRole('status')).toHaveTextContent("Couldn't save — your edits will be lost when you leave.")
-    spy.mockRestore()
+    try {
+      await user.type(bodyField(), '!')
+      expect(screen.getByRole('status')).toHaveTextContent("Couldn't save — your edits will be lost when you leave.")
+    } finally {
+      spy.mockRestore()
+    }
     await user.type(bodyField(), '?')
     expect(screen.getByRole('status')).toHaveTextContent('Your edits stay on this device.')
   })
-
 
   it('Edit > Copy copies the editor selection through copyText', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined)

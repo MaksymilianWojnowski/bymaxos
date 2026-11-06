@@ -24,10 +24,14 @@ function showAll(appId: AppId): void {
   if (top) useSystem.getState().focus(top.id)
 }
 
-// A Dock click over Launchpad closes it first, then runs the click; the Launchpad icon itself just toggles it.
-function clickDock(app: AppDefinition): void {
+// Launchpad covers the screen, so anything the Dock starts closes it first. Launchpad's own icon is the exception: it toggles.
+function closeLaunchpad(app: AppDefinition): void {
   const store = useSystem.getState()
   if (store.overlay === 'launchpad' && app.overlay !== 'launchpad') store.setOverlay(null)
+}
+
+function clickDock(app: AppDefinition): void {
+  closeLaunchpad(app)
   activate(app)
 }
 
@@ -122,6 +126,8 @@ export function Dock() {
   }
 
   const onContextMenu = (e: MouseEvent, app: AppDefinition) => {
+    // The menu's items dispatch their commands after it closes, so Launchpad closes as the menu opens.
+    closeLaunchpad(app)
     const items: MenuItemDef[] = app.external
       ? [{ label: 'Open', command: { type: 'dock.openLink', appId: app.id } }]
       : app.alias || app.overlay
@@ -142,7 +148,7 @@ export function Dock() {
         aria-label="Dock"
         onPointerMove={onPointerMove}
         onPointerLeave={() => setScales({})}
-        className="fixed bottom-2 left-1/2 z-50 flex -translate-x-1/2 items-end gap-[6px] rounded-[18px] border px-2 pt-2 pb-1.5"
+        className="fixed bottom-2 left-1/2 z-[55] flex -translate-x-1/2 items-end gap-[6px] rounded-[18px] border px-2 pt-2 pb-1.5"
         style={{
           background: 'var(--glass-bg)',
           backdropFilter: 'blur(var(--glass-blur))',

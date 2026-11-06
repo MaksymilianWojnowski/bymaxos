@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { launchpadApps } from '../../apps/registry'
+import { installSystemCommands } from '../../system/commands'
 import { resetSystem, useSystem } from '../../system/store'
 import { Dock } from './Dock'
 import { Launchpad } from './Launchpad'
@@ -93,12 +94,22 @@ describe('Launchpad', () => {
     expect(useSystem.getState().overlay).toBeNull()
   })
 
-  it('the Dock stays above Launchpad and works while it is open', () => {
-    const dock = screen.getByRole('toolbar', { name: 'Dock' })
-    expect(dock).toHaveClass('z-50')
-    expect(screen.getByTestId('launchpad-backdrop')).toHaveClass('z-40')
-    fireEvent.click(within(dock).getByRole('button', { name: 'Finder' }))
+  it('clicking a Dock item while Launchpad is open closes it and runs the click', () => {
+    fireEvent.click(within(screen.getByRole('toolbar', { name: 'Dock' })).getByRole('button', { name: 'Finder' }))
     expect(useSystem.getState().overlay).toBeNull()
     expect(useSystem.getState().wm.windows.some((w) => w.appId === 'finder')).toBe(true)
+  })
+
+  it('a Dock menu item closes Launchpad and opens its app', () => {
+    // The menu's Open runs app.open, which only the system commands install.
+    const dispose = installSystemCommands()
+    try {
+      fireEvent.contextMenu(within(screen.getByRole('toolbar', { name: 'Dock' })).getByRole('button', { name: 'Finder' }))
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Open' }))
+      expect(useSystem.getState().overlay).toBeNull()
+      expect(useSystem.getState().wm.windows.some((w) => w.appId === 'finder')).toBe(true)
+    } finally {
+      dispose()
+    }
   })
 })

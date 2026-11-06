@@ -9,10 +9,10 @@ const APPS = launchpadApps()
 
 const LABEL_SHADOW = { textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)' }
 const FADE_MS = 150
-// The Dock's padding and border, on top of its icon size.
-const DOCK_CHROME_PX = 16
+// Clears the Dock's bottom offset (8px), its padding and border (16px) above its icon row.
+const DOCK_CLEARANCE_PX = 24
 
-// Full-screen grid of apps; it covers the menu bar and the dock, so Escape or a click on the background closes it.
+// Full-screen grid of apps; it covers the menu bar but sits under the Dock, so Escape, a background click or a Dock click closes it.
 export function Launchpad() {
   const setOverlay = useSystem((s) => s.setOverlay)
   const reduceMotion = useSystem((s) => s.settings.reduceMotion)
@@ -70,7 +70,7 @@ export function Launchpad() {
   return (
     <div
       data-testid="launchpad-backdrop"
-      className={`launchpad-backdrop${closing ? ' launchpad-backdrop-closing' : ''} fixed inset-0 z-40 flex justify-center overflow-auto font-sans text-white`}
+      className={`launchpad-backdrop${closing ? ' launchpad-backdrop-closing' : ''} fixed inset-0 z-50 flex justify-center overflow-auto font-sans text-white`}
       onMouseDown={(e) => {
         if (!(e.target as Element).closest('button, input')) close()
       }}
@@ -81,7 +81,7 @@ export function Launchpad() {
         onKeyDown={onKeyDown}
         className="flex w-full max-w-[960px] flex-col items-center px-4 pt-14"
         // Bottom padding keeps the last row of apps clear of the Dock, which sits above Launchpad.
-        style={{ paddingBottom: dockSize + DOCK_CHROME_PX }}
+        style={{ paddingBottom: dockSize + DOCK_CLEARANCE_PX }}
       >
         <input
           ref={inputRef}

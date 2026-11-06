@@ -67,6 +67,15 @@ test.describe('system overlays and settings', () => {
     const launchpad = page.getByRole('dialog', { name: 'Launchpad', exact: true })
     await expect(launchpad).toBeVisible()
     await expect(page.getByRole('toolbar', { name: 'Dock' })).toBeVisible()
+    const finder = page.getByRole('toolbar', { name: 'Dock' }).getByRole('button', { name: 'Finder' })
+    const box = await finder.boundingBox()
+    if (!box) throw new Error('Finder has no box')
+    // The Dock must be the element a pointer at its centre would hit, not Launchpad's backdrop.
+    const onDock = await page.evaluate(
+      ([x, y]) => document.elementFromPoint(x, y)?.closest('[aria-label="Dock"]') !== null,
+      [box.x + box.width / 2, box.y + box.height / 2],
+    )
+    expect(onDock).toBe(true)
     await openDock(page, 'Finder')
     await expect(appWindow(page, 'Finder')).toBeVisible()
     await expect(launchpad).toBeHidden()
