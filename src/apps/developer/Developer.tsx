@@ -61,7 +61,8 @@ export default function DeveloperApp() {
   const repos = loaded?.repos ?? []
   const active = repos.find((r) => r.name === picked) ?? repos[0]
   const activeIndex = active ? repos.indexOf(active) : -1
-  const activeName = active?.name
+  // A phone with no open detail has no selection to show, so it must not fetch one.
+  const activeName = shell === 'mobile' && !detailOpen ? undefined : active?.name
   // Fallback entries are content, not GitHub repos, so there is no breakdown to fetch for them.
   const fetchable = loaded?.source === 'api' || loaded?.source === 'cache'
 

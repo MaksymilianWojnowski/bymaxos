@@ -169,6 +169,14 @@ describe('LockScreen', () => {
     expect(card('Welcome to bymaxOS')).toHaveClass('touch-pan-y')
   })
 
+  it('the lock list allows pinch zoom', () => {
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', { configurable: true, get: () => 999 })
+    render(<LockScreen />)
+    const list = screen.getByText('Welcome to bymaxOS').closest('ul') as HTMLElement
+    expect(list).toHaveClass('touch-pan-y', 'touch-pinch-zoom')
+    expect(card('Welcome to bymaxOS')).toHaveClass('touch-pan-y', 'touch-pinch-zoom')
+  })
+
   it('a vertical drag that starts on a card unlocks', () => {
     vi.useFakeTimers()
     render(<LockScreen />)

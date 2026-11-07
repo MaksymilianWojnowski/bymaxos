@@ -39,7 +39,7 @@ function Card({ item, onDismiss, pan }: { item: NotificationItem; onDismiss: () 
   return (
     <div
       data-card
-      className={`relative rounded-[16px] border p-3 ${pan ? 'touch-pan-y' : 'touch-none'}`}
+      className={`relative rounded-[16px] border p-3 ${pan ? 'touch-pan-y touch-pinch-zoom' : 'touch-none'}`}
       style={{ background: 'var(--window-bg)', borderColor: 'var(--glass-border)', transform: `translateX(${dx}px)` }}
       onPointerDown={(e) => {
         startX.current = e.clientX
@@ -244,7 +244,7 @@ export function LockScreen() {
 
           <ul
             ref={list}
-            className={`mt-6 ml-[max(1rem,env(safe-area-inset-left))] mr-[max(1rem,env(safe-area-inset-right))] flex min-h-0 shrink flex-col gap-2 overflow-y-auto [@media(max-height:500px)]:mt-0 [@media(max-height:500px)]:ml-[env(safe-area-inset-left)] [@media(max-height:500px)]:mr-[env(safe-area-inset-right)] [@media(max-height:500px)]:flex-1 [@media(max-height:500px)]:pr-4 ${overflowing ? 'touch-pan-y' : 'touch-none'}`}
+            className={`mt-6 ml-[max(1rem,env(safe-area-inset-left))] mr-[max(1rem,env(safe-area-inset-right))] flex min-h-0 shrink flex-col gap-2 overflow-y-auto [@media(max-height:500px)]:mt-0 [@media(max-height:500px)]:ml-[env(safe-area-inset-left)] [@media(max-height:500px)]:mr-[env(safe-area-inset-right)] [@media(max-height:500px)]:flex-1 [@media(max-height:500px)]:pr-4 ${overflowing ? 'touch-pan-y touch-pinch-zoom' : 'touch-none'}`}
           >
             {visible.map((item) => (
               <li key={item.id}>

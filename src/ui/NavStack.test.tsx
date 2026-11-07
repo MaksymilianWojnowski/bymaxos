@@ -122,6 +122,25 @@ describe('NavStack', () => {
     expect(onBack).not.toHaveBeenCalled()
   })
 
+  it('Escape already handled by a child does not go back', () => {
+    const onBack = vi.fn()
+    const child = (
+      <button type="button" onKeyDown={(e) => e.preventDefault()}>
+        Field
+      </button>
+    )
+    render(<NavStack title="Notes" list={<p>Row</p>} open detailTitle="Detail" onBack={onBack} detail={child} />)
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Field' }), { key: 'Escape' })
+    expect(onBack).not.toHaveBeenCalled()
+  })
+
+  it('Escape while composing text does not go back', () => {
+    const onBack = vi.fn()
+    render(<NavStack title="Notes" list={<p>Row</p>} open detailTitle="Detail" onBack={onBack} detail={<p>Body</p>} />)
+    fireEvent.keyDown(screen.getByText('Body'), { key: 'Escape', isComposing: true })
+    expect(onBack).not.toHaveBeenCalled()
+  })
+
   it('a left-edge pointer drag goes back; one from mid-screen does not', () => {
     const onBack = vi.fn()
     const { unmount } = render(

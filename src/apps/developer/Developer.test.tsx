@@ -256,5 +256,26 @@ describe('Developer on a phone', () => {
     render(<DeveloperApp />)
     expect(screen.getByRole('status')).toHaveTextContent('Loading repositories…')
   })
+
+  // A repo name no other test has fetched, since the language cache outlives each test.
+  it('phone: no language request before a repository is opened', async () => {
+    mockPhone()
+    apiRepos = [{ ...REPOS[0], name: 'phone-first' }]
+    LANGUAGES['phone-first'] = { Go: 100 }
+    render(<DeveloperApp />)
+    await screen.findByRole('button', { name: /^phone-first/ })
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes('/languages'))).toBe(false)
+  })
+
+  it('phone: opening a repository requests its languages', async () => {
+    mockPhone()
+    apiRepos = [{ ...REPOS[0], name: 'phone-second' }]
+    LANGUAGES['phone-second'] = { Go: 100 }
+    const user = userEvent.setup()
+    render(<DeveloperApp />)
+    await user.click(await screen.findByRole('button', { name: /^phone-second/ }))
+    expect(await screen.findByText('Go 100%')).toBeInTheDocument()
+    expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/repos/MaksymilianWojnowski/phone-second/languages'))).toBe(true)
+  })
 })
 

@@ -76,7 +76,8 @@ export function NavStack({ title, listActions, list, open, detailTitle, detailAc
 
   const onDetailKey = (e: KeyboardEvent<HTMLDivElement>) => {
     // Keys from a portalled sheet bubble here through React, so only this pane's own DOM counts.
-    if (e.key === 'Escape' && e.currentTarget.contains(e.target as Node)) goBack()
+    // A child that handled Escape, or an IME committing a composition, keeps it.
+    if (e.key === 'Escape' && !e.defaultPrevented && !e.nativeEvent.isComposing && e.currentTarget.contains(e.target as Node)) goBack()
   }
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {

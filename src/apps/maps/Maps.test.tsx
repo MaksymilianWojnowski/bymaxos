@@ -3,6 +3,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { formatRange } from '../../lib/format'
 import type { Place } from '../../content/types'
+import { mockPhone } from '../../test/mockPhone'
 import MapsApp from './Maps'
 
 const state = vi.hoisted(() => ({ places: [] as Place[] }))
@@ -116,5 +117,13 @@ describe('Maps', () => {
 
     rerender(<MapsApp windowId="w1" props={{ item: 'tokyo' }} />)
     expect(within(detail()).getByRole('heading', { name: 'Tokyo' })).toBeInTheDocument()
+  })
+
+  it('phone: map, place details and timeline follow that order in the DOM', () => {
+    mockPhone()
+    render(<MapsApp windowId="w1" />)
+    const mapSection = screen.getByRole('region', { name: 'Map' })
+    expect(mapSection.compareDocumentPosition(timeline()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(mapSection.contains(detail())).toBe(true)
   })
 })
