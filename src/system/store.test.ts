@@ -319,4 +319,25 @@ describe('genie restores', () => {
     expect(genieRestores.has(id)).toBe(true)
     genieRestores.clear()
   })
+
+  it('App Switcher commit records the restored window', () => {
+    const id = useSystem.getState().openApp('finder') as string
+    useSystem.getState().minimize(id)
+    useSystem.setState({ overlay: 'appSwitcher', switcher: { appIds: ['finder'], index: 0 } })
+    useSystem.getState().switcherCommit()
+    expect(useSystem.getState().wm.windows.find((w) => w.id === id)?.mode).not.toBe('minimized')
+    expect(genieRestores.has(id)).toBe(true)
+    genieRestores.clear()
+  })
+
+  it('openApp on a minimized singleton records the restored window', () => {
+    const contacts: WindowSpec = { ...spec, appId: 'contacts', title: 'Contacts', singleInstance: true }
+    setAppResolver((id) => (id === 'contacts' ? contacts : undefined))
+    const id = useSystem.getState().openApp('contacts') as string
+    useSystem.getState().minimize(id)
+    useSystem.getState().openApp('contacts')
+    expect(useSystem.getState().wm.windows.find((w) => w.id === id)?.mode).not.toBe('minimized')
+    expect(genieRestores.has(id)).toBe(true)
+    genieRestores.clear()
+  })
 })

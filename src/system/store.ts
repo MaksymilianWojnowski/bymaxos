@@ -127,6 +127,15 @@ function activateApp(s: WMState, appId: AppId): WMState {
   return minimized ? wm.restoreWindow(s, minimized.id) : s
 }
 
+// Every window that leaves minimized state gets the reverse genie, whichever path restored it.
+function recordRestores(prev: WMState, next: WMState): void {
+  for (const w of prev.windows) {
+    if (w.mode !== 'minimized') continue
+    const after = next.windows.find((n) => n.id === w.id)
+    if (after && after.mode !== 'minimized') genieRestores.add(w.id)
+  }
+}
+
 let appResolver: (id: AppId) => WindowSpec | undefined = () => undefined
 
 // Zoom is offered only where the window's app allows resizing (About This Mac does not).
@@ -170,6 +179,7 @@ export const useSystem: UseBoundStore<StoreApi<SystemState>> = create<SystemStat
       const spec = appResolver(appId)
       if (!spec) return null
       const next = wm.openWindow(get().wm, spec, area(), props)
+      recordRestores(get().wm, next)
       set({ wm: next })
       return next.focusedId
     },
@@ -229,8 +239,9 @@ export const useSystem: UseBoundStore<StoreApi<SystemState>> = create<SystemStat
 
     restore(id) {
       const s = get().wm
-      if (s.windows.some((w) => w.id === id && w.mode === 'minimized')) genieRestores.add(id)
-      set({ wm: wm.restoreWindow(s, id) })
+      const next = wm.restoreWindow(s, id)
+      recordRestores(s, next)
+      set({ wm: next })
     },
 
     toggleMaximize(id) {
@@ -312,7 +323,10 @@ export const useSystem: UseBoundStore<StoreApi<SystemState>> = create<SystemStat
       const { switcher } = get()
       if (!switcher) return
       const appId = switcher.appIds[index ?? switcher.index]
-      set({ wm: activateApp(get().wm, appId), overlay: null, switcher: null })
+      const prev = get().wm
+      const next = activateApp(prev, appId)
+      recordRestores(prev, next)
+      set({ wm: next, overlay: null, switcher: null })
     },
 
     notify(title, body) {
