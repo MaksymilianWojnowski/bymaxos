@@ -63,6 +63,8 @@ test.describe('desktop screenshots', () => {
         await expect(appWindow(page, 'Mail').getByRole('textbox', { name: 'Message' })).toBeVisible()
         await page.keyboard.press('Alt+ArrowUp')
         await expect(page.getByTestId('mission-backdrop')).toBeVisible()
+        // Keeps the pointer off the Dock, so no icon is magnified in the capture.
+        await page.mouse.move(5, 300)
         await shot(page, `${size}-mission-control`)
       })
 
@@ -76,6 +78,7 @@ test.describe('desktop screenshots', () => {
         await unlock(page)
         await openDock(page, 'Launchpad')
         await expect(page.getByRole('dialog', { name: 'Launchpad', exact: true })).toBeVisible()
+        await page.mouse.move(5, 300)
         await shot(page, `${size}-launchpad`)
       })
     })
