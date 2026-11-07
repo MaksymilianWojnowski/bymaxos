@@ -135,9 +135,12 @@ export function HomeScreen({ onSearch }: { onSearch: () => void }) {
             onTouchCancel={() => {
               pullStart.current = null
             }}
-            className="h-full w-full shrink-0 snap-start overflow-y-auto"
+            className="h-full w-full shrink-0 snap-start overflow-y-auto [@media(max-height:500px)]:[scroll-snap-type:y_proximity]"
           >
-            <ul className={`grid grid-cols-4 gap-x-3 gap-y-5 ${PAGE_PAD} [@media(max-height:500px)]:grid-cols-6`}>
+            {/* In landscape each grid row snaps at its start, so a row is never left cut in half at rest. */}
+            <ul
+              className={`grid grid-cols-4 gap-x-3 gap-y-5 ${PAGE_PAD} [@media(max-height:500px)]:grid-cols-6 [@media(max-height:500px)]:[&>li]:snap-start`}
+            >
               <li className="col-span-full">
                 <button
                   type="button"
@@ -149,14 +152,16 @@ export function HomeScreen({ onSearch }: { onSearch: () => void }) {
                   <span className="sr-only"> — open Resume</span>
                 </button>
               </li>
-              <li className="col-span-2 row-span-2">
+              <li className="col-span-2 row-span-2 [@media(max-height:500px)]:row-span-1">
                 <button
                   type="button"
                   onClick={() => openMobileApp('calendar')}
-                  className={`flex h-full w-full flex-col justify-between rounded-[18px] bg-black/30 p-3 text-left drop-shadow-md ${TILE}`}
+                  className={`flex h-full w-full flex-col justify-between rounded-[18px] bg-black/30 p-3 text-left drop-shadow-md [@media(max-height:500px)]:flex-row [@media(max-height:500px)]:items-baseline [@media(max-height:500px)]:justify-start [@media(max-height:500px)]:gap-2 ${TILE}`}
                 >
                   <span className="text-[13px] font-semibold uppercase">{weekdayShort.format(now)}</span>
-                  <span className="text-[44px] leading-none font-light">{now.getDate()}</span>
+                  <span className="text-[44px] leading-none font-light [@media(max-height:500px)]:text-[26px]">
+                    {now.getDate()}
+                  </span>
                   <span className="text-[13px]">{month.format(now)}</span>
                   <span className="sr-only"> — open Calendar</span>
                 </button>

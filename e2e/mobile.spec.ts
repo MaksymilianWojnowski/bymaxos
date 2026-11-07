@@ -148,6 +148,12 @@ test.describe('phone portrait', () => {
     await expect(dock(page)).toBeVisible()
   })
 
+  test('portrait calendar widget still spans two rows', async ({ page }) => {
+    await unlockMobile(page)
+    const widget = page.getByRole('button', { name: /— open Calendar$/ }).locator('xpath=ancestor::li[1]')
+    await expect(widget).toHaveCSS('grid-row-end', 'span 2')
+  })
+
   test('Enter on the lock screen unlocks without also opening the home control focus moves to', async ({ page }) => {
     await page.goto('/')
     await expect(lockHint(page)).toBeVisible()
@@ -345,6 +351,16 @@ test.describe('phone landscape', () => {
     const dots = await page.getByRole('tablist', { name: 'Home screen pages' }).boundingBox()
     const search = await page.getByRole('button', { name: 'Search', exact: true }).boundingBox()
     expect(dots && search && Math.abs(dots.y + dots.height / 2 - (search.y + search.height / 2)) < 1).toBe(true)
+  })
+
+  test('landscape calendar takes one grid row and the home page snaps by row', async ({ page }) => {
+    await unlockMobile(page)
+    const calendar = page.getByRole('button', { name: /— open Calendar$/ })
+    const widget = await calendar.boundingBox()
+    const cell = await calendar.locator('xpath=ancestor::li[1]/following-sibling::li[1]//button').boundingBox()
+    expect(widget && cell && widget.height <= cell.height + 4).toBe(true)
+    // Chrome serialises proximity, the default strictness, as plain "y"; mandatory would read "y mandatory".
+    await expect(calendar.locator('xpath=ancestor::section[1]')).toHaveCSS('scroll-snap-type', 'y')
   })
 })
 
