@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import { KEYS, safeStorage } from './storage'
 import { AVAILABLE_OVERLAYS, isResizable, useSystem, type Overlay } from './store'
 import { activeAppId, emptyWM, raiseAppWindows } from './wm'
-import { windowMinimizers } from '../shells/desktop/genieLayer'
+import { windowMinimizers } from './genieSignals'
 
 // The mounted window's genie minimize when it has one; the store alone has no animation.
 const minimizeWindow = (id: string) => {

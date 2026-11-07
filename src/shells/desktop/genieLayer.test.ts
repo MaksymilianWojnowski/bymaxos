@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cancelGenie, playGenie } from './genieLayer'
+import { cancelAllGenies, cancelGenie, playGenie } from './genieLayer'
 import { stripCount } from './genie'
 
 const box = { x: 100, y: 50, width: 400, height: 300 }
@@ -49,14 +49,28 @@ describe('playGenie', () => {
     expect(animate).toHaveBeenCalledTimes(count ?? -1)
   })
 
-  it('clones carry no ids and no iframe, video or audio', () => {
+  it('clones carry no ids, test ids or window ids, and no iframe, video or audio', () => {
     stubAnimate()
-    const win = makeWindow('<p id="title">t</p><iframe src="about:blank"></iframe><video></video><audio></audio>')
+    const win = makeWindow(
+      '<p id="title" data-testid="title">t</p><iframe src="about:blank"></iframe><video></video><audio></audio>',
+    )
+    win.dataset.windowId = 'w1'
     playGenie(win, box, icon, 'minimize', 'w')
     const layer = layerOf() as HTMLElement
     expect(layer.querySelector('[id]')).toBeNull()
+    expect(layer.querySelector('[data-testid], [data-window-id]')).toBeNull()
     expect(layer.querySelector('iframe, video, audio')).toBeNull()
     expect(win.querySelector('#title')).not.toBeNull()
+    expect(win.dataset.windowId).toBe('w1')
+  })
+
+  it('cancelAllGenies removes every running layer', () => {
+    stubAnimate()
+    playGenie(makeWindow('<p>a</p>'), box, icon, 'minimize', 'a')
+    playGenie(makeWindow('<p>b</p>'), box, icon, 'minimize', 'b')
+    expect(document.querySelectorAll('[data-genie-layer]')).toHaveLength(2)
+    cancelAllGenies()
+    expect(layerOf()).toBeNull()
   })
 
   it('copies scroll offsets into the clones', () => {

@@ -188,6 +188,18 @@ describe('Window', () => {
     expect(useSystem.getState().wm.windows[0].mode).toBe('minimized')
   })
 
+  it('minimize with Mission Control open skips the genie, since the window is already scaled', () => {
+    const { animate } = stubAnimate()
+    dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
+    openFinder()
+    useSystem.setState({ overlay: 'missionControl' })
+    render(<WindowLayer />)
+    fireEvent.click(screen.getByRole('button', { name: 'Minimize' }))
+    expect(document.querySelector('[data-genie-layer]')).toBeNull()
+    expect(animate).not.toHaveBeenCalled()
+    expect(useSystem.getState().wm.windows[0].mode).toBe('minimized')
+  })
+
   it('closing mid-restore removes the layer and keeps focus off body', () => {
     stubAnimate()
     dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))

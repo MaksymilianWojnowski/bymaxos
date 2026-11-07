@@ -6,6 +6,7 @@ import { useSystem } from '../../system/store'
 import { Banners } from './Banners'
 import { Desktop } from './Desktop'
 import { Dock } from './Dock'
+import { cancelAllGenies } from './genieLayer'
 import { LoginScreen } from './LoginScreen'
 import { MenuBar } from './MenuBar'
 import { Overlays } from './Overlays'
@@ -24,6 +25,9 @@ export function DesktopShell() {
   const switcherCommit = useSystem((s) => s.switcherCommit)
 
   useEffect(() => installSystemCommands(), [])
+
+  // A shell switch can unmount the desktop mid-genie; its layers are removed with it.
+  useEffect(() => cancelAllGenies, [])
 
   useEffect(() => {
     if (locked) return

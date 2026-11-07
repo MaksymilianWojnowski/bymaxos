@@ -165,6 +165,7 @@ export function Dock() {
               )}
               <div className="group relative flex">
                 <button
+                  data-dock-app={app.id}
                   ref={(el) => {
                     if (el) buttons.current.set(app.id, el)
                     else buttons.current.delete(app.id)

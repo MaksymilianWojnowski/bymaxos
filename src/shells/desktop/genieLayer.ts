@@ -3,9 +3,6 @@ import { genieKeyframes, GENIE_MS, stripCount, type Box } from './genie'
 const STEPS = 24
 const MEDIA = 'iframe, video, audio'
 
-// Each mounted desktop window's genie minimize, so every minimize path (⌘M, Hide, the button) animates.
-export const windowMinimizers = new Map<string, () => void>()
-
 // Running layers by window id, so a restore can cancel the minimize it interrupts.
 const running = new Map<string, { layer: HTMLElement; anims: Animation[] }>()
 
@@ -19,6 +16,11 @@ export function cancelGenie(windowId: string, anims?: Animation[]): void {
   entry.layer.remove()
 }
 
+// The desktop shell unmounts: no layer may outlive it.
+export function cancelAllGenies(): void {
+  for (const id of Array.from(running.keys())) cancelGenie(id)
+}
+
 // Iframes and media cannot be cloned live, so each becomes a box of the same size.
 // Returns the original/clone pairs whose scroll offsets are copied once the clone is attached.
 function sanitise(source: HTMLElement, clone: HTMLElement): [Element, Element][] {
@@ -28,6 +30,8 @@ function sanitise(source: HTMLElement, clone: HTMLElement): [Element, Element][]
   copies.forEach((copy, j) => {
     const orig = originals[j]
     copy.removeAttribute('id')
+    copy.removeAttribute('data-testid')
+    copy.removeAttribute('data-window-id')
     if (copy.matches(MEDIA)) {
       const r = orig.getBoundingClientRect()
       const stand = document.createElement('div')

@@ -1,11 +1,11 @@
 import { useEffect, useRef, type CSSProperties, type PointerEvent, type ReactNode } from 'react'
 import { Minus, Plus, X, type LucideIcon } from 'lucide-react'
 import type { AppDefinition } from '../../apps/types'
-import { genieRestores } from '../../system/genieSignals'
+import { genieRestores, windowMinimizers } from '../../system/genieSignals'
 import { useSystem } from '../../system/store'
 import type { Rect, WindowState } from '../../system/types'
-import { dockIconRects } from './dockIconRects'
-import { cancelGenie, playGenie, windowMinimizers } from './genieLayer'
+import { dockIconRect } from './dockIconRects'
+import { cancelGenie, playGenie } from './genieLayer'
 import { resizeRect, type ResizeDir } from './resize'
 
 interface Props {
@@ -38,9 +38,10 @@ const LIGHTS: { name: 'Close' | 'Minimize' | 'Zoom'; color: string; Glyph: Lucid
   { name: 'Zoom', color: '#28c840', Glyph: Plus },
 ]
 
-// Traffic-light clicks must not start a drag or a zoom, so the title bar checks for them.
+// The Dock is a toolbar; focus left on one of its buttons after a restore counts as "nothing took focus".
 const DOCK_SELECTOR = '[role="toolbar"][aria-label="Dock"]'
 
+// Traffic-light clicks must not start a drag or a zoom, so the title bar checks for them.
 const onTrafficLight = (target: EventTarget): boolean =>
   target instanceof Element && target.closest('[data-traffic]') !== null
 
@@ -67,7 +68,7 @@ export function Window({ win, app, focused, children, mission }: Props) {
   useEffect(() => {
     if (!genieRestores.delete(win.id)) return
     const el = rootRef.current
-    const target = dockIconRects.get(win.appId)
+    const target = dockIconRect(win.appId)
     if (!el || !target || document.documentElement.classList.contains('reduce-motion')) return
     // The open animation is still scaling the root, so the box comes from the stored rect, not the live one.
     const parent = el.offsetParent instanceof Element ? el.offsetParent.getBoundingClientRect() : { x: 0, y: 0 }
@@ -120,9 +121,10 @@ export function Window({ win, app, focused, children, mission }: Props) {
   const minimize = () => {
     if (animating.current) return
     const el = rootRef.current
-    const target = dockIconRects.get(win.appId)
+    const target = dockIconRect(win.appId)
     const reduceMotion = document.documentElement.classList.contains('reduce-motion')
-    if (reduceMotion || !target || !el) {
+    // Under Mission Control the window already carries a scale transform, which the clone would apply a second time.
+    if (reduceMotion || !target || !el || mission) {
       minimizeWin(win.id)
       return
     }
