@@ -21,7 +21,7 @@ Reference: https://frvky.online/ (interaction model only; no code or assets copi
 |---|---|
 | Stack | Vite + React 19 + TypeScript (strict) + Tailwind CSS v4 + Zustand. No Next.js (everything is client-side; avoids hydration issues with clocks/viewport). |
 | Drag/resize | Own Pointer Events implementation (no `react-rnd`). |
-| Animation | CSS transitions / Web Animations API. Genie effect via WebGL (see §7.4). No animation library unless a spike proves it necessary. |
+| Animation | CSS transitions / Web Animations API. Genie effect as DOM clone strips on the Web Animations API, not WebGL (see §7.4). No animation library unless a spike proves it necessary. |
 | Icons | macOS system artwork for apps, folders and documents, exported from the owner's Mac by `scripts/export-apple-icons.swift` into `src/assets/icons/` (owner decision 2026-10-27, Apple IP risk accepted). Brand glyphs on a squircle for LinkedIn/GitHub; Lucide for UI glyphs. No Apple logo, no assets from the reference site. The "Apple menu" uses a custom "M" mark. |
 | Fonts | System stack (`-apple-system, BlinkMacSystemFont, "SF Pro Text"…`), Inter (self-hosted) as fallback. |
 | Content language | English only now; content is locale-ready (`src/content/en/`, `getContent(locale)`). PL/PT/DE later. No language setting shown until a second locale exists. |
@@ -201,6 +201,7 @@ Per-window error boundary ("quit unexpectedly" + Reopen). Empty and "not configu
 
 ### 7.4 Genie effect (required)
 Minimize/restore animates the window into its dock icon with a Genie warp: snapshot the window to a texture, render a WebGL mesh that funnels toward the dock icon over ~450ms. A spike validates the snapshot approach first (risk: cross-origin iframes in Safari/Music cannot be captured). Fallback to the Scale effect when snapshotting fails, WebGL is unavailable, or reduced motion is on. Delivered in the polish phase; Scale ships first.
+Shipped: the genie is drawn with DOM clone strips animated by the Web Animations API, not WebGL; Scale stays as the fallback, and reduce motion means no animation.
 
 ## 8. Testing & delivery
 
