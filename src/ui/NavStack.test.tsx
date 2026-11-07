@@ -141,6 +141,13 @@ describe('NavStack', () => {
     expect(onBack).not.toHaveBeenCalled()
   })
 
+  it('Safari reports the IME commit Escape with keyCode 229 and does not go back', () => {
+    const onBack = vi.fn()
+    render(<NavStack title="Notes" list={<p>Row</p>} open detailTitle="Detail" onBack={onBack} detail={<p>Body</p>} />)
+    fireEvent.keyDown(screen.getByText('Body'), { key: 'Escape', keyCode: 229 })
+    expect(onBack).not.toHaveBeenCalled()
+  })
+
   it('a left-edge pointer drag goes back; one from mid-screen does not', () => {
     const onBack = vi.fn()
     const { unmount } = render(
