@@ -91,6 +91,22 @@ test.describe('contrast', () => {
     expect(contrastRatio(trackColour, backdrop), `track ${trackColour} over ${backdrop}`).toBeGreaterThanOrEqual(3)
   })
 
+  test('an unchecked switch track has 3:1 against the window in light mode', async ({ page }) => {
+    await unlock(page)
+    await applyLook(page, 'light', 'blue')
+    await openDock(page, 'System Settings')
+    const settings = appWindow(page, 'System Settings')
+    await expect(settings).toBeVisible()
+    await settings.getByRole('button', { name: 'Accessibility', exact: true }).click()
+
+    const toggle = settings.getByRole('switch', { name: 'Reduce motion' })
+    await expect(toggle).toHaveAttribute('aria-checked', 'false')
+    const track = toggle.locator('span').nth(1)
+    const trackColour = await track.evaluate((el) => getComputedStyle(el).backgroundColor)
+    const backdrop = await backdropOf(toggle)
+    expect(contrastRatio(trackColour, backdrop), `track ${trackColour} over ${backdrop}`).toBeGreaterThanOrEqual(3)
+  })
+
   test('the selected Safari tab bar has 3:1 against the tab in dark mode for every accent', async ({ page }) => {
     await unlock(page)
     const failures: string[] = []
