@@ -1,10 +1,12 @@
 // Renders the icons macOS itself shows (Finder/Dock) into src/assets/icons/*.png.
 // Run on a Mac from the repo root: swift scripts/export-apple-icons.swift
 // The icons are Apple's artwork; re-run after a macOS update to pick up restyles.
+// --dark writes only the app icons, in the system's current icon style, to icons/dark/.
 import AppKit
 import UniformTypeIdentifiers
 
 let size = 256
+let darkMode = CommandLine.arguments.contains("--dark")
 let out = URL(fileURLWithPath: "src/assets/icons", isDirectory: true)
 let coreTypes = "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/"
 
@@ -48,6 +50,12 @@ func image(for source: Source) -> NSImage? {
   }
 }
 
+// The .app bundle behind an app icon; nil for folders and documents.
+func appBundle(_ source: Source) -> String? {
+  guard case .icns(let path) = source, let end = path.range(of: ".app/") else { return nil }
+  return String(path[..<end.upperBound].dropLast())
+}
+
 func png(_ image: NSImage) -> Data? {
   guard let rep = NSBitmapImageRep(
     bitmapDataPlanes: nil, pixelsWide: size, pixelsHigh: size, bitsPerSample: 8,
@@ -61,15 +69,21 @@ func png(_ image: NSImage) -> Data? {
   return rep.representation(using: .png, properties: [:])
 }
 
-try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+let dir = darkMode ? out.appendingPathComponent("dark", isDirectory: true) : out
+try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 var failed = false
 for (name, source) in icons {
-  guard let img = image(for: source), let data = png(img) else {
+  var rendered: NSImage? = image(for: source)
+  if darkMode {
+    guard let bundle = appBundle(source) else { continue }
+    rendered = NSWorkspace.shared.icon(forFile: bundle)
+  }
+  guard let img = rendered, let data = png(img) else {
     print("FAILED \(name)")
     failed = true
     continue
   }
-  try data.write(to: out.appendingPathComponent("\(name).png"))
+  try data.write(to: dir.appendingPathComponent("\(name).png"))
   print("ok \(name)")
 }
 exit(failed ? 1 : 0)
