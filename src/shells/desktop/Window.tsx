@@ -94,6 +94,10 @@ export function Window({ win, app, focused, children, mission }: Props) {
     wasMinimized.current = minimized
     const el = rootRef.current
     if (minimized) {
+      // A Scale minimize's fill would hold the hidden window at scale(0.1); the root is already invisible here.
+      animation.current?.cancel()
+      animation.current = null
+      animating.current = false
       if (!was && el?.contains(document.activeElement)) handOffFocus(opener.current, useSystem.getState().wm.focusedId)
       return
     }
@@ -148,10 +152,14 @@ export function Window({ win, app, focused, children, mission }: Props) {
   // Focus the window on open; hand focus back to whatever had it before the window existed.
   useEffect(() => {
     const previous = document.activeElement
+    const el = rootRef.current
     opener.current = previous
-    rootRef.current?.focus({ preventScroll: true })
+    el?.focus({ preventScroll: true })
     return () => {
-      if (previous instanceof HTMLElement && previous.isConnected) previous.focus()
+      // A hidden window closed from elsewhere must not pull focus off the window the user is in.
+      const active = document.activeElement
+      const holdsFocus = !active || active === document.body || (el !== null && el.contains(active))
+      if (holdsFocus && previous instanceof HTMLElement && previous.isConnected) previous.focus()
     }
   }, [])
 

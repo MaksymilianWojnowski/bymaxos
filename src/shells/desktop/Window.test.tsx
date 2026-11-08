@@ -404,6 +404,36 @@ describe('Window', () => {
     expect(windowMinimizers.has(id)).toBe(false)
   })
 
+  it('quitting a minimized window leaves focus in the window the user is in', () => {
+    const first = openFinder()
+    const second = openFinder()
+    render(<WindowLayer />)
+    const field = document.querySelector<HTMLTextAreaElement>(`[data-window-id="${first}"] textarea`)
+    field?.focus()
+    act(() => useSystem.getState().minimize(second))
+    act(() => useSystem.getState().close(second))
+    expect(document.activeElement).toBe(field)
+  })
+
+  it('a Scale minimize releases its animation so restore and a second minimize work', async () => {
+    stub.genieNull = true
+    const { animate, anims } = stubAnimate()
+    dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
+    openFinder()
+    render(<WindowLayer />)
+    fireEvent.click(screen.getByRole('button', { name: 'Minimize' }))
+    await finishAll(anims)
+    expect(useSystem.getState().wm.windows[0].mode).toBe('minimized')
+    // The finished fill-forwards animation must not keep the hidden window shrunk.
+    expect(anims[0].cancel).toHaveBeenCalled()
+    const id = useSystem.getState().wm.windows[0].id
+    act(() => useSystem.getState().restore(id))
+    const before = animate.mock.calls.length
+    fireEvent.click(screen.getByRole('button', { name: 'Minimize' }))
+    expect(animate.mock.calls.length).toBe(before + 1)
+    expect(JSON.stringify(animate.mock.calls[before][0])).toContain('scale(0.1)')
+  })
+
   it('toggles maximize on title bar double-click', () => {
     openFinder()
     render(<WindowLayer />)

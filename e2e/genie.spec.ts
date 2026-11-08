@@ -225,6 +225,22 @@ test.describe('genie', () => {
     await expect(page.locator('[data-genie-layer]')).toHaveCount(0)
   })
 
+  test('minimizing a focused Notes window moves focus out of it', async ({ page }) => {
+    await unlock(page)
+    await openDock(page, 'Notes')
+    const win = appWindow(page, 'Notes')
+    await settle(win)
+    await win.getByRole('textbox', { name: 'Note body' }).focus()
+    await win.getByRole('button', { name: 'Minimize' }).click()
+    await expect(win).toBeHidden()
+    await expect(page.locator('[data-genie-layer]')).toHaveCount(0)
+    const focus = await page.evaluate(() => ({
+      onBody: document.activeElement === document.body,
+      inHidden: document.activeElement?.closest('[aria-hidden="true"]') != null,
+    }))
+    expect(focus).toEqual({ onBody: false, inHidden: false })
+  })
+
   test('a minimized Notes window passes axe and is skipped by Tab', async ({ page }) => {
     await unlock(page)
     await openDock(page, 'Notes')
