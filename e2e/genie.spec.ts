@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { dragBy, openDock, settle, unlock } from './helpers.ts'
+import { dragBy, openDock, seriousViolations, settle, unlock } from './helpers.ts'
 
 const IDENTITY = 'translate(0px, 0px) scale(1, 1)'
 
@@ -207,5 +207,38 @@ test.describe('genie', () => {
     const recorded = await strips(page)
     expect(recorded.length).toBeGreaterThanOrEqual(8)
     for (const s of recorded) expect(Math.abs(s.scrollTop - scrolled)).toBeLessThanOrEqual(1)
+  })
+
+  test('a Notes edit survives minimize and restore', async ({ page }) => {
+    await unlock(page)
+    await openDock(page, 'Notes')
+    const win = appWindow(page, 'Notes')
+    await settle(win)
+    await win.getByRole('textbox', { name: 'Note body' }).fill('kept draft')
+    await win.getByRole('button', { name: 'Minimize' }).click()
+    await expect(win).toBeHidden()
+    await expect(page.locator('[data-genie-layer]')).toHaveCount(0)
+
+    await openDock(page, 'Notes')
+    await expect(win).toBeVisible()
+    await expect(win.getByRole('textbox', { name: 'Note body' })).toHaveValue('kept draft')
+    await expect(page.locator('[data-genie-layer]')).toHaveCount(0)
+  })
+
+  test('a minimized Notes window passes axe and is skipped by Tab', async ({ page }) => {
+    await unlock(page)
+    await openDock(page, 'Notes')
+    const win = appWindow(page, 'Notes')
+    await settle(win)
+    await win.getByRole('button', { name: 'Minimize' }).click()
+    await expect(win).toBeHidden()
+    await expect(page.locator('[data-genie-layer]')).toHaveCount(0)
+    expect(await seriousViolations(page)).toEqual([])
+
+    for (let i = 0; i < 60; i++) {
+      await page.keyboard.press('Tab')
+      const inHidden = await page.evaluate(() => document.activeElement?.closest('[aria-hidden="true"]') !== null)
+      expect(inHidden).toBe(false)
+    }
   })
 })

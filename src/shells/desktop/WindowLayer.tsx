@@ -18,10 +18,9 @@ export function WindowLayer() {
   // A reset drops the cached lazy component; this re-render makes the window pick up the fresh one.
   const [, rerender] = useReducer((n: number) => n + 1, 0)
 
-  // Mission Control lays out every open window, back to front, over the work area.
+  // Minimized windows stay mounted (hidden) so their app state survives; Mission Control lays out only the visible ones.
   // Rendering keeps the store order: a DOM reorder on each focus change would blur inputs inside windows.
-  const visible = windows.filter((win) => win.mode !== 'minimized')
-  const byZ = [...visible].sort((a, b) => a.z - b.z)
+  const byZ = windows.filter((win) => win.mode !== 'minimized').sort((a, b) => a.z - b.z)
   const missionRects =
     overlay === 'missionControl'
       ? missionLayout(
@@ -37,11 +36,11 @@ export function WindowLayer() {
           labels={byZ.map((win) => ({ id: win.id, title: win.title, rect: missionRects[win.id] }))}
         />
       )}
-      {visible.map((win) => {
+      {windows.map((win) => {
         const app = getApp(win.appId)
         const App = app && componentFor(app)
         if (!app || !App || !app.window) return null
-        const mission = missionRects
+        const mission = missionRects && win.mode !== 'minimized'
           ? {
               target: missionRects[win.id],
               onPick: () => {

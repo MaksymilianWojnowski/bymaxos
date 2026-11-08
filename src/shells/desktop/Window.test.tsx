@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { dockIconRects } from './dockIconRects'
 import { genieKeyframes, stripCount } from './genie'
 import { WindowLayer } from './WindowLayer'
-import { genieRestores } from '../../system/genieSignals'
+import { genieRestores, windowMinimizers } from '../../system/genieSignals'
 import { setAppResolver, resetSystem, useSystem } from '../../system/store'
 import { dispatch, installSystemCommands } from '../../system/commands'
 import type { WindowSpec } from '../../system/types'
@@ -21,7 +21,12 @@ vi.mock('./genieLayer', async (importOriginal) => {
 vi.mock('../../apps/registry', () => {
   const StubApp = () => {
     if (stub.shouldThrow) throw new Error('boom')
-    return <p>stub</p>
+    return (
+      <>
+        <p>stub</p>
+        <textarea aria-label="Draft" />
+      </>
+    )
   }
   const makeApp = (id: string) => ({
     id,
@@ -203,13 +208,13 @@ describe('Window', () => {
   it('closing mid-restore removes the layer and keeps focus off body', () => {
     stubAnimate()
     dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
-    const id = openFinder()
-    useSystem.getState().minimize(id)
     const opener = document.createElement('button')
     document.body.append(opener)
     opener.focus()
-    useSystem.getState().restore(id)
+    const id = openFinder()
     const { unmount } = render(<WindowLayer />)
+    act(() => useSystem.getState().minimize(id))
+    act(() => useSystem.getState().restore(id))
     expect(document.querySelector('[data-genie-layer]')).not.toBeNull()
     unmount()
     expect(document.querySelector('[data-genie-layer]')).toBeNull()
@@ -221,9 +226,9 @@ describe('Window', () => {
     const { animate, anims } = stubAnimate()
     dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
     const id = openFinder()
-    useSystem.getState().minimize(id)
-    useSystem.getState().restore(id)
     render(<WindowLayer />)
+    act(() => useSystem.getState().minimize(id))
+    act(() => useSystem.getState().restore(id))
     const started = animate.mock.calls.length
     expect(started).toBeGreaterThan(0)
     expect(windowEl()?.style.visibility).toBe('hidden')
@@ -237,12 +242,12 @@ describe('Window', () => {
     const { animate } = stubAnimate()
     dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
     const id = openFinder()
-    useSystem.getState().minimize(id)
+    render(<WindowLayer />)
+    act(() => useSystem.getState().minimize(id))
     const current = new DOMRect(900, 760, 52, 52)
     dockIconRects.set('finder', current)
     const win = useSystem.getState().wm.windows[0]
-    useSystem.getState().restore(id)
-    render(<WindowLayer />)
+    act(() => useSystem.getState().restore(id))
     const from = { x: win.rect.x, y: win.rect.y, width: win.rect.w, height: win.rect.h }
     const strips = animate.mock.calls.length
     // The first restore frame is the last minimize frame: the strip sitting on the icon.
@@ -268,30 +273,30 @@ describe('Window', () => {
     expect(document.querySelector('[data-genie-layer]')).toBeNull()
   })
 
-  it('a restore cancelled before it finishes leaves the window visible', () => {
+  it('a restore cancelled by a new minimize leaves the window hidden and removes its layer', () => {
     stubAnimate()
     dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
     const id = openFinder()
-    useSystem.getState().minimize(id)
-    useSystem.getState().restore(id)
-    // StrictMode mounts, cleans up and mounts again: the first run's restore is cancelled.
     render(
       <StrictMode>
         <WindowLayer />
       </StrictMode>,
     )
-    expect(windowEl()?.style.visibility).toBe('')
-    expect(useSystem.getState().wm.windows[0].mode).toBe('normal')
+    act(() => useSystem.getState().minimize(id))
+    act(() => useSystem.getState().restore(id))
+    expect(document.querySelector('[data-genie-layer]')).not.toBeNull()
+    act(() => useSystem.getState().minimize(id))
     expect(document.querySelector('[data-genie-layer]')).toBeNull()
+    expect(windowEl()?.style.visibility).toBe('')
   })
 
   it('a finished restore does not take focus from another window', async () => {
     const { anims } = stubAnimate()
     dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
     const id = openFinder()
-    useSystem.getState().minimize(id)
-    useSystem.getState().restore(id)
     render(<WindowLayer />)
+    act(() => useSystem.getState().minimize(id))
+    act(() => useSystem.getState().restore(id))
     const other = document.createElement('button')
     document.body.append(other)
     other.focus()
@@ -317,9 +322,9 @@ describe('Window', () => {
     const { anims } = stubAnimate()
     dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
     const id = openFinder()
-    useSystem.getState().minimize(id)
-    useSystem.getState().restore(id)
     render(<WindowLayer />)
+    act(() => useSystem.getState().minimize(id))
+    act(() => useSystem.getState().restore(id))
     // Chrome leaves focus on the Dock button that was clicked.
     const dock = document.createElement('div')
     dock.setAttribute('role', 'toolbar')
@@ -331,6 +336,72 @@ describe('Window', () => {
     await finishAll(anims)
     expect(document.activeElement).toBe(windowEl())
     dock.remove()
+  })
+
+  it('a minimized window stays mounted, hidden and inert', () => {
+    openFinder()
+    render(<WindowLayer />)
+    const id = useSystem.getState().wm.windows[0].id
+    act(() => useSystem.getState().minimize(id))
+    expect(windowEl()).not.toBeNull()
+    expect(windowEl()?.hasAttribute('inert')).toBe(true)
+    expect(windowEl()?.getAttribute('aria-hidden')).toBe('true')
+    expect(screen.queryByRole('dialog', { name: 'Finder' })).toBeNull()
+  })
+
+  it('a text field keeps its value across minimize and restore', () => {
+    const id = openFinder()
+    render(<WindowLayer />)
+    const field = screen.getByRole('textbox', { name: 'Draft' }) as HTMLTextAreaElement
+    field.value = 'draft'
+    act(() => useSystem.getState().minimize(id))
+    act(() => useSystem.getState().restore(id))
+    expect(field.isConnected).toBe(true)
+    expect(field.value).toBe('draft')
+  })
+
+  it('focus inside a minimized window moves to the next focused window', () => {
+    const first = openFinder()
+    const second = openFinder()
+    render(<WindowLayer />)
+    const field = document.querySelector<HTMLTextAreaElement>(`[data-window-id="${second}"] textarea`)
+    field?.focus()
+    act(() => useSystem.getState().minimize(second))
+    expect(document.activeElement).toBe(document.querySelector(`[data-window-id="${first}"]`))
+    expect(document.activeElement).not.toBe(document.body)
+  })
+
+  it('restore without a Dock rect plays the Scale open animation', () => {
+    const { animate } = stubAnimate()
+    const id = openFinder()
+    render(<WindowLayer />)
+    act(() => useSystem.getState().minimize(id))
+    act(() => useSystem.getState().restore(id))
+    expect(animate).toHaveBeenCalledTimes(1)
+    expect(animate.mock.calls[0][0]).toEqual([
+      { opacity: 0, transform: 'scale(0.95)' },
+      { opacity: 1, transform: 'none' },
+    ])
+  })
+
+  it('restore under reduce motion plays no animation', () => {
+    const { animate } = stubAnimate()
+    dockIconRects.set('finder', new DOMRect(10, 700, 52, 52))
+    document.documentElement.classList.add('reduce-motion')
+    const id = openFinder()
+    render(<WindowLayer />)
+    act(() => useSystem.getState().minimize(id))
+    act(() => useSystem.getState().restore(id))
+    expect(animate).not.toHaveBeenCalled()
+  })
+
+  it('quitting an app whose only window is minimized unmounts it', () => {
+    const id = openFinder()
+    render(<WindowLayer />)
+    act(() => useSystem.getState().minimize(id))
+    act(() => useSystem.getState().close(id))
+    expect(windowEl()).toBeNull()
+    expect(windowMinimizers.has(id)).toBe(false)
   })
 
   it('toggles maximize on title bar double-click', () => {

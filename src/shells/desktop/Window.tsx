@@ -40,6 +40,26 @@ const LIGHTS: { name: 'Close' | 'Minimize' | 'Zoom'; color: string; Glyph: Lucid
 
 // The Dock is a toolbar; focus left on one of its buttons after a restore counts as "nothing took focus".
 const DOCK_SELECTOR = '[role="toolbar"][aria-label="Dock"]'
+const DESKTOP_SELECTOR = '[role="listbox"][aria-label="Desktop"]'
+
+// A restored window takes focus unless something else holds it: body and the Dock do not count.
+function claimFocus(el: HTMLElement): void {
+  const active = document.activeElement
+  const onDock = active instanceof Element && active.closest(DOCK_SELECTOR) !== null
+  if (!active || active === document.body || onDock) el.focus({ preventScroll: true })
+}
+
+// A minimized window's focus goes to the store's focused window, else the window's opener, else the Desktop.
+function handOffFocus(opened: Element | null, focusedId: string | null): void {
+  const next = focusedId ? document.querySelector<HTMLElement>(`[data-window-id="${focusedId}"]`) : null
+  const openerLive =
+    opened instanceof HTMLElement &&
+    opened !== document.body &&
+    opened.isConnected &&
+    opened.closest('[data-window-id][aria-hidden="true"]') === null
+  const target = next ?? (openerLive ? opened : null) ?? document.querySelector<HTMLElement>(DESKTOP_SELECTOR)
+  target?.focus({ preventScroll: true })
+}
 
 // Traffic-light clicks must not start a drag or a zoom, so the title bar checks for them.
 const onTrafficLight = (target: EventTarget): boolean =>
@@ -63,39 +83,58 @@ export function Window({ win, app, focused, children, mission }: Props) {
   const minSize = app.window?.minSize ?? { w: 0, h: 0 }
   const titleId = `win-title-${win.id}`
 
-  // A window restored from the Dock plays the genie in reverse, hidden until the strips land.
-  // It runs before the focus effect below, so the hidden root is never focused.
+  const minimized = win.mode === 'minimized'
+  const wasMinimized = useRef(minimized)
+  // The focus that existed when this window opened: where focus goes if this window hides.
+  const opener = useRef<Element | null>(null)
+
+  // Runs on the minimized transition only: restore plays the reverse genie or Scale, and hiding hands focus away.
   useEffect(() => {
-    if (!genieRestores.delete(win.id)) return
+    const was = wasMinimized.current
+    wasMinimized.current = minimized
     const el = rootRef.current
-    const target = dockIconRect(win.appId)
-    if (!el || !target || document.documentElement.classList.contains('reduce-motion')) return
-    // The open animation is still scaling the root, so the box comes from the stored rect, not the live one.
-    const parent = el.offsetParent instanceof Element ? el.offsetParent.getBoundingClientRect() : { x: 0, y: 0 }
-    const from = { x: parent.x + win.rect.x, y: parent.y + win.rect.y, width: win.rect.w, height: win.rect.h }
-    // A minimize still running for this window hands over to the restore.
-    cancelGenie(win.id)
-    const anims = playGenie(el, from, target, 'restore', win.id)
-    if (!anims) return
-    el.style.visibility = 'hidden'
-    Promise.all(anims.map((a) => a.finished)).then(
-      () => {
-        el.style.visibility = ''
-        // Chrome leaves focus on the Dock button that started the restore, so the Dock counts as "nothing took focus".
-        const active = document.activeElement
-        const onDock = active instanceof Element && active.closest(DOCK_SELECTOR) !== null
-        if (!active || active === document.body || onDock) el.focus({ preventScroll: true })
-      },
-      () => {},
-    )
-    // StrictMode runs this effect twice: the cancel leaves the window visible, and the second run has no id left to play.
-    return () => {
-      cancelGenie(win.id, anims)
-      el.style.visibility = ''
+    if (minimized) {
+      if (!was && el?.contains(document.activeElement)) handOffFocus(opener.current, useSystem.getState().wm.focusedId)
+      return
     }
-    // Mount-only: a restore is a one-off event, and its deps would replay it on every store change.
+    if (!was || !el) return
+    const reduceMotion = document.documentElement.classList.contains('reduce-motion')
+    // Consumed on every restore, even under reduce motion, so no stale entry survives.
+    const genie = genieRestores.delete(win.id)
+    const target = dockIconRect(win.appId)
+    if (genie && target && !reduceMotion) {
+      // The open animation is still scaling the root, so the box comes from the stored rect, not the live one.
+      const parent = el.offsetParent instanceof Element ? el.offsetParent.getBoundingClientRect() : { x: 0, y: 0 }
+      const from = { x: parent.x + win.rect.x, y: parent.y + win.rect.y, width: win.rect.w, height: win.rect.h }
+      // A minimize still running for this window hands over to the restore.
+      cancelGenie(win.id)
+      const anims = playGenie(el, from, target, 'restore', win.id)
+      if (anims) {
+        el.style.visibility = 'hidden'
+        Promise.all(anims.map((a) => a.finished)).then(
+          () => {
+            el.style.visibility = ''
+            claimFocus(el)
+          },
+          () => {},
+        )
+        // StrictMode and a re-minimize both clean up: the cancel leaves the window visible.
+        return () => {
+          cancelGenie(win.id, anims)
+          el.style.visibility = ''
+        }
+      }
+    }
+    claimFocus(el)
+    if (!reduceMotion && typeof el.animate === 'function') {
+      el.animate([{ opacity: 0, transform: 'scale(0.95)' }, { opacity: 1, transform: 'none' }], {
+        duration: 160,
+        easing: 'ease-out',
+      })
+    }
+    // Keyed on the transition only: the rect and app do not change while the window is hidden.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [minimized])
 
   // The Dock calls minimize through the store; this entry gives it the genie.
   useEffect(() => {
@@ -109,6 +148,7 @@ export function Window({ win, app, focused, children, mission }: Props) {
   // Focus the window on open; hand focus back to whatever had it before the window existed.
   useEffect(() => {
     const previous = document.activeElement
+    opener.current = previous
     rootRef.current?.focus({ preventScroll: true })
     return () => {
       if (previous instanceof HTMLElement && previous.isConnected) previous.focus()
@@ -202,9 +242,11 @@ export function Window({ win, app, focused, children, mission }: Props) {
       role="dialog"
       aria-modal="false"
       aria-labelledby={titleId}
+      aria-hidden={minimized ? 'true' : undefined}
+      inert={minimized}
       tabIndex={-1}
       data-window-id={win.id}
-      className="animate-window-open pointer-events-auto absolute flex flex-col overflow-hidden rounded-[var(--radius-window)] bg-window outline-none"
+      className={`animate-window-open absolute flex flex-col overflow-hidden rounded-[var(--radius-window)] bg-window outline-none ${minimized ? 'invisible pointer-events-none' : 'pointer-events-auto'}`}
       style={{
         left: win.rect.x,
         top: win.rect.y,
