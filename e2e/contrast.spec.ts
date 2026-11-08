@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { ACCENTS } from '../src/system/settings.ts'
-import { composite, contrastRatio, openDock, parseRgba, unlock } from './helpers.ts'
+import { composite, contrastRatio, openDock, parseRgba, unlock, unlockMobile } from './helpers.ts'
 
 const appWindow = (page: Page, name: string) => page.getByRole('dialog', { name, exact: true })
 
@@ -174,4 +174,50 @@ test.describe('contrast', () => {
     }
     expect(failures, 'Dock focus ring contrast').toEqual([])
   })
+})
+
+test.describe('phone status bar', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  for (const appearance of ['light', 'dark'] as const) {
+    test(`the battery fill and a filled signal bar have 3:1 against the wallpaper in ${appearance} mode`, async ({ page }) => {
+      // Stubs the browser readings the status bar draws from: half a battery and a 4g connection.
+      await page.addInitScript((look) => {
+        try {
+          localStorage.setItem('bymaxos.settings', JSON.stringify({ appearance: look, accent: 'blue' }))
+        } catch {
+          // about:blank has no storage; the page's own navigation sets it.
+        }
+        Object.defineProperty(navigator, 'getBattery', {
+          configurable: true,
+          value: async () => ({ level: 0.5, charging: false, addEventListener() {}, removeEventListener() {} }),
+        })
+        Object.defineProperty(navigator, 'connection', {
+          configurable: true,
+          value: { effectiveType: '4g', addEventListener() {}, removeEventListener() {} },
+        })
+      }, appearance)
+      await unlockMobile(page)
+
+      const battery = page.getByRole('img', { name: 'Battery 50%' })
+      const signal = page.getByRole('img', { name: 'Signal: 4 of 4 bars' })
+      await expect(battery).toBeVisible()
+      await expect(signal).toBeVisible()
+
+      const failures: string[] = []
+      for (const [name, glyph] of [
+        ['battery fill', battery.locator('rect').nth(2)],
+        ['signal bar', signal.locator('rect').nth(0)],
+      ] as const) {
+        const fill = await glyph.evaluate((el) => getComputedStyle(el).fill)
+        // Sampled just above the element, the same way the Dock ring is measured.
+        const box = await glyph.locator('xpath=ancestor::*[@role="img"][1]').boundingBox()
+        if (!box) throw new Error(`${name} has no box`)
+        const backdrop = await wallpaperAt(page, box.x + box.width / 2, box.y - 3)
+        const ratio = contrastRatio(fill, backdrop)
+        if (ratio < 3) failures.push(`${name} ${fill} over wallpaper ${backdrop} is ${ratio.toFixed(2)}:1`)
+      }
+      expect(failures, 'phone status bar contrast').toEqual([])
+    })
+  }
 })

@@ -53,6 +53,38 @@ export function useClock(): Date {
   return now
 }
 
+interface NetworkInformationLike {
+  effectiveType?: string
+  addEventListener(type: 'change', fn: () => void): void
+  removeEventListener(type: 'change', fn: () => void): void
+}
+
+// connection is absent from the DOM typings and from Safari and Firefox.
+const networkNavigator = () =>
+  navigator as Navigator & { connection?: NetworkInformationLike }
+
+const BARS: Partial<Record<string, 1 | 2 | 3 | 4>> = { 'slow-2g': 1, '2g': 2, '3g': 3, '4g': 4 }
+
+// Effective connection quality, not signal strength: the only network reading a web page gets.
+export function useNetwork(): { bars: 1 | 2 | 3 | 4; type?: string } | null {
+  const [network, setNetwork] = useState<{ bars: 1 | 2 | 3 | 4; type?: string } | null>(null)
+
+  useEffect(() => {
+    const connection = networkNavigator().connection
+    if (!connection) return
+    const sync = () => {
+      const type = connection.effectiveType
+      const bars = type ? BARS[type] : undefined
+      setNetwork(bars ? { bars, type } : null)
+    }
+    sync()
+    connection.addEventListener('change', sync)
+    return () => connection.removeEventListener('change', sync)
+  }, [])
+
+  return network
+}
+
 const subscribeOnline = (onChange: () => void) => {
   window.addEventListener('online', onChange)
   window.addEventListener('offline', onChange)
