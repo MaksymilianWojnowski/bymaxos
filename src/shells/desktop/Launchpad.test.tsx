@@ -30,7 +30,8 @@ const appButtons = () => panel().queryAllByRole('button')
 
 describe('Launchpad', () => {
   it('shows every launchpadApps() entry as a button named after the app', () => {
-    expect(appButtons().map((b) => b.textContent)).toEqual(launchpadApps().map((a) => a.name))
+    // The caption is the last child; the live Calendar icon adds its own (aria-hidden) text before it.
+    expect(appButtons().map((b) => b.lastElementChild?.textContent)).toEqual(launchpadApps().map((a) => a.name))
     expect(panel().getByRole('button', { name: 'Mail' })).toBeInTheDocument()
   })
 

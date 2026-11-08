@@ -26,9 +26,10 @@ export interface MenuContext {
   keyboardLocked: boolean
 }
 
-// macOS artwork (image URL, with Apple's built-in margin) or a brand glyph on a squircle.
+// macOS artwork (image URL, with Apple's built-in margin), a live icon drawn at runtime, or a brand glyph on a squircle.
 export type AppIconSpec =
   | { image: string }
+  | { live: 'calendar' }
   | {
       glyph: ComponentType<{ className?: string; 'aria-hidden'?: boolean }>
       background: string

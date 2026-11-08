@@ -1,8 +1,10 @@
 import type { AppDefinition } from '../apps/types'
+import { CalendarIcon } from './CalendarIcon'
 
 // Decorative only: the labels come from the parent (dock tooltip, desktop icon caption).
 export function AppIcon({ app, size }: { app: AppDefinition; size: number }) {
   const { icon } = app
+  if ('live' in icon) return <CalendarIcon size={size} />
   if ('image' in icon) {
     return <img src={icon.image} alt="" aria-hidden="true" draggable={false} style={{ width: size, height: size }} />
   }

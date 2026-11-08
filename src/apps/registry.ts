@@ -1,4 +1,3 @@
-import calendarIcon from '../assets/icons/calendar.png'
 import contactsIcon from '../assets/icons/contacts.png'
 import finderIcon from '../assets/icons/finder.png'
 import launchpadIcon from '../assets/icons/launchpad.png'
@@ -166,7 +165,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'calendar',
     name: 'Calendar',
-    icon: { image: calendarIcon },
+    icon: { live: 'calendar' },
     load: () => import('./calendar/Calendar'),
     window: {
       defaultSize: { w: 760, h: 540 },
