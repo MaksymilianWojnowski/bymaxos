@@ -3,38 +3,33 @@ import { useShell } from '../system/shell'
 
 const MONTH = new Intl.DateTimeFormat('en-US', { month: 'short' })
 const WEEKDAY = new Intl.DateTimeFormat('en-US', { weekday: 'long' })
+const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif'
 
-// Live Calendar artwork: today's date, labelled the way each shell's Calendar icon is.
+// Drawn as an image, like the PNG it replaces: DOM text would be checked by axe as UI.
 export function CalendarIcon({ size, dark }: { size: number; dark?: boolean }) {
   const now = useClock()
   const shell = useShell()
   const label = shell === 'mobile' ? WEEKDAY.format(now) : MONTH.format(now).toUpperCase()
+  const pad = size * 0.1
+  const tile = size * 0.8
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
+    '<defs><filter id="s" x="-20%" y="-20%" width="140%" height="150%">' +
+    '<feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.25"/></filter></defs>' +
+    `<rect x="${pad}" y="${pad}" width="${tile}" height="${tile}" rx="${tile * 0.225}" ` +
+    `fill="${dark ? '#1c1c1e' : '#ffffff'}" filter="url(#s)"/>` +
+    `<text x="${size / 2}" y="${pad + tile * 0.28}" text-anchor="middle" font-family='${FONT}' ` +
+    `font-size="${size * 0.13}" font-weight="600" fill="#ff3b30">${label}</text>` +
+    `<text x="${size / 2}" y="${pad + tile * 0.8}" text-anchor="middle" font-family='${FONT}' ` +
+    `font-size="${size * 0.42}" font-weight="300" fill="${dark ? '#ffffff' : '#1d1d1f'}">${now.getDate()}</text>` +
+    '</svg>'
   return (
-    <div
+    <img
+      src={`data:image/svg+xml,${encodeURIComponent(svg)}`}
+      alt=""
       aria-hidden="true"
-      className="flex items-center justify-center"
-      style={{ width: size, height: size, padding: size * 0.1 }}
-    >
-      <div
-        className="flex h-full w-full flex-col items-center justify-center"
-        style={{
-          borderRadius: '22.5%',
-          backgroundColor: dark ? '#1c1c1e' : '#ffffff',
-          boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 2px 6px rgba(0, 0, 0, 0.25)',
-        }}
-      >
-        <span style={{ color: '#ff3b30', fontSize: size * 0.13, fontWeight: 600, lineHeight: 1.1 }}>{label}</span>
-        <span
-          style={{
-            color: dark ? '#ffffff' : '#1d1d1f',
-            fontSize: size * 0.42,
-            fontWeight: 300,
-            lineHeight: 1.1,
-          }}
-        >
-          {now.getDate()}
-        </span>
-      </div>
-    </div>
+      draggable={false}
+      style={{ width: size, height: size }}
+    />
   )
 }

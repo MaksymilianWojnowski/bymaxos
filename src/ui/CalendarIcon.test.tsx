@@ -22,18 +22,22 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
+// The icon is an SVG image; its text and colours live in the decoded data URL.
+const drawn = (container: HTMLElement) =>
+  decodeURIComponent(container.querySelector('img')!.getAttribute('src')!)
+
 describe('CalendarIcon', () => {
   it('desktop shows the month and the day', () => {
     const { container } = render(<CalendarIcon size={128} />)
-    expect(container.textContent).toContain('NOV')
-    expect(container.textContent).toContain('7')
+    expect(drawn(container)).toContain('NOV')
+    expect(drawn(container)).toContain('>7<')
   })
 
   it('phone shows the weekday and the day', () => {
     shell.value = 'mobile'
     const { container } = render(<CalendarIcon size={128} />)
-    expect(container.textContent).toContain('Saturday')
-    expect(container.textContent).toContain('7')
+    expect(drawn(container)).toContain('Saturday')
+    expect(drawn(container)).toContain('>7<')
   })
 
   it('the date rolls over at midnight', () => {
@@ -42,14 +46,13 @@ describe('CalendarIcon', () => {
     act(() => {
       vi.advanceTimersByTime(20_000)
     })
-    expect(container.textContent).toContain('Sunday')
-    expect(container.textContent).toContain('8')
-    expect(container.textContent).not.toContain('7')
+    expect(drawn(container)).toContain('Sunday')
+    expect(drawn(container)).toContain('>8<')
+    expect(drawn(container)).not.toContain('>7<')
   })
 
   it('the dark variant uses a dark tile', () => {
     const { container } = render(<CalendarIcon size={128} dark />)
-    const tile = container.firstElementChild?.firstElementChild as HTMLElement
-    expect(tile).toHaveStyle({ backgroundColor: '#1c1c1e' })
+    expect(drawn(container)).toContain('#1c1c1e')
   })
 })
