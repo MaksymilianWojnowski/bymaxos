@@ -28,13 +28,12 @@ export interface MenuContext {
 
 // macOS artwork (image URL, with Apple's built-in margin), a live icon drawn at runtime, or a brand glyph on a squircle.
 export type AppIconSpec =
-  | { image: string; darkKey?: string }
+  | { image: string }
   | { live: 'calendar' }
   | {
       glyph: ComponentType<{ className?: string; 'aria-hidden'?: boolean }>
       background: string
       color?: string
-      darkGlyph?: string
     }
 
 export interface AppDefinition {
