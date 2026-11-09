@@ -25,7 +25,12 @@ const notes = {
 const brand = {
   id: 'linkedin',
   name: 'LinkedIn',
-  icon: { glyph: () => <svg data-testid="glyph" />, background: '#0a66c2', color: '#ffffff' },
+  icon: {
+    glyph: () => <svg data-testid="glyph" />,
+    background: 'linear-gradient(180deg, #1f7fd0 0%, #0a66c2 100%)',
+    color: '#ffffff',
+    darkGlyph: '#70b5f9',
+  },
 } as unknown as AppDefinition
 
 const setTheme = (theme: 'light' | 'dark') => {
@@ -63,7 +68,7 @@ describe('AppIcon dark artwork', () => {
   it('a dark brand glyph sits on a dark tile in its brand colour', () => {
     const { getByTestId } = render(<AppIcon app={brand} size={60} />)
     const tile = getByTestId('glyph').parentElement!
-    expect(tile).toHaveStyle({ background: '#1c1c1e', color: '#0a66c2' })
+    expect(tile).toHaveStyle({ background: '#1c1c1e', color: '#70b5f9' })
   })
 
   it('a theme switch while mounted swaps to the dark artwork', async () => {

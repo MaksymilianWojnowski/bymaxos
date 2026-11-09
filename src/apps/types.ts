@@ -34,6 +34,7 @@ export type AppIconSpec =
       glyph: ComponentType<{ className?: string; 'aria-hidden'?: boolean }>
       background: string
       color?: string
+      darkGlyph?: string
     }
 
 export interface AppDefinition {

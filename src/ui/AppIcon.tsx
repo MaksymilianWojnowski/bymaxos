@@ -37,7 +37,7 @@ export function AppIcon({ app, size }: { app: AppDefinition; size: number }) {
         style={{
           borderRadius: '22.5%',
           background: dark ? '#1c1c1e' : icon.background,
-          color: dark ? icon.background : icon.color,
+          color: dark ? (icon.darkGlyph ?? icon.color) : icon.color,
           boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 2px 6px rgba(0, 0, 0, 0.25)',
         }}
       >
