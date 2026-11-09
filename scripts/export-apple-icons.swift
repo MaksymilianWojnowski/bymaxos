@@ -76,7 +76,8 @@ for (name, source) in icons {
   var rendered: NSImage? = image(for: source)
   if darkMode {
     guard let bundle = appBundle(source) else { continue }
-    rendered = NSWorkspace.shared.icon(forFile: bundle)
+    // Safari.app is a symlink; on the link itself the system draws an alias arrow.
+    rendered = NSWorkspace.shared.icon(forFile: URL(fileURLWithPath: bundle).resolvingSymlinksInPath().path)
   }
   guard let img = rendered, let data = png(img) else {
     print("FAILED \(name)")

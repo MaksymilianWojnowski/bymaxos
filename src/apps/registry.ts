@@ -49,7 +49,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'launchpad',
     name: 'Launchpad',
-    icon: { image: launchpadIcon },
+    icon: { image: launchpadIcon, darkKey: 'launchpad' },
     overlay: 'launchpad',
     launchpad: false,
     mobile: { presentation: 'hidden' },
@@ -58,7 +58,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'finder',
     name: 'Finder',
-    icon: { image: finderIcon },
+    icon: { image: finderIcon, darkKey: 'finder' },
     load: () => import('./finder/Finder'),
     menus: finderMenus,
     window: {
@@ -72,7 +72,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'resume',
     name: 'Resume',
-    icon: { image: previewIcon },
+    icon: { image: previewIcon, darkKey: 'preview' },
     load: () => import('./resume/Resume'),
     menus: resumeMenus,
     window: {
@@ -88,7 +88,7 @@ const APP_LIST: (AppDefinition | null)[] = [
     name: 'Quick Look',
     deepLink: false,
     mobile: { presentation: 'hidden' },
-    icon: { image: previewIcon },
+    icon: { image: previewIcon, darkKey: 'preview' },
     load: () => import('./quicklook/QuickLook'),
     window: {
       defaultSize: { w: 640, h: 520 },
@@ -101,7 +101,7 @@ const APP_LIST: (AppDefinition | null)[] = [
     id: 'textedit',
     name: 'TextEdit',
     deepLink: false,
-    icon: { image: texteditIcon },
+    icon: { image: texteditIcon, darkKey: 'textedit' },
     load: () => import('./textedit/TextEdit'),
     window: {
       defaultSize: { w: 620, h: 560 },
@@ -114,7 +114,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'safari',
     name: 'Safari',
-    icon: { image: safariIcon },
+    icon: { image: safariIcon, darkKey: 'safari' },
     load: () => import('./safari/Safari'),
     window: {
       defaultSize: { w: 960, h: 620 },
@@ -127,7 +127,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'mail',
     name: 'Mail',
-    icon: { image: mailIcon },
+    icon: { image: mailIcon, darkKey: 'mail' },
     load: () => import('./mail/Mail'),
     menus: (ctx) => [
       {
@@ -152,7 +152,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'contacts',
     name: 'Contacts',
-    icon: { image: contactsIcon },
+    icon: { image: contactsIcon, darkKey: 'contacts' },
     load: () => import('./contacts/Contacts'),
     window: {
       defaultSize: { w: 480, h: 520 },
@@ -178,7 +178,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'notes',
     name: 'Notes',
-    icon: { image: notesIcon },
+    icon: { image: notesIcon, darkKey: 'notes' },
     load: () => import('./notes/Notes'),
     menus: notesMenus,
     window: {
@@ -192,7 +192,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'photos',
     name: 'Photos',
-    icon: { image: photosIcon },
+    icon: { image: photosIcon, darkKey: 'photos' },
     load: () => import('./photos/Photos'),
     window: {
       defaultSize: { w: 900, h: 600 },
@@ -205,7 +205,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'music',
     name: 'Music',
-    icon: { image: musicIcon },
+    icon: { image: musicIcon, darkKey: 'music' },
     load: () => import('./music/Music'),
     window: {
       defaultSize: { w: 860, h: 560 },
@@ -218,7 +218,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'maps',
     name: 'Maps',
-    icon: { image: mapsIcon },
+    icon: { image: mapsIcon, darkKey: 'maps' },
     load: () => import('./maps/Maps'),
     window: {
       defaultSize: { w: 960, h: 600 },
@@ -231,7 +231,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'developer',
     name: 'Developer',
-    icon: { image: xcodeIcon },
+    icon: { image: xcodeIcon, darkKey: 'xcode' },
     load: () => import('./developer/Developer'),
     window: {
       defaultSize: { w: 880, h: 560 },
@@ -244,7 +244,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'terminal',
     name: 'Terminal',
-    icon: { image: terminalIcon },
+    icon: { image: terminalIcon, darkKey: 'terminal' },
     load: () => import('./terminal/Terminal'),
     window: {
       defaultSize: { w: 680, h: 440 },
@@ -257,7 +257,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'settings',
     name: 'System Settings',
-    icon: { image: systemSettingsIcon },
+    icon: { image: systemSettingsIcon, darkKey: 'system-settings' },
     load: () => import('./settings/Settings'),
     window: {
       defaultSize: { w: 680, h: 520 },
@@ -270,7 +270,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'about',
     name: 'About This Mac',
-    icon: { image: systemInfoIcon },
+    icon: { image: systemInfoIcon, darkKey: 'system-information' },
     load: () => import('./about/AboutThisMac'),
     launchpad: false,
     mobile: { presentation: 'hidden' },
@@ -302,7 +302,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'trash',
     name: 'Trash',
-    icon: { image: trashIcon },
+    icon: { image: trashIcon, darkKey: 'trash' },
     alias: { appId: 'finder', props: { folderId: 'trash' } },
     launchpad: false,
     mobile: { presentation: 'hidden' },
