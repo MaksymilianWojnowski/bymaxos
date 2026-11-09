@@ -50,14 +50,19 @@ function claimFocus(el: HTMLElement): void {
 }
 
 // A minimized window's focus goes to the store's focused window, else the window's opener, else the Desktop.
-function handOffFocus(opened: Element | null, focusedId: string | null): void {
-  const next = focusedId ? document.querySelector<HTMLElement>(`[data-window-id="${focusedId}"]`) : null
-  const openerLive =
+// A live opener is attached, is not body, and is not inside a minimized window (focus cannot enter it).
+function isLiveOpener(opened: Element | null): opened is HTMLElement {
+  return (
     opened instanceof HTMLElement &&
     opened !== document.body &&
     opened.isConnected &&
     opened.closest('[data-window-id][aria-hidden="true"]') === null
-  const target = next ?? (openerLive ? opened : null) ?? document.querySelector<HTMLElement>(DESKTOP_SELECTOR)
+  )
+}
+
+function handOffFocus(opened: Element | null, focusedId: string | null): void {
+  const next = focusedId ? document.querySelector<HTMLElement>(`[data-window-id="${focusedId}"]`) : null
+  const target = next ?? (isLiveOpener(opened) ? opened : null) ?? document.querySelector<HTMLElement>(DESKTOP_SELECTOR)
   target?.focus({ preventScroll: true })
 }
 
@@ -159,7 +164,7 @@ export function Window({ win, app, focused, children, mission }: Props) {
       // A hidden window closed from elsewhere must not pull focus off the window the user is in.
       const active = document.activeElement
       const holdsFocus = !active || active === document.body || (el !== null && el.contains(active))
-      if (holdsFocus && previous instanceof HTMLElement && previous.isConnected) previous.focus()
+      if (holdsFocus) handOffFocus(previous, null)
     }
   }, [])
 

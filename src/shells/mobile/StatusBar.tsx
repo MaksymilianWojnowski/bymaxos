@@ -53,7 +53,7 @@ export function StatusBar({ onWallpaper = false }: { onWallpaper?: boolean }) {
     >
       <time dateTime={now.toISOString()}>{clock.format(now)}</time>
       <div className="flex items-center gap-1.5">
-        {network && <SignalBars bars={network.bars} />}
+        {online && network && <SignalBars bars={network.bars} />}
         <span role="img" aria-label={online ? 'Wi-Fi: connected' : 'Wi-Fi: offline'}>
           {online ? <Wifi aria-hidden="true" className={ICON} /> : <WifiOff aria-hidden="true" className={ICON} />}
         </span>

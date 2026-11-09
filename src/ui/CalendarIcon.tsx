@@ -12,10 +12,11 @@ export function CalendarIcon({ size, dark }: { size: number; dark?: boolean }) {
   const label = shell === 'mobile' ? WEEKDAY.format(now) : MONTH.format(now).toUpperCase()
   const pad = size * 0.1
   const tile = size * 0.8
+  const shadow = Math.round(size * 3) / 100
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
     '<defs><filter id="s" x="-20%" y="-20%" width="140%" height="150%">' +
-    '<feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.25"/></filter></defs>' +
+    `<feDropShadow dx="0" dy="${shadow}" stdDeviation="${shadow}" flood-color="#000" flood-opacity="0.25"/></filter></defs>` +
     `<rect x="${pad}" y="${pad}" width="${tile}" height="${tile}" rx="${tile * 0.225}" ` +
     `fill="${dark ? '#1c1c1e' : '#ffffff'}" filter="url(#s)"/>` +
     `<text x="${size / 2}" y="${pad + tile * 0.28}" text-anchor="middle" font-family='${FONT}' ` +

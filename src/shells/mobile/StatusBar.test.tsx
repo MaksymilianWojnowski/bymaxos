@@ -5,13 +5,14 @@ import * as hooks from '../desktop/statusHooks'
 
 vi.mock('../desktop/statusHooks', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../desktop/statusHooks')>()
-  return { ...actual, useBattery: vi.fn(() => null), useNetwork: vi.fn(() => null) }
+  return { ...actual, useBattery: vi.fn(() => null), useNetwork: vi.fn(() => null), useOnline: vi.fn(() => true) }
 })
 
 describe('StatusBar', () => {
   beforeEach(() => {
     vi.mocked(hooks.useBattery).mockReturnValue(null)
     vi.mocked(hooks.useNetwork).mockReturnValue(null)
+    vi.mocked(hooks.useOnline).mockReturnValue(true)
   })
 
   afterEach(() => {
@@ -36,5 +37,12 @@ describe('StatusBar', () => {
     vi.mocked(hooks.useNetwork).mockReturnValue({ bars: 3, type: '3g' })
     render(<StatusBar />)
     expect(screen.getByRole('img', { name: 'Signal: 3 of 4 bars' })).toBeInTheDocument()
+  })
+
+  it('hides the signal bars while offline', () => {
+    vi.mocked(hooks.useOnline).mockReturnValue(false)
+    vi.mocked(hooks.useNetwork).mockReturnValue({ bars: 4, type: '3g' })
+    render(<StatusBar />)
+    expect(screen.queryByRole('img', { name: /Signal/ })).toBeNull()
   })
 })

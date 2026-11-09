@@ -55,4 +55,9 @@ describe('CalendarIcon', () => {
     const { container } = render(<CalendarIcon size={128} dark />)
     expect(drawn(container)).toContain('#1c1c1e')
   })
+
+  it('the drop shadow scales with the icon size', () => {
+    const { container } = render(<CalendarIcon size={24} />)
+    expect(drawn(container)).toContain('stdDeviation="0.72"')
+  })
 })

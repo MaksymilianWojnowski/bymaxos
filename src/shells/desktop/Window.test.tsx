@@ -102,6 +102,16 @@ async function finishAll(anims: FakeAnim[]) {
 
 const windowEl = () => document.querySelector<HTMLElement>('[data-window-id]')
 
+// The Desktop listbox that focus falls back to when nothing else is live.
+function addDesktop(): HTMLElement {
+  const desktop = document.createElement('div')
+  desktop.setAttribute('role', 'listbox')
+  desktop.setAttribute('aria-label', 'Desktop')
+  desktop.tabIndex = -1
+  document.body.append(desktop)
+  return desktop
+}
+
 beforeEach(() => {
   resetSystem()
   useSystem.setState({ locked: false })
@@ -114,6 +124,7 @@ afterEach(() => {
   stub.genieNull = false
   genieRestores.clear()
   document.body.querySelectorAll('[data-genie-layer]').forEach((el) => el.remove())
+  document.body.querySelectorAll('[role="listbox"][aria-label="Desktop"]').forEach((el) => el.remove())
   dockIconRects.clear()
   Reflect.deleteProperty(HTMLElement.prototype, 'animate')
   document.documentElement.classList.remove('reduce-motion')
@@ -413,6 +424,35 @@ describe('Window', () => {
     act(() => useSystem.getState().minimize(second))
     act(() => useSystem.getState().close(second))
     expect(document.activeElement).toBe(field)
+  })
+
+  it('closing a window opened from a field in a minimized window keeps focus out of it', () => {
+    const desktop = addDesktop()
+    const first = openFinder()
+    render(<WindowLayer />)
+    document.querySelector<HTMLTextAreaElement>(`[data-window-id="${first}"] textarea`)?.focus()
+    let second = ''
+    act(() => {
+      second = openFinder()
+    })
+    act(() => useSystem.getState().minimize(first))
+    act(() => useSystem.getState().close(second))
+    expect(document.activeElement).not.toBe(document.body)
+    expect(document.querySelector(`[data-window-id="${first}"]`)?.contains(document.activeElement)).toBe(false)
+    expect(document.activeElement).toBe(desktop)
+  })
+
+  it('minimizing the only focused window with a gone opener focuses the Desktop', () => {
+    const desktop = addDesktop()
+    const opener = document.createElement('button')
+    document.body.append(opener)
+    opener.focus()
+    const id = openFinder()
+    render(<WindowLayer />)
+    opener.remove()
+    document.querySelector<HTMLTextAreaElement>(`[data-window-id="${id}"] textarea`)?.focus()
+    act(() => useSystem.getState().minimize(id))
+    expect(document.activeElement).toBe(desktop)
   })
 
   it('a Scale minimize releases its animation so restore and a second minimize work', async () => {
