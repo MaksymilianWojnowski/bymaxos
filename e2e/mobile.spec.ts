@@ -116,8 +116,9 @@ test.describe('touch lock screen at 320x568, list scrolls', () => {
     await expect(lockHint(page)).toBeVisible()
     const clock = await page.locator('p', { hasText: /^\d{2}:\d{2}$/ }).boundingBox()
     if (!clock) throw new Error('no clock box')
+    // Starts in the gap under the clock: a drag from inside it is shorter than the 30% distance rule on a 320x568 phone, so it unlocks only on flick speed, which CDP timing under load makes flaky.
     const x = clock.x + clock.width / 2
-    await touchDrag(page, { x, y: clock.y + clock.height - 4 }, { x, y: 0 })
+    await touchDrag(page, { x, y: clock.y + clock.height + 12 }, { x, y: 0 })
     await expect(lockHint(page)).toBeHidden()
   })
 })
