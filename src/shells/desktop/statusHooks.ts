@@ -74,7 +74,7 @@ export function useNetwork(): { bars: 1 | 2 | 3 | 4; type?: string } | null {
     if (!connection) return
     const sync = () => {
       const type = connection.effectiveType
-      const bars = type ? BARS[type] : undefined
+      const bars = type && Object.hasOwn(BARS, type) ? BARS[type] : undefined
       setNetwork(bars ? { bars, type } : null)
     }
     sync()

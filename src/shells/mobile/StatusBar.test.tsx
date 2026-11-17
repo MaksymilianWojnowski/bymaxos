@@ -33,6 +33,22 @@ describe('StatusBar', () => {
     expect(screen.queryByText(/%/)).toBeNull()
   })
 
+  it('the battery name says charging', () => {
+    vi.mocked(hooks.useBattery).mockReturnValue({ level: 0.82, charging: true })
+    render(<StatusBar />)
+    expect(screen.getByRole('img', { name: 'Battery 82%, charging' })).toBeInTheDocument()
+  })
+
+  it('the battery fill is green while charging and red under 20%', () => {
+    vi.mocked(hooks.useBattery).mockReturnValue({ level: 0.82, charging: true })
+    const { container, unmount } = render(<StatusBar />)
+    expect(container.querySelector('rect[rx="1"][height="8"]')?.getAttribute('fill')).toBe('#34c759')
+    unmount()
+    vi.mocked(hooks.useBattery).mockReturnValue({ level: 0.15, charging: false })
+    const low = render(<StatusBar />)
+    expect(low.container.querySelector('rect[rx="1"][height="8"]')?.getAttribute('fill')).toBe('#ff3b30')
+  })
+
   it('signal bars label', () => {
     vi.mocked(hooks.useNetwork).mockReturnValue({ bars: 3, type: '3g' })
     render(<StatusBar />)

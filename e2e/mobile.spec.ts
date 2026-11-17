@@ -111,7 +111,7 @@ test.describe('touch lock screen at 320x568, list scrolls', () => {
     await expect(lockHint(page)).toBeVisible()
   })
 
-  test('a vertical touch drag from the clock unlocks', async ({ page }) => {
+  test('a vertical touch drag from the clock area unlocks', async ({ page }) => {
     await page.goto('/')
     await expect(lockHint(page)).toBeVisible()
     const clock = await page.locator('p', { hasText: /^\d{2}:\d{2}$/ }).boundingBox()

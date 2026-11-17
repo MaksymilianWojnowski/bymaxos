@@ -30,14 +30,14 @@ describe('CalendarIcon', () => {
   it('desktop shows the month and the day', () => {
     const { container } = render(<CalendarIcon size={128} />)
     expect(drawn(container)).toContain('NOV')
-    expect(drawn(container)).toContain('>7<')
+    expect(drawn(container)).toContain('>7</text>')
   })
 
   it('phone shows the weekday and the day', () => {
     shell.value = 'mobile'
     const { container } = render(<CalendarIcon size={128} />)
     expect(drawn(container)).toContain('Saturday')
-    expect(drawn(container)).toContain('>7<')
+    expect(drawn(container)).toContain('>7</text>')
   })
 
   it('the date rolls over at midnight', () => {
@@ -47,13 +47,24 @@ describe('CalendarIcon', () => {
       vi.advanceTimersByTime(20_000)
     })
     expect(drawn(container)).toContain('Sunday')
-    expect(drawn(container)).toContain('>8<')
-    expect(drawn(container)).not.toContain('>7<')
+    expect(drawn(container)).toContain('>8</text>')
+    expect(drawn(container)).not.toContain('>7</text>')
   })
 
   it('the dark variant uses a dark tile', () => {
     const { container } = render(<CalendarIcon size={128} dark />)
     expect(drawn(container)).toContain('#1c1c1e')
+    expect(drawn(container)).toContain('fill="#ffffff">7</text>')
+  })
+
+  it('light colours and decorative image', () => {
+    const { container } = render(<CalendarIcon size={128} />)
+    const img = container.querySelector('img')!
+    expect(drawn(container)).toContain('#ffffff')
+    expect(drawn(container)).toContain('#1d1d1f')
+    expect(drawn(container)).toContain('#ff3b30')
+    expect(img).toHaveAttribute('alt', '')
+    expect(img).toHaveAttribute('aria-hidden', 'true')
   })
 
   it('the drop shadow scales with the icon size', () => {

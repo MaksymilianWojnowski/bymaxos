@@ -49,7 +49,6 @@ function claimFocus(el: HTMLElement): void {
   if (!active || active === document.body || onDock) el.focus({ preventScroll: true })
 }
 
-// A minimized window's focus goes to the store's focused window, else the window's opener, else the Desktop.
 // A live opener is attached, is not body, and is not inside a minimized window (focus cannot enter it).
 function isLiveOpener(opened: Element | null): opened is HTMLElement {
   return (
@@ -60,6 +59,7 @@ function isLiveOpener(opened: Element | null): opened is HTMLElement {
   )
 }
 
+// A minimized window's focus goes to the store's focused window, else the window's opener, else the Desktop.
 function handOffFocus(opened: Element | null, focusedId: string | null): void {
   const next = focusedId ? document.querySelector<HTMLElement>(`[data-window-id="${focusedId}"]`) : null
   const target = next ?? (isLiveOpener(opened) ? opened : null) ?? document.querySelector<HTMLElement>(DESKTOP_SELECTOR)
