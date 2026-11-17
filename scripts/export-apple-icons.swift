@@ -16,7 +16,6 @@ enum Source {
 let icons: [(String, Source)] = [
   ("finder", .icns("/System/Library/CoreServices/Finder.app/Contents/Resources/Finder.icns")),
   ("preview", .icns("/System/Applications/Preview.app/Contents/Resources/AppIcon.icns")),
-  ("system-information", .icns("/System/Applications/Utilities/System Information.app/Contents/Resources/ASP.icns")),
   ("textedit", .icns("/System/Applications/TextEdit.app/Contents/Resources/AppIcon.icns")),
   ("mail", .icns("/System/Applications/Mail.app/Contents/Resources/ApplicationIcon.icns")),
   ("contacts", .icns("/System/Applications/Contacts.app/Contents/Resources/Contacts.icns")),

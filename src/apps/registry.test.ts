@@ -48,6 +48,12 @@ describe('registry', () => {
     expect(names).not.toEqual(expect.arrayContaining(['TextEdit', 'Quick Look', 'Launchpad', 'About This Mac', 'Trash']))
   })
 
+  it('About This Mac uses the custom M mark, not Apple artwork', () => {
+    const icon = getApp('about')?.icon
+    expect(icon).toHaveProperty('glyph')
+    expect(icon).not.toHaveProperty('image')
+  })
+
   it('gives every loadable app a window spec and every external link https', () => {
     for (const app of APPS.filter((a) => a.load)) expect(app.window, app.id).toBeDefined()
     for (const app of APPS.filter((a) => a.external)) {

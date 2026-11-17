@@ -8,7 +8,6 @@ import notesIcon from '../assets/icons/notes.png'
 import photosIcon from '../assets/icons/photos.png'
 import previewIcon from '../assets/icons/preview.png'
 import safariIcon from '../assets/icons/safari.png'
-import systemInfoIcon from '../assets/icons/system-information.png'
 import systemSettingsIcon from '../assets/icons/system-settings.png'
 import terminalIcon from '../assets/icons/terminal.png'
 import texteditIcon from '../assets/icons/textedit.png'
@@ -20,6 +19,7 @@ import { setAppLookup, setAppResolver } from '../system/store'
 import type { Command } from '../system/commands'
 import type { AppId, WindowSpec } from '../system/types'
 import { GitHubGlyph, LinkedInGlyph } from '../ui/glyphs'
+import { SystemMarkGlyph } from '../ui/SystemMark'
 import { finderMenus } from './finder/menus'
 import { notesMenus } from './notes/menus'
 import { resumeMenus } from './resume/menus'
@@ -270,7 +270,7 @@ const APP_LIST: (AppDefinition | null)[] = [
   {
     id: 'about',
     name: 'About This Mac',
-    icon: { image: systemInfoIcon },
+    icon: { glyph: SystemMarkGlyph, background: 'linear-gradient(180deg, #4a4a4f 0%, #1d1d1f 100%)', color: '#ffffff' },
     load: () => import('./about/AboutThisMac'),
     launchpad: false,
     mobile: { presentation: 'hidden' },
