@@ -6,6 +6,20 @@ import { openDock, settleAnimations, unlock, unlockMobile } from './helpers.ts'
 // Generates the README screenshots. Skipped unless SCREENSHOTS=1, so the normal suite and CI never run it.
 test.skip(process.env.SCREENSHOTS !== '1', 'screenshots are generated on demand with SCREENSHOTS=1')
 
+// The capture must not depend on the machine's real battery or network connection.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'getBattery', {
+      configurable: true,
+      value: async () => ({ level: 0.8, charging: false, addEventListener() {}, removeEventListener() {} }),
+    })
+    Object.defineProperty(navigator, 'connection', {
+      configurable: true,
+      value: { effectiveType: '4g', addEventListener() {}, removeEventListener() {} },
+    })
+  })
+})
+
 const OUT = new URL('../docs/screenshots/', import.meta.url)
 const GITHUB_API = 'https://api.github.com/**'
 const CLOCK = '2026-11-06T10:09:00'
